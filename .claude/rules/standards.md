@@ -1,0 +1,21 @@
+# Standards
+
+## Frontend
+Keep frontend code focused on UI, state orchestration, and API consumption — no backend business logic in components. Use strong static typing, schema-based input validation, and a server-state caching layer with explicit invalidation.
+
+Exceptions: prototypes may temporarily relax layering, but production must restore separation of concerns. Intentionally checked-in generated client code may include verbose types.
+
+## Backend
+Keep business logic in backend services and domain apps. Use structured JSON logging with contextual fields. Keep tests in per-app `tests/` directories. Organise by domain (users, teams, goals, tasks). Split settings by environment (base/local/staging/production).
+
+Exceptions: small utility repos may use simpler structure if boundaries stay clear. Monolithic modules are acceptable during migrations when a refactor plan is documented.
+
+## Deployment
+Containerize runtime services with health checks. Run automated CI checks before every deployment. Use secure, environment-specific config. Never deploy unvalidated changes to production. Use multi-stage Docker builds and workflow naming like `*-ci.yml` / `*-deploy.yml`.
+
+Exceptions: emergency production fixes may bypass normal flow only with identified approver, documented incident severity, and a post-incident task to restore CI/CD path.
+
+## API Design
+Version all endpoints under `/api/<version>/`. Return consistent error envelopes with appropriate HTTP status codes. Paginate all list endpoints. Use typed schema validation, token-based auth with secure refresh handling, and auto-generated API docs.
+
+Exceptions: public endpoints may skip auth when explicitly documented and rate-limited. Internal-only endpoints may use alternate auth patterns with a recorded security review.
