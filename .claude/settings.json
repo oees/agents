@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git stash*)",
+      "Bash(find . *)",
+      "Bash(ls*)",
+      "Bash(grep*)",
+      "Bash(cat*)",
+      "Bash(wc*)",
+      "Bash(mkdir*)",
+      "Bash(mv*)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(git reset*)",
+      "Bash(git rebase*)",
+      "Bash(git checkout*)",
+      "Bash(rm*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'for f in rules/*.md; do [ -f \"$f\" ] || continue; lines=$(wc -l < \"$f\"); [ \"$lines\" -gt 40 ] && echo \"Warning: $f has $lines lines — keep rules compact\"; done'"
+          }
+        ]
+      }
+    ]
+  }
+}
