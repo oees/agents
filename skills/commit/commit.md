@@ -66,12 +66,6 @@ Improves session security while keeping client retry behavior predictable.
 Related: #123
 ```
 
-Bad example (do not produce this):
-```
-fix stuff
-
-Fixed the bug
-```
 
 ### 4. Validate the message
 
