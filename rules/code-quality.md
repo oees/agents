@@ -1,3 +1,7 @@
+---
+description: Lint, format, type checks, tests, and security scans before merge
+---
+
 # Code Quality
 
 Run lint, format, type checks, and tests before merge. Run security scans on backend dependencies. Never merge known failing lint or type checks without an explicit waiver.

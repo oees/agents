@@ -1,5 +1,5 @@
 ---
-description: Python patterns: framework selection, async, type hints, project structure
+description: Python development principles and decision-making. Framework selection, async patterns, type hints, project structure. Teaches thinking, not copying.
 globs: ["**/*.py"]
 alwaysApply: false
 ---

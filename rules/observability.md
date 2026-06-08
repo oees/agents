@@ -1,3 +1,7 @@
+---
+description: Structured logging, contextual errors, no silent exceptions
+---
+
 # Observability
 
 Emit structured logs for backend operations and failures as well as frontend failures. Include contextual identifiers (request/task IDs) in all log entries and error paths. Never swallow exceptions silently — log with context and re-raise or handle explicitly.

@@ -1,3 +1,7 @@
+---
+description: TDD: write failing tests before implementation, red-green-refactor
+---
+
 # TDD
 
 Write a failing test before every behavioral change. Red → green → refactor, in that order. Tests ship in the same commit as the implementation.

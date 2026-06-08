@@ -9,6 +9,10 @@ strip_frontmatter() {
   awk 'NR==1 && /^---/ { in_fm=1; next } in_fm && /^---/ { in_fm=0; next } in_fm { next } { print }' "$1"
 }
 
+get_description() {
+  awk 'NR==1 && /^---/ { in_fm=1; next } in_fm && /^---/ { exit } in_fm && /^description:/ { sub(/^description: */, ""); print; exit }' "$1"
+}
+
 write_mdc() {
   local out="$1" description="$2" always_apply="$3" globs="$4"
   shift 4
@@ -23,28 +27,22 @@ write_mdc() {
   } > "$out"
 }
 
-declare -A descriptions=(
-  ["tdd"]="TDD: write failing tests before implementation, red-green-refactor"
-  ["no-inline-imports"]="Keep imports at top of module, no inline imports"
-  ["observability"]="Structured logging, contextual errors, no silent exceptions"
-  ["code-quality"]="Lint, format, type checks, tests, and security scans before merge"
-  ["standards"]="Frontend, backend, deployment, and API design conventions"
-)
-
 for md_file in rules/*.md; do
   name=$(basename "$md_file" .md)
+  description=$(get_description "$md_file")
+  [ -z "$description" ] && description="${name} standards"
   tmp=$(mktemp)
   strip_frontmatter "$md_file" > "$tmp"
-  write_mdc ".cursor/rules/${name}.mdc" "${descriptions[$name]}" "true" "" "$tmp"
+  write_mdc ".cursor/rules/${name}.mdc" "$description" "true" "" "$tmp"
   rm "$tmp"
   echo "  rules/${name}.md → .cursor/rules/${name}.mdc"
 done
 
 tmp=$(mktemp)
 strip_frontmatter "skills/python-patterns/python-patterns.md" > "$tmp"
-write_mdc ".cursor/rules/python-patterns.mdc" \
-  "Python patterns: framework selection, async, type hints, project structure" \
-  "false" '["**/*.py"]' "$tmp"
+description=$(get_description "skills/python-patterns/python-patterns.md")
+[ -z "$description" ] && description="Python patterns: framework selection, async, type hints, project structure"
+write_mdc ".cursor/rules/python-patterns.mdc" "$description" "false" '["**/*.py"]' "$tmp"
 rm "$tmp"
 echo "  skills/python-patterns/python-patterns.md → .cursor/rules/python-patterns.mdc"
 
