@@ -33,6 +33,10 @@
           {
             "type": "command",
             "command": "bash -c 'for f in rules/*.md; do [ -f \"$f\" ] || continue; lines=$(wc -l < \"$f\"); [ \"$lines\" -gt 40 ] && echo \"Warning: $f has $lines lines — keep rules compact\"; done'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'input=$(cat); if echo \"$input\" | grep -qE \"rules/.*\\.md|python-patterns\"; then bash scripts/sync-cursor-rules.sh && echo \"Cursor rules synced.\"; fi'"
           }
         ]
       }
