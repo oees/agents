@@ -1,43 +1,64 @@
 # agents
 
-Shared agent configuration — rules, skills, and commands for Claude Code and Cursor.
+Shared Claude Code configuration for the Octopus Energy Spain engineering org — rules, skills, and commands that apply across every repo.
 
 ## Install
 
-### Global (your machine only)
+Run this from the root of any repo:
 
 ```bash
-bash scripts/install.sh
+curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | bash
 ```
 
-Symlinks commands into `~/.claude/commands/` and adds rules to `~/.claude/CLAUDE.md`. Active in every Claude Code session on this machine.
+That's it. The script fetches the latest tooling, copies it into `.claude/` inside your repo, and cleans up after itself. No permanent clone of this repo needed on your machine.
+
+Then commit the result:
 
 ```bash
-bash scripts/uninstall.sh  # reverses the above
+git add .claude/
+git commit -m "chore: add Claude Code tooling"
 ```
 
-### Per-repository (shareable with your team)
+Once committed, every engineer on the repo gets rules, commands, and skills automatically — no per-developer setup required. Claude Code picks up `.claude/` on first launch.
 
-```bash
-bash /path/to/agents/scripts/init-repo.sh [target-dir]
-```
+### What the bootstrap does
 
-`target-dir` defaults to the current directory. The script copies rules, skills, and commands into `.claude/` inside the target repo. Commit `.claude/` and the whole team gets the tooling — no per-developer setup required.
+1. Shallow-clones this repo into a temp directory
+2. Runs `scripts/init-repo.sh` in your current directory
+3. Deletes the temp clone
 
-Re-run the script to pull in rule or skill updates from this repo.
-
-**What gets written:**
+The generated `.claude/` layout:
 
 ```
 .claude/
-  CLAUDE.md          # @imports for every rule
-  rules/             # copies of all rules
-  commands/          # copies of all commands
-  skills/            # copies of all skills
-  settings.json      # permissions and hooks (only written if not already present)
+  CLAUDE.md          # @imports for every rule — Claude Code loads these automatically
+  rules/             # always-on behavioural rules
+  commands/          # slash commands (/commit, /code-review, etc.)
+  skills/            # skill definitions used by commands
+  settings.json      # recommended permissions and hooks (only written if not already present)
 ```
 
-If `settings.json` already exists in the target repo it is left untouched. Review `/.claude/settings.json` in this repo and merge in any permissions or hooks you want.
+### Updating
+
+Pull in the latest rules, commands, and skills by re-running the bootstrap from the repo root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | bash
+```
+
+Review and commit the diff. Rules are intentionally stable so updates are infrequent and easy to audit.
+
+### If you prefer to inspect before running
+
+Download the script, review it, then execute:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh -o bootstrap.sh
+# read bootstrap.sh and scripts/init-repo.sh before proceeding
+bash bootstrap.sh && rm bootstrap.sh
+```
+
+---
 
 ## What you get
 
@@ -52,7 +73,7 @@ If `settings.json` already exists in the target repo it is left untouched. Revie
 | `/test` | Write well-structured tests following TDD — mocking discipline, naming, coverage decisions |
 | `/shipped` | Summary of everything you've committed across all local repos in a time period |
 
-**Rules** (always-on in every session):
+**Rules** (always-on in every Claude Code session on this repo):
 
 | Rule | Enforces |
 |---|---|
@@ -65,28 +86,51 @@ If `settings.json` already exists in the target repo it is left untouched. Revie
 | `secrets` | No hardcoded credentials, use env vars and secret stores |
 | `migrations` | Safe schema migrations — backwards-compatible, reversible, never drop data silently |
 
-## Structure
+---
+
+## Structure of this repo
 
 ```
-rules/        canonical always-on rules (Claude Code via CLAUDE.md, Cursor via .cursor/rules/)
+rules/        canonical always-on rules
 skills/       skill definitions referenced by commands
-commands/     slash command entry points (@-importing their skill)
-.claude/      Claude Code config (settings.json — shared permissions and hooks)
+commands/     slash command entry points
+.claude/      Claude Code config for this repo (settings.json — permissions and hooks)
 .cursor/      generated Cursor rules (do not edit directly)
-scripts/      install.sh, uninstall.sh, init-repo.sh, sync-cursor-rules.sh
+scripts/
+  bootstrap.sh      remote one-liner install (the main path)
+  init-repo.sh      local install — run directly if you have this repo cloned
+  install.sh        global install — symlinks into ~/.claude/ for all repos on your machine
+  uninstall.sh      reverses install.sh
+  sync-cursor-rules.sh  regenerates .cursor/rules/ from rules/ and python-patterns
 ```
 
-## Adding a rule
+## Global install (optional)
+
+If you want rules and commands active in *every* repo on your machine — not just repos that have `.claude/` committed — you can install globally:
+
+```bash
+bash scripts/install.sh   # requires this repo cloned locally
+bash scripts/uninstall.sh # reverses the above
+```
+
+This adds rules to `~/.claude/CLAUDE.md` and symlinks commands into `~/.claude/commands/`. Most people won't need this if their repos all use the bootstrap.
+
+---
+
+## Contributing
+
+### Adding a rule
 
 1. Create `rules/<name>.md` with a `description:` frontmatter field
 2. Add `@rules/<name>.md` to `CLAUDE.md`
 3. Run `bash scripts/sync-cursor-rules.sh` to generate the Cursor equivalent
 
-## Adding a skill and command
+### Adding a skill and command
 
 1. Create `skills/<name>/<name>.md`
 2. Create `commands/<name>.md` with frontmatter and `@skills/<name>/<name>.md`
-3. Re-run `bash scripts/install.sh` (global) or `bash scripts/init-repo.sh` (per-repo) to pick up the new command
+
+Changes are picked up by repos on their next bootstrap run.
 
 ## Cursor
 
