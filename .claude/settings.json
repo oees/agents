@@ -21,7 +21,7 @@
       "Bash(git push*)",
       "Bash(git reset*)",
       "Bash(git rebase*)",
-      "Bash(git checkout*)",
+      "Bash(git checkout .)",
       "Bash(rm*)"
     ]
   },
@@ -32,11 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'for f in rules/*.md; do [ -f \"$f\" ] || continue; lines=$(wc -l < \"$f\"); [ \"$lines\" -gt 40 ] && echo \"Warning: $f has $lines lines — keep rules compact\"; done'"
-          },
-          {
-            "type": "command",
-            "command": "bash -c 'input=$(cat); if echo \"$input\" | grep -qE \"rules/.*\\.md|python-patterns\"; then bash scripts/sync-cursor-rules.sh && echo \"Cursor rules synced.\"; fi'"
+            "command": "bash -c 'i=$(cat); for f in rules/*.md; do [ -f \"$f\" ] || continue; l=$(wc -l < \"$f\"); [ \"$l\" -gt 40 ] && echo \"Warning: $f has $l lines — keep rules compact\"; done; if echo \"$i\" | grep -qF rules/ || echo \"$i\" | grep -qF skills/; then bash scripts/sync-cursor-rules.sh; fi'"
           }
         ]
       }
