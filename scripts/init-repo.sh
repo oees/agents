@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Copies rules, skills, and commands into a target repo's .claude/ directory
-# so the whole team gets the tooling once .claude/ is committed.
+# Copies rules, skills, and commands into a target repo's .claude/ and
+# .cursor/rules/ directories so the whole team gets the tooling once committed.
 # Usage: bash scripts/init-repo.sh [target-dir]   (defaults to current directory)
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -14,11 +14,12 @@ COMMANDS_DIR="$CLAUDE_DIR/commands"
 SKILLS_DIR="$CLAUDE_DIR/skills"
 CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 SETTINGS_JSON="$CLAUDE_DIR/settings.json"
+CURSOR_RULES_DIR="$TARGET/.cursor/rules"
 
 echo "Initialising agents tooling in: $TARGET"
 echo ""
 
-mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"
+mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$CURSOR_RULES_DIR"
 touch "$CLAUDE_MD"
 
 echo "Copying rules..."
@@ -71,4 +72,12 @@ else
 fi
 
 echo ""
-echo "Done. Commit .claude/ to share the tooling with your team."
+echo "Copying Cursor rules..."
+for rule in "$REPO/.cursor/rules"/*.mdc; do
+  name=$(basename "$rule")
+  cp "$rule" "$CURSOR_RULES_DIR/$name"
+  echo "  ✓ $name"
+done
+
+echo ""
+echo "Done. Commit .claude/ and .cursor/ to share the tooling with your team."

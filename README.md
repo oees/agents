@@ -15,11 +15,11 @@ That's it. The script fetches the latest tooling, copies it into `.claude/` insi
 Then commit the result:
 
 ```bash
-git add .claude/
-git commit -m "chore: add Claude Code tooling"
+git add .claude/ .cursor/
+git commit -m "chore: add Claude Code and Cursor tooling"
 ```
 
-Once committed, every engineer on the repo gets rules, commands, and skills automatically — no per-developer setup required. Claude Code picks up `.claude/` on first launch.
+Once committed, every engineer on the repo gets rules, commands, and skills automatically — no per-developer setup required. Claude Code picks up `.claude/` and Cursor picks up `.cursor/rules/` on first launch.
 
 ### What the bootstrap does
 
@@ -27,7 +27,7 @@ Once committed, every engineer on the repo gets rules, commands, and skills auto
 2. Runs `scripts/init-repo.sh` in your current directory
 3. Deletes the temp clone
 
-The generated `.claude/` layout:
+The generated layout:
 
 ```
 .claude/
@@ -36,6 +36,8 @@ The generated `.claude/` layout:
   commands/          # slash commands (/commit, /code-review, etc.)
   skills/            # skill definitions used by commands
   settings.json      # recommended permissions and hooks (only written if not already present)
+.cursor/
+  rules/             # same rules as .mdc files — Cursor picks these up automatically
 ```
 
 ### Updating
@@ -46,7 +48,7 @@ Pull in the latest rules, commands, and skills by re-running the bootstrap from 
 curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | bash
 ```
 
-Review and commit the diff. Rules are intentionally stable so updates are infrequent and easy to audit.
+Review and commit the diff — both `.claude/` and `.cursor/` may change. Rules are intentionally stable so updates are infrequent and easy to audit.
 
 ### If you prefer to inspect before running
 
@@ -134,4 +136,6 @@ Changes are picked up by repos on their next bootstrap run.
 
 ## Cursor
 
-Cursor rules live in `.cursor/rules/` and are generated from `rules/` and `skills/python-patterns/`. The `PostToolUse` hook in `.claude/settings.json` auto-syncs them whenever a rule or the python-patterns skill is edited.
+Cursor rules are generated from `rules/` and `skills/python-patterns/` into `.cursor/rules/*.mdc` and committed to this repo. The bootstrap copies them directly — no extra steps needed for per-repo installs.
+
+When contributing rules to this repo, run `bash scripts/sync-cursor-rules.sh` after editing a rule to keep `.cursor/rules/` in sync. The `PostToolUse` hook in `.claude/settings.json` does this automatically when working in this repo.
