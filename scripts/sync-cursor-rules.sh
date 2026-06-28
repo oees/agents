@@ -38,13 +38,47 @@ for md_file in rules/*.md; do
   echo "  rules/${name}.md → .cursor/rules/${name}.mdc"
 done
 
-tmp=$(mktemp)
-strip_frontmatter "skills/python-patterns/python-patterns.md" > "$tmp"
-description=$(get_description "skills/python-patterns/python-patterns.md")
-[ -z "$description" ] && description="Python patterns: framework selection, async, type hints, project structure"
-write_mdc ".cursor/rules/python-patterns.mdc" "$description" "false" '["**/*.py"]' "$tmp"
-rm "$tmp"
-echo "  skills/python-patterns/python-patterns.md → .cursor/rules/python-patterns.mdc"
+# Skills become Cursor rules too, matching how Claude surfaces each one:
+#   *-patterns      → Auto Attached (glob-scoped) — passive guidance while
+#                     editing that language. Add a language by giving it a glob
+#                     mapping in the case below.
+#   everything else → Agent Requested (description only, no globs) — Cursor's
+#                     agent pulls it in when relevant, like Claude auto-invoking
+#                     a skill by its description.
+for skill_dir in skills/*/; do
+  name=$(basename "$skill_dir")           # e.g. commit, python-patterns
+  skill_file="$skill_dir$name.md"
+  [ -f "$skill_file" ] || { echo "  ⚠ $name: no $name.md — skipping"; continue; }
+  description=$(get_description "$skill_file")
+
+  case "$name" in
+    *-patterns)
+      lang=${name%-patterns}
+      case "$lang" in
+        python)     globs='["**/*.py"]' ;;
+        typescript) globs='["**/*.ts", "**/*.tsx"]' ;;
+        *)
+          echo "  ⚠ $name: no glob mapping in sync-cursor-rules.sh — skipping"
+          continue ;;
+      esac
+      [ -z "$description" ] && description="${lang} patterns"
+      ;;
+    *)
+      # Agent Requested rules are selected purely by their description.
+      if [ -z "$description" ]; then
+        echo "  ⚠ $name: no description frontmatter — skipping (needed for Agent Requested rule)"
+        continue
+      fi
+      globs=""
+      ;;
+  esac
+
+  tmp=$(mktemp)
+  strip_frontmatter "$skill_file" > "$tmp"
+  write_mdc ".cursor/rules/${name}.mdc" "$description" "false" "$globs" "$tmp"
+  rm "$tmp"
+  echo "  ${skill_file} → .cursor/rules/${name}.mdc"
+done
 
 echo ""
 echo "Done. $(ls .cursor/rules/*.mdc | wc -l | tr -d ' ') Cursor rules written."
