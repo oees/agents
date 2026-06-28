@@ -126,7 +126,7 @@ bash scripts/install.sh   # requires this repo cloned locally
 bash scripts/uninstall.sh # reverses the above
 ```
 
-This adds rules to `~/.claude/CLAUDE.md` and symlinks commands into `~/.claude/commands/`. Most people won't need this if their repos all use the bootstrap.
+This adds rules to `~/.claude/CLAUDE.md` and symlinks commands and skills into `~/.claude/commands/` and `~/.claude/skills/`. Most people won't need this if their repos all use the bootstrap.
 
 ---
 
