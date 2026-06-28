@@ -9,6 +9,7 @@
       "Bash(git add*)",
       "Bash(git commit*)",
       "Bash(git stash*)",
+      "Bash(git rebase*)",
       "Bash(find . *)",
       "Bash(ls*)",
       "Bash(grep*)",
@@ -46,7 +47,6 @@
     "deny": [
       "Bash(git push*)",
       "Bash(git reset*)",
-      "Bash(git rebase*)",
       "Bash(git checkout .)",
       "Bash(rm*)"
     ]
