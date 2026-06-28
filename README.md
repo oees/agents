@@ -103,7 +103,7 @@ bash bootstrap.sh && rm bootstrap.sh
 
 ```
 rules/        canonical always-on rules
-skills/       skill definitions referenced by commands
+skills/       skill definitions — command-backed actions and language guidance
 commands/     slash command entry points
 loops/        templates for scheduled, unsupervised cloud agents (tiers 0-2)
 .claude/      Claude Code config for this repo (CLAUDE.md, settings.json — permissions and hooks)
@@ -113,7 +113,7 @@ scripts/
   init-repo.sh      local install — run directly if you have this repo cloned
   install.sh        global install — symlinks into ~/.claude/ for all repos on your machine
   uninstall.sh      reverses install.sh
-  sync-cursor-rules.sh  regenerates .cursor/rules/ from rules/ and python-patterns
+  sync-cursor-rules.sh  regenerates .cursor/rules/ from rules/ and skills/
   check.sh          validates the generated tree — every command/rule import resolves (run in CI)
 ```
 
@@ -141,12 +141,22 @@ This adds rules to `~/.claude/CLAUDE.md` and symlinks commands and skills into `
 ### Adding a skill and command
 
 1. Create `skills/<name>/<name>.md`
-2. Create `commands/<name>.md` with frontmatter and `@skills/<name>/<name>.md`
+2. Create `commands/<name>.md` with frontmatter and `@../skills/<name>/<name>.md` (the `../` resolves from `.claude/commands/` to `.claude/skills/`)
 
-Changes are picked up by repos on their next bootstrap run.
+Changes are picked up by repos on their next bootstrap run. Run `bash scripts/check.sh` to confirm every command import still resolves.
+
+### Adding a language pattern skill
+
+Language guidance (e.g. Python, TypeScript) lives in `skills/<lang>-patterns/` as a skill — Claude auto-invokes it by its `description` when you work in that language, so it needs no command. To scope its Cursor rule to that language, add a `<lang> → globs` mapping in `scripts/sync-cursor-rules.sh` and run the script.
 
 ## Cursor
 
-Cursor rules are generated from `rules/` and `skills/python-patterns/` into `.cursor/rules/*.mdc` and committed to this repo. The bootstrap copies them directly — no extra steps needed for per-repo installs.
+Cursor rules are generated from `rules/` and `skills/` into `.cursor/rules/*.mdc` and committed to this repo. The bootstrap copies them directly — no extra steps needed for per-repo installs. Each source maps to the matching Cursor rule type:
 
-When contributing rules to this repo, run `bash scripts/sync-cursor-rules.sh` after editing a rule to keep `.cursor/rules/` in sync. The `PostToolUse` hook in `.claude/settings.json` does this automatically when working in this repo.
+| Source | Cursor rule type | When it loads |
+|---|---|---|
+| `rules/*` | Always | every request |
+| `skills/*-patterns/` | Auto Attached (glob-scoped) | while editing that language's files |
+| other `skills/*` | Agent Requested (by `description`) | when Cursor's agent judges it relevant |
+
+When contributing to this repo, run `bash scripts/sync-cursor-rules.sh` after editing a rule or skill to keep `.cursor/rules/` in sync. The `PostToolUse` hook in `.claude/settings.json` does this automatically when working in this repo.
