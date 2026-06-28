@@ -35,6 +35,7 @@ The generated layout:
   rules/             # always-on behavioural rules
   commands/          # slash commands (/commit, /code-review, etc.)
   skills/            # skill definitions used by commands
+  loops/             # scheduled cloud-agent templates (fill in the per-repo config block)
   settings.json      # recommended permissions and hooks (only written if not already present)
 .cursor/
   rules/             # same rules as .mdc files — Cursor picks these up automatically
