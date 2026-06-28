@@ -58,8 +58,9 @@ echo ""
 echo "Copying commands..."
 for cmd in "$REPO/commands"/*.md; do
   name=$(basename "$cmd")
-  # Rewrite @skills/ → @../skills/ so imports resolve from .claude/commands/
-  sed 's|@skills/|@../skills/|g' "$cmd" > "$COMMANDS_DIR/$name"
+  # Commands import skills as @../skills/... which resolves from .claude/commands/
+  # straight to .claude/skills/ — same string works for the global install too.
+  cp "$cmd" "$COMMANDS_DIR/$name"
   echo "  ✓ $name"
 done
 
