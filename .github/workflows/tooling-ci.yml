@@ -1,0 +1,14 @@
+name: tooling-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate tooling distribution
+        run: bash scripts/check.sh

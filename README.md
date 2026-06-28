@@ -114,6 +114,7 @@ scripts/
   install.sh        global install — symlinks into ~/.claude/ for all repos on your machine
   uninstall.sh      reverses install.sh
   sync-cursor-rules.sh  regenerates .cursor/rules/ from rules/ and python-patterns
+  check.sh          validates the generated tree — every command/rule import resolves (run in CI)
 ```
 
 ## Global install (optional)
