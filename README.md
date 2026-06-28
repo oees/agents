@@ -1,6 +1,6 @@
 # agents
 
-Shared Claude Code configuration for the Octopus Energy Spain engineering org — rules, skills, and commands that apply across every repo.
+Shared AI agents configuration for the Octopus Energy Spain engineering org — rules, skills, loops and commands that apply across every repo (if you so desire).
 
 ## Install
 
@@ -88,6 +88,14 @@ bash bootstrap.sh && rm bootstrap.sh
 | `secrets` | No hardcoded credentials, use env vars and secret stores |
 | `migrations` | Safe schema migrations — backwards-compatible, reversible, never drop data silently |
 
+**Loops** (templates for unsupervised cloud agents that run on a schedule — copy one, fill in the per-repo config block at the top, leave the rest untouched):
+
+| Loop | What it does |
+|---|---|
+| `tier-0-daily-health-scan` | Read-only daily scan for dependency vulnerabilities and health issues — posts a single Slack summary, never writes to the repo |
+| `tier-1-increase-test-coverage` | Weekly test-coverage filler — opens small, reviewable PRs adding tests for one production module at a time |
+| `tier-2-behavioural-improvements` | Behavioural-change fixer — opens at most one PR at a time, gated behind explicit human authorization |
+
 ---
 
 ## Structure of this repo
@@ -96,7 +104,8 @@ bash bootstrap.sh && rm bootstrap.sh
 rules/        canonical always-on rules
 skills/       skill definitions referenced by commands
 commands/     slash command entry points
-.claude/      Claude Code config for this repo (settings.json — permissions and hooks)
+loops/        templates for scheduled, unsupervised cloud agents (tiers 0-2)
+.claude/      Claude Code config for this repo (CLAUDE.md, settings.json — permissions and hooks)
 .cursor/      generated Cursor rules (do not edit directly)
 scripts/
   bootstrap.sh      remote one-liner install (the main path)
@@ -124,7 +133,7 @@ This adds rules to `~/.claude/CLAUDE.md` and symlinks commands into `~/.claude/c
 ### Adding a rule
 
 1. Create `rules/<name>.md` with a `description:` frontmatter field
-2. Add `@rules/<name>.md` to `CLAUDE.md`
+2. Add `@rules/<name>.md` to `.claude/CLAUDE.md`
 3. Run `bash scripts/sync-cursor-rules.sh` to generate the Cursor equivalent
 
 ### Adding a skill and command
