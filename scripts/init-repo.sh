@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Copies rules, skills, and commands into a target repo's .claude/ and
+# Copies rules, skills, commands, and loops into a target repo's .claude/ and
 # .cursor/rules/ directories so the whole team gets the tooling once committed.
 # Usage: bash scripts/init-repo.sh [target-dir]   (defaults to current directory)
 
@@ -12,6 +12,7 @@ CLAUDE_DIR="$TARGET/.claude"
 RULES_DIR="$CLAUDE_DIR/rules"
 COMMANDS_DIR="$CLAUDE_DIR/commands"
 SKILLS_DIR="$CLAUDE_DIR/skills"
+LOOPS_DIR="$CLAUDE_DIR/loops"
 CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 SETTINGS_JSON="$CLAUDE_DIR/settings.json"
 CURSOR_RULES_DIR="$TARGET/.cursor/rules"
@@ -19,7 +20,7 @@ CURSOR_RULES_DIR="$TARGET/.cursor/rules"
 echo "Initialising agents tooling in: $TARGET"
 echo ""
 
-mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$CURSOR_RULES_DIR"
+mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$LOOPS_DIR" "$CURSOR_RULES_DIR"
 touch "$CLAUDE_MD"
 
 echo "Copying rules..."
@@ -59,6 +60,15 @@ for cmd in "$REPO/commands"/*.md; do
   name=$(basename "$cmd")
   # Rewrite @skills/ → @../skills/ so imports resolve from .claude/commands/
   sed 's|@skills/|@../skills/|g' "$cmd" > "$COMMANDS_DIR/$name"
+  echo "  ✓ $name"
+done
+
+echo ""
+echo "Copying loops..."
+for loop in "$REPO/loops"/*.md; do
+  [ -f "$loop" ] || continue
+  name=$(basename "$loop")
+  cp "$loop" "$LOOPS_DIR/$name"
   echo "  ✓ $name"
 done
 
