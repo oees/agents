@@ -41,11 +41,11 @@ echo "Installing rules..."
 for rule in "$REPO/rules"/*.md; do
   import="@$rule"
   if grep -qF "$import" "$CLAUDE_MD" 2>/dev/null; then
-    echo "  · $(basename $rule) already present"
+    echo "  · $(basename "$rule") already present"
     continue
   fi
   echo "$import" >> "$CLAUDE_MD"
-  echo "  ✓ $(basename $rule)"
+  echo "  ✓ $(basename "$rule")"
 done
 
 echo ""

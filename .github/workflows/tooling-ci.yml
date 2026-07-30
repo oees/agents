@@ -10,5 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Validate tooling distribution
         run: bash scripts/check.sh
+      - name: Lint shell scripts
+        run: shellcheck scripts/*.sh
+      - name: Install Gitleaks
+        run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
+      - name: Scan repository history for secrets
+        run: '"$(go env GOPATH)/bin/gitleaks" git --redact --no-banner'

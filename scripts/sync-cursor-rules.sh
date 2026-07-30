@@ -81,4 +81,5 @@ for skill_dir in skills/*/; do
 done
 
 echo ""
-echo "Done. $(ls .cursor/rules/*.mdc | wc -l | tr -d ' ') Cursor rules written."
+rule_count="$(find .cursor/rules -maxdepth 1 -type f -name '*.mdc' | wc -l | tr -d ' ')"
+echo "Done. $rule_count Cursor rules written."
