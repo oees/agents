@@ -116,16 +116,18 @@ The tier number is the **blast radius of a single unattended tick** — 0 writes
 rules/        canonical always-on rules
 skills/       skill definitions — command-backed actions and language guidance
 commands/     slash command entry points
-loops/        templates for scheduled, unsupervised cloud agents (tiers 0-2)
+loops/        templates for scheduled, unsupervised cloud agents (tiers 0-3)
+AGENTS.md     generated cross-vendor rules block (do not edit inside the markers)
 .claude/      Claude Code config for this repo (CLAUDE.md, settings.json — permissions and hooks)
-.cursor/      generated Cursor rules (do not edit directly)
+.cursor/      generated Cursor rules and commands (do not edit directly)
 scripts/
   bootstrap.sh      remote one-liner install (the main path)
   init-repo.sh      local install — run directly if you have this repo cloned
   install.sh        global install — symlinks into ~/.claude/ for all repos on your machine
   uninstall.sh      reverses install.sh
-  sync-cursor-rules.sh  regenerates .cursor/rules/ from rules/ and skills/
-  check.sh          validates the generated tree — every command/rule import resolves (run in CI)
+  sync-cursor-rules.sh  regenerates .cursor/rules/ and .cursor/commands/
+  sync-agents-md.sh     regenerates the managed block in AGENTS.md
+  check.sh          validates the generated tree — imports resolve, exports are well-formed (run in CI)
 ```
 
 ## Global install (optional)
@@ -171,16 +173,25 @@ Loops need no import wiring — `init-repo.sh` copies `loops/*.md` verbatim into
 
 Language guidance (e.g. Python, TypeScript) lives in `skills/<lang>-patterns/` as a skill — Claude auto-invokes it by its `description` when you work in that language, so it needs no command. To scope its Cursor rule to that language, add a `<lang> → globs` mapping in `scripts/sync-cursor-rules.sh` and run the script.
 
-## Cursor
+## Claude Code, Cursor and Codex
 
-Cursor rules are generated from `rules/` and `skills/` into `.cursor/rules/*.mdc` and committed to this repo. The bootstrap copies them directly — no extra steps needed for per-repo installs. Each source maps to the matching Cursor rule type:
+There is **one canonical source** for each asset — `rules/`, `skills/`, `commands/`, `loops/` — and the bootstrap fans it out into whatever each assistant reads. You edit the source; you never edit an export.
 
-| Source | Cursor rule type | When it loads |
-|---|---|---|
-| `rules/*` | Always | every request |
-| `skills/*-patterns/` | Auto Attached (glob-scoped) | while editing that language's files |
-| other `skills/*` | Agent Requested (by `description`) | when Cursor's agent judges it relevant |
+| Asset | Claude Code | Cursor | Codex |
+|---|---|---|---|
+| Rules | `.claude/rules/*.md`, `@`-imported by `.claude/CLAUDE.md` | `.cursor/rules/*.mdc` (Always) | `AGENTS.md` |
+| Skills | `.claude/skills/<n>/<n>.md` | `.cursor/rules/*.mdc` (Agent Requested / Auto Attached) | `.agents/skills/<n>/SKILL.md` |
+| Commands | `.claude/commands/*.md` (thin `@` pointers) | `.cursor/commands/*.md` (skill body inlined) | invoke the skill directly (`$skill-name`) |
+| Loops | `.agents/loops/*.md` — one neutral path, any scheduler | | |
 
-When contributing to this repo, run `bash scripts/sync-cursor-rules.sh` after editing a rule or skill to keep `.cursor/rules/` in sync. The `PostToolUse` hook in `.claude/settings.json` does this automatically when working in this repo.
+Three things are worth knowing about why it looks like this:
+
+- **`AGENTS.md` is the cross-vendor standard** (Linux Foundation) — read natively by Codex, Cursor, Copilot, Aider, Gemini CLI, Windsurf and Zed. **Claude Code does not read it**; it reads `CLAUDE.md`, which is why the rules are `@`-imported there instead. `AGENTS.md` has no import mechanism, so the rule text is inlined into a marker-delimited block. **Anything outside those markers is yours and is never touched** — a repo with a hand-written `AGENTS.md` keeps it and gains the block at the end.
+- **Cursor commands** support neither frontmatter nor `@` imports, so they are generated with the skill body resolved inline — the mirror image of the Claude command files, which are deliberately thin pointers to the same skill.
+- **Codex skills** need `name` and `description` frontmatter, which our skills already carry, so that export is a copy plus a rename to `SKILL.md`.
+
+The rule text therefore exists three times in a consumer repo (`.claude/rules/`, `.cursor/rules/`, `AGENTS.md`). That is deliberate: all three are regenerated from `rules/` on every bootstrap, so they cannot drift. Hand-maintained duplication drifts; generated duplication does not.
+
+When contributing here, run `bash scripts/sync-cursor-rules.sh` and `bash scripts/sync-agents-md.sh` after editing a rule, skill or command. The `PostToolUse` hook in `.claude/settings.json` does both automatically when working in this repo.
 
 **Loops are deliberately not synced to Cursor.** A loop is a prompt a scheduler points at by path, not always-on guidance — `.agents/loops/<name>.md` works verbatim as a Cursor Automation prompt. Exporting one as a rule would load the whole loop into the context of every interactive request in the repo, which is both expensive and wrong: a human editing a file should not have a merge robot's instructions in their system prompt.

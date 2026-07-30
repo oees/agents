@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'i=$(cat); for f in rules/*.md; do [ -f \"$f\" ] || continue; l=$(wc -l < \"$f\"); [ \"$l\" -gt 40 ] && echo \"Warning: $f has $l lines — keep rules compact\"; done; if echo \"$i\" | grep -qF rules/ || echo \"$i\" | grep -qF skills/; then bash scripts/sync-cursor-rules.sh; fi'"
+            "command": "bash -c 'i=$(cat); for f in rules/*.md; do [ -f \"$f\" ] || continue; l=$(wc -l < \"$f\"); [ \"$l\" -gt 40 ] && echo \"Warning: $f has $l lines — keep rules compact\"; done; if echo \"$i\" | grep -qF rules/ || echo \"$i\" | grep -qF skills/ || echo \"$i\" | grep -qF commands/; then bash scripts/sync-cursor-rules.sh; fi; if echo \"$i\" | grep -qF rules/; then bash scripts/sync-agents-md.sh; fi'"
           }
         ]
       }
