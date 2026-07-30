@@ -10,6 +10,13 @@ strip_frontmatter() {
   awk 'NR==1 && /^---/ { in_fm=1; next } in_fm && /^---/ { in_fm=0; next } in_fm { next } { print }' "$1"
 }
 
+trim_trailing_blank_lines() {
+  awk '
+    /^[[:space:]]*$/ { pending = pending $0 ORS; next }
+    { printf "%s", pending; pending = ""; print }
+  '
+}
+
 get_description() {
   awk 'NR==1 && /^---/ { in_fm=1; next } in_fm && /^---/ { exit } in_fm && /^description:/ { sub(/^description: */, ""); print; exit }' "$1"
 }
@@ -103,7 +110,8 @@ for cmd_file in commands/*.md; do
     continue
   fi
 
-  strip_frontmatter "$skill_file" > ".cursor/commands/${name}.md"
+  strip_frontmatter "$skill_file" | trim_trailing_blank_lines \
+    > ".cursor/commands/${name}.md"
   echo "  ${cmd_file} + ${skill_file} → .cursor/commands/${name}.md"
 done
 

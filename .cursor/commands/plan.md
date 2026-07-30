@@ -140,4 +140,3 @@ After saving the plan, offer execution choice:
 
 **If Inline Execution chosen:**
 - Batch execution with checkpoints for review
-
