@@ -46,6 +46,18 @@ trap 'rm -f "$BLOCK" "$BLOCK.before" "$BLOCK.after"' EXIT
   echo "$END_MARKER"
 } > "$BLOCK"
 
+begin_count=0
+end_count=0
+if [ -f "$TARGET" ]; then
+  begin_count="$(grep -cF "$BEGIN_MARKER" "$TARGET" || true)"
+  end_count="$(grep -cF "$END_MARKER" "$TARGET" || true)"
+
+  if [ "$begin_count" -ne "$end_count" ] || [ "$begin_count" -gt 1 ]; then
+    echo "  ✗ $(basename "$TARGET") has malformed generated-block markers" >&2
+    exit 1
+  fi
+fi
+
 if [ ! -f "$TARGET" ]; then
   {
     echo "# AGENTS.md"
@@ -56,7 +68,14 @@ if [ ! -f "$TARGET" ]; then
     cat "$BLOCK"
   } > "$TARGET"
   echo "  ✓ created $(basename "$TARGET")"
-elif grep -qF "$BEGIN_MARKER" "$TARGET"; then
+elif [ "$begin_count" -eq 1 ]; then
+  begin_line="$(grep -nF "$BEGIN_MARKER" "$TARGET" | cut -d: -f1)"
+  end_line="$(grep -nF "$END_MARKER" "$TARGET" | cut -d: -f1)"
+  if [ "$begin_line" -ge "$end_line" ]; then
+    echo "  ✗ $(basename "$TARGET") has generated-block markers in the wrong order" >&2
+    exit 1
+  fi
+
   # Replace only what is between the markers; preserve everything either side.
   awk -v b="$BEGIN_MARKER" 'index($0, b) { exit } { print }' "$TARGET" > "$BLOCK.before"
   awk -v e="$END_MARKER" 'found { print } index($0, e) { found = 1 }' "$TARGET" > "$BLOCK.after"
