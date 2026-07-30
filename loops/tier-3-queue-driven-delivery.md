@@ -105,9 +105,11 @@ Invariants that bind every role:
 2. **One transition per tick.** Swap the stage label, leave one comment with your verdict
    and evidence, exit. Never two transitions in a run.
 3. **Never act on a PR whose stage label is not yours.** Not to help, not to unblock.
+   The one explicit exception is the MERGER resuming an approved checkpoint from
+   `stage:human` back to `stage:merge`.
 4. **Never remove a `checkpoint:` label.** Only a human clears one, by adding `approved`.
-5. **Idempotent.** No matching PR means exit having changed nothing. That is a success,
-   not a failure — post nothing.
+5. **Idempotent.** If your role-specific guards find no eligible work, exit having changed
+   nothing. That is a success, not a failure — post nothing.
 6. **Never invent work.** Work comes from `{QUEUE_FILE}` and nowhere else.
 
 ## Step 0 — every role, every tick
@@ -127,8 +129,14 @@ Run these four checks before anything else. Any one of them can end the run.
    repo. A query against a label that was never created returns an empty list, which is
    indistinguishable from "no work" — so a missing label silently strands every PR at that
    stage forever. If any is missing, post the "labels missing" message and exit.
-4. **Cheap exit.** If no open PR carries your stage label, exit. (Your scheduler prompt
-   should already have made this check before opening this file — see **Setup**.)
+4. **Role-specific cheap exit.**
+   - **REQ-CHECKER / PR-CHECKER:** if no open PR carries your stage label, exit.
+     Your scheduler prompt should already have made this check before opening this file.
+   - **CODER:** a `stage:build` PR is not required — you may need to claim the next queue
+     row. Continue to **Select**, where the concurrency, queue and milestone guards decide
+     whether there is work.
+   - **MERGER:** do not exit here. You must run the stall sweep even without a merge
+     candidate, and an approved checkpoint may be waiting at `stage:human`.
 
 ## Role: CODER
 
@@ -264,34 +272,38 @@ upstream — do not re-litigate them.
 You merge, you advance the stack, you report. You never write production code and never
 touch `{DEFAULT_BRANCH}` destructively.
 
-1. **Select.** Open PRs labelled `stage:merge` with green CI (`{CI_GREEN_CHECK}`), oldest
-   first.
-2. **Checkpoint gate — a pure label lookup, never a judgement you re-make.**
-   - Carries any label prefixed `checkpoint:` and **not** `approved` → swap to
-     `stage:human`, comment that `{CHECKPOINT_APPROVER}` must sign, exit.
-   - Carries `stage:human` + a checkpoint + `approved` → swap back to `stage:merge`; it
-     merges on the next pass.
+1. **Stall sweep.** List every open PR carrying a `stage:*` label. For any whose stage
+   label has not changed in `{STALL_HOURS}`, post the "stalled" message. **Run this sweep
+   even when no PR is ready to merge.** You are the only watchdog this loop has — without
+   this, a PR stranded by a missing label or a dead schedule sits forever and nothing
+   alarms.
+2. **Select.** Select `stage:merge`, plus approved checkpoint PRs parked at
+   `stage:human`. A `stage:merge` candidate must have green CI (`{CI_GREEN_CHECK}`).
+   An eligible `stage:human` candidate carries both a `checkpoint:` label and `approved`.
+   Choose the oldest eligible PR and process only that one.
+3. **Checkpoint gate — a pure label lookup, never a judgement you re-make.**
+   - Selected from `stage:human` with a checkpoint + `approved` → swap back to
+     `stage:merge`, comment that approval was consumed, exit. It merges on the next pass.
+   - Selected from `stage:merge` with any label prefixed `checkpoint:` and **not**
+     `approved` → swap to `stage:human`, comment that `{CHECKPOINT_APPROVER}` must sign,
+     exit.
    - Otherwise → merge.
 
    You do not read the queue row or decide what "needs" a human. The label decides. If it
    is absent, the PR merges. Full stop.
-3. **Merge** using `{MERGE_METHOD}`, one PR per tick. Rebase onto the base first and
+4. **Merge** using `{MERGE_METHOD}`, one PR per tick. Rebase onto the base first and
    re-confirm CI; if it is not green after the rebase push, swap to `stage:build`, comment,
    exit. Do not fix and merge — a clean rule-abiding merge is the job, not code repair.
-4. **Advance the stack.** Only if `{STACKED_PRS}` is `yes`: retarget each child PR onto the
+5. **Advance the stack.** Only if `{STACKED_PRS}` is `yes`: retarget each child PR onto the
    new base, rebase it, force-push the **child branch only**, and comment the new stack
    state.
-5. **Heartbeat.** Comment one line on the merged PR, with counts **derived from
+6. **Heartbeat.** Comment one line on the merged PR, with counts **derived from
    `{QUEUE_FILE}` at read time**:
    ```
    merged [<ROW-ID>] · <milestone> · queue <done>/<total> done, <available> available
    ```
    If that merge closed the last available row in the active milestone, add a second line
    naming it and saying it awaits sign-off in `{MILESTONE_SIGNOFF}`.
-6. **Stall sweep.** Before exiting, list every open PR carrying a `stage:*` label. For any
-   whose stage label has not changed in `{STALL_HOURS}`, post the "stalled" message. You
-   are the only watchdog this loop has — without this, a PR stranded by a missing label or
-   a dead schedule sits forever and nothing alarms.
 
 ### Never
 - Never merge a PR that is not `stage:merge` with green CI.
@@ -332,8 +344,8 @@ touch `{DEFAULT_BRANCH}` destructively.
   the test was run and went red on revert.
 - **PR-CHECKER** — exactly one PR left `stage:pr-check`, with the gate evidence and the
   checkpoint decision both recorded.
-- **MERGER** — at most one PR merged or parked, the heartbeat posted, and the stall sweep
-  run regardless of whether anything merged.
+- **MERGER** — the stall sweep always ran; at most one PR was resumed, merged or parked;
+  and a merged PR received its heartbeat.
 
 ## Setup
 
@@ -364,8 +376,8 @@ gh label create approved        -c "#5319e7" --description "human cleared a chec
 `{GATE_COMMANDS}`. This is configured in your scheduler, not by the tooling install —
 `init-repo.sh` copies markdown only and never writes an execution environment.
 
-**4. Create four schedules**, each with the cheap exit in the prompt so an idle tick never
-opens this file:
+**4. Create four schedules.** REQ-CHECKER and PR-CHECKER use the stage-specific cheap exit
+below so an idle tick never opens this file:
 
 ```
 Run: gh pr list --state open --label "stage:req-check" --json number
@@ -373,9 +385,17 @@ If the result is empty, stop now and output nothing.
 Otherwise follow .agents/loops/tier-3-queue-driven-delivery.md as role REQ-CHECKER.
 ```
 
-Substitute the label and role for each of the four. The CODER's variant checks
-`stage:build` **and** the `{MAX_IN_FLIGHT}` count, since it may have work even when no PR
-carries its label. Run exactly **one** CODER instance so ticks never overlap.
+Substitute the label and role for each checker.
+
+The CODER's prompt checks `stage:build` **and** the `{MAX_IN_FLIGHT}` count. It exits only
+when no build PR exists and the in-flight limit is already full; otherwise it opens this
+file so the queue guard can determine whether a new row is claimable. Run exactly **one**
+CODER instance so ticks never overlap.
+
+The MERGER's prompt makes one cheap query for all open PRs and exits only when none carries
+any `stage:*` label. It must open this file when any staged PR exists so the stall sweep
+runs, even if nothing is at `stage:merge`; this query also exposes approved
+`stage:human` checkpoints for resumption.
 
 ## Cost & cadence
 

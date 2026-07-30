@@ -87,6 +87,44 @@ for loop in "$AGENTS_DIR/loops"/*.md; do
 done
 
 echo ""
+echo "Checking tier-3 orchestration contracts..."
+tier3_loop="$AGENTS_DIR/loops/tier-3-queue-driven-delivery.md"
+if [ -f "$tier3_loop" ]; then
+  step_zero="$(
+    awk '
+      /^## Step 0/ { capture = 1 }
+      /^## Role: CODER/ { capture = 0 }
+      capture { print }
+    ' "$tier3_loop"
+  )"
+
+  if printf '%s\n' "$step_zero" | grep -qF \
+    'If no open PR carries your stage label, exit'; then
+    note_fail "tier-3 Step 0 applies a checker-only cheap exit to every role"
+  else
+    echo "  ✓ tier-3 cheap exits are role-specific"
+  fi
+
+  if grep -qF \
+    'plus approved checkpoint PRs parked at' \
+    "$tier3_loop"; then
+    echo "  ✓ tier-3 merger can resume approved checkpoints"
+  else
+    note_fail "tier-3 merger cannot select approved stage:human checkpoints"
+  fi
+
+  if grep -qF \
+    'even when no PR is ready to merge.' \
+    "$tier3_loop"; then
+    echo "  ✓ tier-3 watchdog runs without a merge candidate"
+  else
+    note_fail "tier-3 watchdog exits when no PR is ready to merge"
+  fi
+else
+  note_fail "tier-3 loop is missing"
+fi
+
+echo ""
 echo "Checking command imports resolve..."
 for cmd in "$CLAUDE_DIR/commands"/*.md; do
   [ -f "$cmd" ] || continue
