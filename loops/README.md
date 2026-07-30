@@ -5,8 +5,14 @@ sandbox. Not a slash command you invoke, not a rule that shapes an interactive s
 something that wakes up on its own, does one bounded piece of work, reports, and exits.
 
 Each file in this directory is a template. You copy nothing: the file is already in your
-repo at `.claude/loops/`. You **fill in the config block at the top and leave the rest
+repo at `.agents/loops/`. You **fill in the config block at the top and leave the rest
 untouched**, then point a scheduler at it.
+
+**Loops are not tied to any one assistant.** A loop is plain markdown plus a schedule, so
+whatever can run an agent against your repo can run one — a Cursor Automation, a Codex
+cloud task, a Claude Code scheduled job, or a GitHub Actions cron that shells out to an
+agent CLI. That is why they live in the vendor-neutral `.agents/` directory rather than
+under `.claude/` or `.cursor/`.
 
 This is the operating manual. If you are adding a *new* loop template to the `agents`
 repo, see the "Adding a loop" section in that repo's root README instead.
@@ -78,22 +84,31 @@ and "post nothing" is a valid, correct outcome for a tick with no work.
 
 ## Scheduling
 
-A loop is not self-starting. Something has to run it — a Cursor Automation, a GitHub
-Actions cron, or any scheduler that can launch an agent with a prompt.
+A loop is not self-starting. Something has to run it. Any of these work, because all a
+scheduler needs to do is launch an agent with a prompt:
+
+| Scheduler | Where the schedule lives |
+|---|---|
+| Cursor | Cursor UI → Automations (prompt + cron) |
+| Codex | a Codex cloud task on a schedule |
+| Claude Code | a scheduled job / cron invoking the CLI |
+| Anything else | GitHub Actions cron shelling out to an agent CLI |
 
 Keep the scheduler prompt **thin** and let the committed file carry the instructions, so
 the loop can be updated by a normal PR rather than by editing a prompt in a web UI:
 
 ```
-Follow .claude/loops/tier-0-daily-health-scan.md
+Follow .agents/loops/tier-0-daily-health-scan.md
 ```
+
+That one line is the whole prompt, and it is identical whichever tool you use.
 
 **For anything that polls, put a cheap exit in the prompt itself:**
 
 ```
 Run: gh pr list --state open --label "stage:req-check" --json number
 If the result is empty, stop now and output nothing.
-Otherwise follow .claude/loops/tier-3-queue-driven-delivery.md as role REQ-CHECKER.
+Otherwise follow .agents/loops/tier-3-queue-driven-delivery.md as role REQ-CHECKER.
 ```
 
 Most ticks of a polling loop have no work. Without that guard, every idle tick loads the
@@ -103,10 +118,12 @@ whole file for nothing; with it, an idle tick is one API call. On a loop that ti
 **Cadence:** match it to how fast work actually appears, not to how quickly you'd like a
 response. A checker that polls faster than work is produced is pure waste.
 
-**Note on Cursor:** loops are deliberately *not* exported to `.cursor/rules/`. A loop is a
-prompt a scheduler points at by path — `.claude/loops/<name>.md` works verbatim as a
-Cursor Automation prompt. Turning one into an always-on rule would load a merge robot's
-instructions into every interactive request in the repo.
+**A loop is never an always-on rule.** Loops are deliberately not exported to
+`.cursor/rules/`, not imported into `CLAUDE.md`, and not registered as a Codex skill. They
+are prompts a scheduler points at by path, and nothing else should load them. Wiring one
+in as always-on guidance would put a merge robot's instructions into the context of every
+interactive request in the repo — expensive, and wrong: a human editing a file should not
+be reading from the same prompt as an unattended agent that merges to main.
 
 ## Stopping a loop
 

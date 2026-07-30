@@ -370,7 +370,7 @@ opens this file:
 ```
 Run: gh pr list --state open --label "stage:req-check" --json number
 If the result is empty, stop now and output nothing.
-Otherwise follow .claude/loops/tier-3-queue-driven-delivery.md as role REQ-CHECKER.
+Otherwise follow .agents/loops/tier-3-queue-driven-delivery.md as role REQ-CHECKER.
 ```
 
 Substitute the label and role for each of the four. The CODER's variant checks

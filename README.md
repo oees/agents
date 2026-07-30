@@ -35,11 +35,17 @@ The generated layout:
   rules/             # always-on behavioural rules
   commands/          # slash commands (/commit, /code-review, etc.)
   skills/            # skill definitions used by commands
-  loops/             # scheduled cloud-agent templates (fill in the per-repo config block)
   settings.json      # recommended permissions and hooks (only written if not already present)
 .cursor/
   rules/             # same rules as .mdc files — Cursor picks these up automatically
+.agents/
+  loops/             # scheduled cloud-agent templates (fill in the per-repo config block)
 ```
+
+`.agents/` is the vendor-neutral namespace. Loops sit there because they are markdown a
+scheduler points at by path — nothing about them is specific to one assistant, so the same
+`.agents/loops/<name>.md` path works as a Cursor Automation prompt, a Codex task, or a
+scheduled Claude Code job.
 
 ### Updating
 
@@ -159,7 +165,7 @@ Changes are picked up by repos on their next bootstrap run. Run `bash scripts/ch
 5. Add a row to the Loops table above
 6. Run `bash scripts/check.sh`
 
-Loops need no import wiring — `init-repo.sh` copies `loops/*.md` verbatim into `.claude/loops/`. Note that the copy is a **flat glob**: a loop split across a subdirectory would be silently skipped, so keep each loop to one file.
+Loops need no import wiring — `init-repo.sh` copies `loops/*.md` verbatim into `.agents/loops/`. Note that the copy is a **flat glob**: a loop split across a subdirectory would be silently skipped, so keep each loop to one file.
 
 ### Adding a language pattern skill
 
@@ -177,4 +183,4 @@ Cursor rules are generated from `rules/` and `skills/` into `.cursor/rules/*.mdc
 
 When contributing to this repo, run `bash scripts/sync-cursor-rules.sh` after editing a rule or skill to keep `.cursor/rules/` in sync. The `PostToolUse` hook in `.claude/settings.json` does this automatically when working in this repo.
 
-**Loops are deliberately not synced to Cursor.** A loop is a prompt a scheduler points at by path, not always-on guidance — `.claude/loops/<name>.md` works verbatim as a Cursor Automation prompt. Exporting one as a rule would load the whole loop into the context of every interactive request in the repo, which is both expensive and wrong: a human editing a file should not have a merge robot's instructions in their system prompt.
+**Loops are deliberately not synced to Cursor.** A loop is a prompt a scheduler points at by path, not always-on guidance — `.agents/loops/<name>.md` works verbatim as a Cursor Automation prompt. Exporting one as a rule would load the whole loop into the context of every interactive request in the repo, which is both expensive and wrong: a human editing a file should not have a merge robot's instructions in their system prompt.

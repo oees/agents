@@ -27,20 +27,27 @@ echo "Running init-repo.sh into a throwaway target..."
 bash "$REPO/scripts/init-repo.sh" "$TMP" >/dev/null
 
 CLAUDE_DIR="$TMP/.claude"
+AGENTS_DIR="$TMP/.agents"
 
 echo ""
 echo "Checking required directories are present and non-empty..."
-for d in rules commands skills loops; do
+for d in rules commands skills; do
   if [ -d "$CLAUDE_DIR/$d" ] && [ -n "$(ls -A "$CLAUDE_DIR/$d")" ]; then
     echo "  ✓ .claude/$d"
   else
     note_fail ".claude/$d is missing or empty"
   fi
 done
+# Loops live in the vendor-neutral .agents/ namespace, not under .claude/.
+if [ -d "$AGENTS_DIR/loops" ] && [ -n "$(ls -A "$AGENTS_DIR/loops")" ]; then
+  echo "  ✓ .agents/loops"
+else
+  note_fail ".agents/loops is missing or empty"
+fi
 
 echo ""
 echo "Checking loop templates are well-formed..."
-for loop in "$CLAUDE_DIR/loops"/*.md; do
+for loop in "$AGENTS_DIR/loops"/*.md; do
   [ -f "$loop" ] || continue
   name="$(basename "$loop")"
 
