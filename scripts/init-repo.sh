@@ -9,7 +9,9 @@ TARGET="${1:-$(pwd)}"
 TARGET="$(cd "$TARGET" && pwd)"
 
 CLAUDE_DIR="$TARGET/.claude"
-RULES_DIR="$CLAUDE_DIR/rules"
+# Rules are no longer copied to .claude/rules/. AGENTS.md is the single in-repo home for
+# the rule text and Claude Code reaches it via an @import from .claude/CLAUDE.md.
+LEGACY_RULES_DIR="$CLAUDE_DIR/rules"
 COMMANDS_DIR="$CLAUDE_DIR/commands"
 SKILLS_DIR="$CLAUDE_DIR/skills"
 # Loops are tool-agnostic markdown that a scheduler points at by path, so they live in
@@ -26,28 +28,34 @@ AGENTS_MD="$TARGET/AGENTS.md"
 echo "Initialising agents tooling in: $TARGET"
 echo ""
 
-mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$LOOPS_DIR" \
+mkdir -p "$COMMANDS_DIR" "$SKILLS_DIR" "$LOOPS_DIR" \
          "$CURSOR_RULES_DIR" "$CURSOR_COMMANDS_DIR" "$CODEX_SKILLS_DIR"
 touch "$CLAUDE_MD"
 
-echo "Copying rules..."
-for rule in "$REPO/rules"/*.md; do
-  name=$(basename "$rule")
-  cp "$rule" "$RULES_DIR/$name"
-  echo "  ✓ $name"
-done
-
-echo ""
 echo "Updating .claude/CLAUDE.md..."
-for rule in "$REPO/rules"/*.md; do
-  import="@rules/$(basename "$rule")"
-  if grep -qF "$import" "$CLAUDE_MD" 2>/dev/null; then
-    echo "  · $(basename "$rule") already present"
-    continue
-  fi
-  echo "$import" >> "$CLAUDE_MD"
-  echo "  ✓ $import"
-done
+# One import instead of one per rule: the rule text lives in AGENTS.md, which every other
+# assistant reads natively. From .claude/CLAUDE.md, ../AGENTS.md is the repo root.
+AGENTS_IMPORT="@../AGENTS.md"
+
+# Migration: strip the old per-rule imports, or a repo that re-bootstraps would load every
+# rule twice — once from .claude/rules/ and once from AGENTS.md.
+if grep -qE '^@rules/.*\.md$' "$CLAUDE_MD" 2>/dev/null; then
+  tmp_cm="$(mktemp)"
+  grep -vE '^@rules/.*\.md$' "$CLAUDE_MD" > "$tmp_cm"
+  mv "$tmp_cm" "$CLAUDE_MD"
+  echo "  ✓ removed superseded @rules/*.md imports"
+fi
+
+if grep -qF "$AGENTS_IMPORT" "$CLAUDE_MD" 2>/dev/null; then
+  echo "  · $AGENTS_IMPORT already present"
+else
+  echo "$AGENTS_IMPORT" >> "$CLAUDE_MD"
+  echo "  ✓ $AGENTS_IMPORT"
+fi
+
+if [ -d "$LEGACY_RULES_DIR" ]; then
+  echo "  ⚠ $LEGACY_RULES_DIR is now unused — safe to delete and commit"
+fi
 
 echo ""
 echo "Copying skills..."
