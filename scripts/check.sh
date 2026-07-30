@@ -44,6 +44,10 @@ for loop in "$CLAUDE_DIR/loops"/*.md; do
   [ -f "$loop" ] || continue
   name="$(basename "$loop")"
 
+  # loops/README.md is the operator manual that ships alongside the templates, not a
+  # loop — it has no tier, no config block, and several H1-free sections.
+  [ "$name" = "README.md" ] && { echo "  · $name (operator manual, not a loop)"; continue; }
+
   # Filename encodes the risk tier: tier-<n>-<kebab-case-purpose>.md
   if ! printf '%s' "$name" | grep -qE '^tier-[0-9]+-[a-z0-9-]+\.md$'; then
     note_fail "$name does not match tier-<n>-<kebab-name>.md"

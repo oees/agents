@@ -98,18 +98,9 @@ bash bootstrap.sh && rm bootstrap.sh
 | `tier-2-behavioural-improvements` | Behavioural-change fixer — opens at most one PR at a time, gated behind explicit human authorization |
 | `tier-3-queue-driven-delivery` | Four-role delivery loop (coder → req-checker → pr-checker → merger) that works a queue of specified behaviours and **merges to the default branch unattended** |
 
-### Tiers — what a loop may do
+The tier number is the **blast radius of a single unattended tick** — 0 writes nothing, 1 writes tests only, 2 writes production code with per-change human authorization, and 3 merges to the default branch on its own. Tiers 0–2 all stop at "PR opened", so a human is always the last step; tier 3 is a different kind of thing and has hard prerequisites.
 
-The tier number is the **blast radius of a single unattended tick**. It is the one thing an engineer should be able to read off the filename, so do not reuse a tier for something more dangerous than its rung.
-
-| Tier | May write | Reaches the default branch | Human authorization | Agents |
-|---|---|---|---|---|
-| **0** | nothing | never | none needed — read-only | one |
-| **1** | test files only | only via a human merging the PR | none needed — tests can't change behaviour | one |
-| **2** | production code | only via a human merging the PR | **per change**, before the agent starts | one |
-| **3** | production code | **yes, unattended** | **per milestone**, granted in advance | four, coordinated by labels |
-
-Tier 3 is a different kind of thing from 0–2: those all stop at "PR opened", so a human is always the last step. A tier-3 loop merges on its own, and the only routine stop is a named checkpoint class the loop itself detects. Do not adopt one without the prerequisites in its Setup section — a bot identity, branch protection, and a queue whose rows an independent checker can actually pass or fail.
+**[`loops/README.md`](loops/README.md) is the operating manual** — the full tier table, how to adopt and configure a loop, how to schedule one, and how to stop it. It ships into every repo alongside the loops themselves, so it's the doc your consumers actually get.
 
 ---
 
