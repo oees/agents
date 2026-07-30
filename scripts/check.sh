@@ -31,13 +31,18 @@ AGENTS_DIR="$TMP/.agents"
 
 echo ""
 echo "Checking required directories are present and non-empty..."
-for d in rules commands skills; do
+# No .claude/rules/ any more — the rule text lives in AGENTS.md and reaches Claude Code
+# through the @../AGENTS.md import in .claude/CLAUDE.md, which is resolved further down.
+for d in commands skills; do
   if [ -d "$CLAUDE_DIR/$d" ] && [ -n "$(ls -A "$CLAUDE_DIR/$d")" ]; then
     echo "  ✓ .claude/$d"
   else
     note_fail ".claude/$d is missing or empty"
   fi
 done
+if [ -d "$CLAUDE_DIR/rules" ]; then
+  note_fail ".claude/rules/ was created — rules belong only in AGENTS.md now"
+fi
 # Loops and Codex skills live in the vendor-neutral .agents/ namespace.
 for d in loops skills; do
   if [ -d "$AGENTS_DIR/$d" ] && [ -n "$(ls -A "$AGENTS_DIR/$d")" ]; then
@@ -76,6 +81,24 @@ elif cmp -s "$malformed_agents" "$malformed_before"; then
   echo "  ✓ malformed markers fail without changing AGENTS.md"
 else
   note_fail "sync-agents-md.sh changed AGENTS.md after a malformed-marker failure"
+fi
+
+echo ""
+echo "Checking legacy-only Claude rule migration..."
+legacy_target="$TMP/legacy-target"
+mkdir -p "$legacy_target/.claude"
+printf '%s\n' \
+  '@rules/code-quality.md' \
+  '@rules/git.md' > "$legacy_target/.claude/CLAUDE.md"
+
+if bash "$REPO/scripts/init-repo.sh" "$legacy_target" >/dev/null 2>&1; then
+  if [ "$(cat "$legacy_target/.claude/CLAUDE.md")" = '@../AGENTS.md' ]; then
+    echo "  ✓ legacy-only CLAUDE.md migrates to the AGENTS.md import"
+  else
+    note_fail "legacy-only CLAUDE.md did not migrate to exactly @../AGENTS.md"
+  fi
+else
+  note_fail "init-repo.sh failed when CLAUDE.md contained only legacy imports"
 fi
 
 echo ""
