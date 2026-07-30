@@ -96,6 +96,20 @@ bash bootstrap.sh && rm bootstrap.sh
 | `tier-0-daily-health-scan` | Read-only daily scan for dependency vulnerabilities and health issues — posts a single Slack summary, never writes to the repo |
 | `tier-1-increase-test-coverage` | Weekly test-coverage filler — opens small, reviewable PRs adding tests for one production module at a time |
 | `tier-2-behavioural-improvements` | Behavioural-change fixer — opens at most one PR at a time, gated behind explicit human authorization |
+| `tier-3-queue-driven-delivery` | Four-role delivery loop (coder → req-checker → pr-checker → merger) that works a queue of specified behaviours and **merges to the default branch unattended** |
+
+### Tiers — what a loop may do
+
+The tier number is the **blast radius of a single unattended tick**. It is the one thing an engineer should be able to read off the filename, so do not reuse a tier for something more dangerous than its rung.
+
+| Tier | May write | Reaches the default branch | Human authorization | Agents |
+|---|---|---|---|---|
+| **0** | nothing | never | none needed — read-only | one |
+| **1** | test files only | only via a human merging the PR | none needed — tests can't change behaviour | one |
+| **2** | production code | only via a human merging the PR | **per change**, before the agent starts | one |
+| **3** | production code | **yes, unattended** | **per milestone**, granted in advance | four, coordinated by labels |
+
+Tier 3 is a different kind of thing from 0–2: those all stop at "PR opened", so a human is always the last step. A tier-3 loop merges on its own, and the only routine stop is a named checkpoint class the loop itself detects. Do not adopt one without the prerequisites in its Setup section — a bot identity, branch protection, and a queue whose rows an independent checker can actually pass or fail.
 
 ---
 
@@ -145,6 +159,17 @@ This adds rules to `~/.claude/CLAUDE.md` and symlinks commands and skills into `
 
 Changes are picked up by repos on their next bootstrap run. Run `bash scripts/check.sh` to confirm every command import still resolves.
 
+### Adding a loop
+
+1. Create `loops/tier-<n>-<kebab-name>.md` — pick the tier from the blast-radius table above, and be honest about it
+2. Open with a single H1, then a `## ── PER-REPO CONFIG ──` block. Values are `<angle-bracket>` hints; refer to them in the body as `{KEY}`. **Nothing interpolates these** — the agent reads the config block and resolves them at runtime, so every `{KEY}` must be defined in the block and every key should be referenced at least once
+3. Include a `## Stopping the loop` section saying how to halt it. `check.sh` warns if it's missing — an unsupervised loop that on-call can't stop is a liability
+4. Give it an explicit termination condition and an output contract. "Post nothing" must be a valid, correct outcome
+5. Add a row to the Loops table above
+6. Run `bash scripts/check.sh`
+
+Loops need no import wiring — `init-repo.sh` copies `loops/*.md` verbatim into `.claude/loops/`. Note that the copy is a **flat glob**: a loop split across a subdirectory would be silently skipped, so keep each loop to one file.
+
 ### Adding a language pattern skill
 
 Language guidance (e.g. Python, TypeScript) lives in `skills/<lang>-patterns/` as a skill — Claude auto-invokes it by its `description` when you work in that language, so it needs no command. To scope its Cursor rule to that language, add a `<lang> → globs` mapping in `scripts/sync-cursor-rules.sh` and run the script.
@@ -160,3 +185,5 @@ Cursor rules are generated from `rules/` and `skills/` into `.cursor/rules/*.mdc
 | other `skills/*` | Agent Requested (by `description`) | when Cursor's agent judges it relevant |
 
 When contributing to this repo, run `bash scripts/sync-cursor-rules.sh` after editing a rule or skill to keep `.cursor/rules/` in sync. The `PostToolUse` hook in `.claude/settings.json` does this automatically when working in this repo.
+
+**Loops are deliberately not synced to Cursor.** A loop is a prompt a scheduler points at by path, not always-on guidance — `.claude/loops/<name>.md` works verbatim as a Cursor Automation prompt. Exporting one as a rule would load the whole loop into the context of every interactive request in the repo, which is both expensive and wrong: a human editing a file should not have a merge robot's instructions in their system prompt.

@@ -39,6 +39,43 @@ for d in rules commands skills loops; do
 done
 
 echo ""
+echo "Checking loop templates are well-formed..."
+for loop in "$CLAUDE_DIR/loops"/*.md; do
+  [ -f "$loop" ] || continue
+  name="$(basename "$loop")"
+
+  # Filename encodes the risk tier: tier-<n>-<kebab-case-purpose>.md
+  if ! printf '%s' "$name" | grep -qE '^tier-[0-9]+-[a-z0-9-]+\.md$'; then
+    note_fail "$name does not match tier-<n>-<kebab-name>.md"
+    continue
+  fi
+
+  # A loop must contain its H1 exactly once. Catches the duplicated-paste class of
+  # bug, where a truncated copy of the file is prepended to the real one. Lines inside
+  # fenced code blocks are skipped — a `#` there is a shell comment, not a heading.
+  h1_count="$(awk '/^```/ { fenced = !fenced; next } !fenced && /^# / { n++ } END { print n+0 }' "$loop")"
+  if [ "$h1_count" -ne 1 ]; then
+    note_fail "$name has $h1_count H1 headings — expected exactly 1 (duplicated content?)"
+    continue
+  fi
+
+  # Every loop is configured by exactly one per-repo config block.
+  cfg_count="$(grep -cF 'PER-REPO CONFIG' "$loop" || true)"
+  if [ "$cfg_count" -ne 1 ]; then
+    note_fail "$name has $cfg_count 'PER-REPO CONFIG' blocks — expected exactly 1"
+    continue
+  fi
+
+  echo "  ✓ $name"
+
+  # Advisory only: an unsupervised loop should say how to stop it. Warned, not failed,
+  # so the existing tier-0/1/2 templates do not block CI until they catch up.
+  if ! grep -qF '## Stopping the loop' "$loop"; then
+    echo "  ⚠ $name: no '## Stopping the loop' section — on-call has no documented kill switch"
+  fi
+done
+
+echo ""
 echo "Checking command imports resolve..."
 for cmd in "$CLAUDE_DIR/commands"/*.md; do
   [ -f "$cmd" ] || continue
