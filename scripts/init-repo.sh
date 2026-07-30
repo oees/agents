@@ -41,7 +41,7 @@ AGENTS_IMPORT="@../AGENTS.md"
 # rule twice — once from .claude/rules/ and once from AGENTS.md.
 if grep -qE '^@rules/.*\.md$' "$CLAUDE_MD" 2>/dev/null; then
   tmp_cm="$(mktemp)"
-  grep -vE '^@rules/.*\.md$' "$CLAUDE_MD" > "$tmp_cm"
+  awk '!/^@rules\/.*\.md$/' "$CLAUDE_MD" > "$tmp_cm"
   mv "$tmp_cm" "$CLAUDE_MD"
   echo "  ✓ removed superseded @rules/*.md imports"
 fi

@@ -84,6 +84,24 @@ else
 fi
 
 echo ""
+echo "Checking legacy-only Claude rule migration..."
+legacy_target="$TMP/legacy-target"
+mkdir -p "$legacy_target/.claude"
+printf '%s\n' \
+  '@rules/code-quality.md' \
+  '@rules/git.md' > "$legacy_target/.claude/CLAUDE.md"
+
+if bash "$REPO/scripts/init-repo.sh" "$legacy_target" >/dev/null 2>&1; then
+  if [ "$(cat "$legacy_target/.claude/CLAUDE.md")" = '@../AGENTS.md' ]; then
+    echo "  ✓ legacy-only CLAUDE.md migrates to the AGENTS.md import"
+  else
+    note_fail "legacy-only CLAUDE.md did not migrate to exactly @../AGENTS.md"
+  fi
+else
+  note_fail "init-repo.sh failed when CLAUDE.md contained only legacy imports"
+fi
+
+echo ""
 echo "Checking Codex skills are valid..."
 for skill in "$AGENTS_DIR/skills"/*/SKILL.md; do
   [ -f "$skill" ] || continue
