@@ -12,7 +12,9 @@ CLAUDE_DIR="$TARGET/.claude"
 RULES_DIR="$CLAUDE_DIR/rules"
 COMMANDS_DIR="$CLAUDE_DIR/commands"
 SKILLS_DIR="$CLAUDE_DIR/skills"
-LOOPS_DIR="$CLAUDE_DIR/loops"
+# Loops are tool-agnostic markdown that a scheduler points at by path, so they live in
+# the neutral .agents/ namespace rather than under any one vendor's directory.
+LOOPS_DIR="$TARGET/.agents/loops"
 CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 SETTINGS_JSON="$CLAUDE_DIR/settings.json"
 CURSOR_RULES_DIR="$TARGET/.cursor/rules"
