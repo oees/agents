@@ -4,6 +4,8 @@ alwaysApply: false
 ---
 
 
+> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+
 # Shipped — Personal Git Activity Summary
 
 Summarize everything the user has personally committed across all their local git repositories.

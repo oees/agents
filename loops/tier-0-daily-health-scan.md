@@ -1,5 +1,7 @@
 # Tier-0 Daily Health Scan — Automation Instructions
 
+> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+
 ## ── PER-REPO CONFIG (fill this in, leave the rest untouched) ──
 REPO_NAME:         <e.g. proyecto_tesla>
 STACK:             <e.g. Django backend + Alpine/HTMX templates>

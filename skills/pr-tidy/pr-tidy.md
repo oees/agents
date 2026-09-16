@@ -3,6 +3,8 @@ name: pr-tidy
 description: Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff".
 ---
 
+> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+
 # Make PR Easy to Review
 
 Prepare a PR so a reviewer can quickly understand the intent, important files, and risk. The default goal is reviewability without behavior changes.

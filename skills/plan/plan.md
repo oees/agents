@@ -3,6 +3,8 @@ name: plan
 description: Use when you have a spec or requirements for a multi-step task, before touching code
 ---
 
+> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+
 # Writing Plans
 
 ## Overview

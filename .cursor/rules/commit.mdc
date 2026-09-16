@@ -4,6 +4,8 @@ alwaysApply: false
 ---
 
 
+> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+
 # Commit — Git Commit Standards
 
 Create a well-formed git commit that follows the team's commit standards.

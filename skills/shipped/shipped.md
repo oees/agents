@@ -3,6 +3,8 @@ name: shipped
 description: Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary.
 ---
 
+> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+
 # Shipped — Personal Git Activity Summary
 
 Summarize everything the user has personally committed across all their local git repositories.

@@ -3,6 +3,8 @@ name: commit
 description: Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit.
 ---
 
+> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+
 # Commit — Git Commit Standards
 
 Create a well-formed git commit that follows the team's commit standards.
