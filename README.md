@@ -30,15 +30,17 @@ Once committed, every engineer on the repo gets rules, commands, and skills auto
 The generated layout:
 
 ```
+AGENTS.md            # the rules, in the cross-vendor standard file
 .claude/
-  CLAUDE.md          # @imports for every rule — Claude Code loads these automatically
-  rules/             # always-on behavioural rules
+  CLAUDE.md          # a single @../AGENTS.md import — Claude Code loads it automatically
   commands/          # slash commands (/commit, /code-review, etc.)
   skills/            # skill definitions used by commands
   settings.json      # recommended permissions and hooks (only written if not already present)
 .cursor/
-  rules/             # same rules as .mdc files — Cursor picks these up automatically
+  rules/             # the same rules as .mdc files — Cursor picks these up automatically
+  commands/          # Cursor slash commands, with skill bodies inlined
 .agents/
+  skills/            # Codex skills (<name>/SKILL.md)
   loops/             # scheduled cloud-agent templates (fill in the per-repo config block)
 ```
 
@@ -148,8 +150,10 @@ This adds rules to `~/.claude/CLAUDE.md` and symlinks commands and skills into `
 ### Adding a rule
 
 1. Create `rules/<name>.md` with a `description:` frontmatter field
-2. Add `@rules/<name>.md` to `.claude/CLAUDE.md`
+2. Run `bash scripts/sync-agents-md.sh` to fold it into `AGENTS.md`
 3. Run `bash scripts/sync-cursor-rules.sh` to generate the Cursor equivalent
+
+No `.claude/CLAUDE.md` edit is needed — it holds one `@../AGENTS.md` import that covers every rule. Both scripts run automatically via the `PostToolUse` hook when working in this repo.
 
 ### Adding a skill and command
 
@@ -179,7 +183,7 @@ There is **one canonical source** for each asset — `rules/`, `skills/`, `comma
 
 | Asset | Claude Code | Cursor | Codex |
 |---|---|---|---|
-| Rules | `.claude/rules/*.md`, `@`-imported by `.claude/CLAUDE.md` | `.cursor/rules/*.mdc` (Always) | `AGENTS.md` |
+| Rules | `AGENTS.md`, via a single `@../AGENTS.md` import in `.claude/CLAUDE.md` | `.cursor/rules/*.mdc` (Always) | `AGENTS.md` |
 | Skills | `.claude/skills/<n>/<n>.md` | `.cursor/rules/*.mdc` (Agent Requested / Auto Attached) | `.agents/skills/<n>/SKILL.md` |
 | Commands | `.claude/commands/*.md` (thin `@` pointers) | `.cursor/commands/*.md` (skill body inlined) | invoke the skill directly (`$skill-name`) |
 | Loops | `.agents/loops/*.md` — one neutral path, any scheduler | | |
@@ -190,7 +194,9 @@ Three things are worth knowing about why it looks like this:
 - **Cursor commands** support neither frontmatter nor `@` imports, so they are generated with the skill body resolved inline — the mirror image of the Claude command files, which are deliberately thin pointers to the same skill.
 - **Codex skills** need `name` and `description` frontmatter, which our skills already carry, so that export is a copy plus a rename to `SKILL.md`.
 
-The rule text therefore exists three times in a consumer repo (`.claude/rules/`, `.cursor/rules/`, `AGENTS.md`). That is deliberate: all three are regenerated from `rules/` on every bootstrap, so they cannot drift. Hand-maintained duplication drifts; generated duplication does not.
+The rule text lives in **one** place in a consumer repo — `AGENTS.md`. Claude Code reaches it through a single `@../AGENTS.md` import rather than a copy under `.claude/rules/`, which is why that directory no longer exists. The only remaining duplicate is `.cursor/rules/*.mdc`, which has to be separate because it carries per-rule frontmatter (`globs`, `alwaysApply`) that a flat markdown file cannot express — and it is regenerated from `rules/` on every bootstrap, so it cannot drift.
+
+If you installed before this change, the next bootstrap strips the superseded `@rules/*.md` lines from your `.claude/CLAUDE.md` (leaving anything you wrote yourself) and tells you that `.claude/rules/` is now unused. Delete it and commit.
 
 When contributing here, run `bash scripts/sync-cursor-rules.sh` and `bash scripts/sync-agents-md.sh` after editing a rule, skill or command. The `PostToolUse` hook in `.claude/settings.json` does both automatically when working in this repo.
 
