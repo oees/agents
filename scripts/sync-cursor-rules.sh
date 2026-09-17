@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Generates .cursor/rules/*.mdc from canonical sources in rules/ and
-# skills/python-patterns/. Run after editing any rule or that skill.
+# Generates Cursor artifacts from canonical sources: .cursor/rules/*.mdc from rules/ and
+# skills/, and .cursor/commands/*.md from commands/ (with skill bodies inlined).
+# Run after editing any rule, skill, or command.
 
 mkdir -p .cursor/rules
 
 strip_frontmatter() {
   awk 'NR==1 && /^---/ { in_fm=1; next } in_fm && /^---/ { in_fm=0; next } in_fm { next } { print }' "$1"
+}
+
+trim_trailing_blank_lines() {
+  awk '
+    /^[[:space:]]*$/ { pending = pending $0 ORS; next }
+    { printf "%s", pending; pending = ""; print }
+  '
 }
 
 get_description() {
@@ -80,6 +88,34 @@ for skill_dir in skills/*/; do
   echo "  ${skill_file} → .cursor/rules/${name}.mdc"
 done
 
+# Cursor slash commands (.cursor/commands/*.md). Cursor supports neither frontmatter nor
+# @imports here, so each command is emitted with its skill body resolved inline — the
+# opposite of the Claude command files, which are deliberately thin pointers.
+mkdir -p .cursor/commands
+
+for cmd_file in commands/*.md; do
+  [ -f "$cmd_file" ] || continue
+  name=$(basename "$cmd_file" .md)
+
+  import=$(grep -oE '@[^[:space:]]+\.md' "$cmd_file" | head -1 || true)
+  if [ -z "$import" ]; then
+    echo "  ⚠ $name: no @import to resolve — skipping"
+    continue
+  fi
+
+  # The import is written relative to the command file (@../skills/<n>/<n>.md).
+  skill_file="commands/${import#@}"
+  if [ ! -f "$skill_file" ]; then
+    echo "  ⚠ $name: $import does not resolve — skipping"
+    continue
+  fi
+
+  strip_frontmatter "$skill_file" | trim_trailing_blank_lines \
+    > ".cursor/commands/${name}.md"
+  echo "  ${cmd_file} + ${skill_file} → .cursor/commands/${name}.md"
+done
+
 echo ""
 rule_count="$(find .cursor/rules -maxdepth 1 -type f -name '*.mdc' | wc -l | tr -d ' ')"
-echo "Done. $rule_count Cursor rules written."
+command_count="$(find .cursor/commands -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
+echo "Done. $rule_count Cursor rules, $command_count Cursor commands written."

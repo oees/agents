@@ -18,11 +18,16 @@ LOOPS_DIR="$TARGET/.agents/loops"
 CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 SETTINGS_JSON="$CLAUDE_DIR/settings.json"
 CURSOR_RULES_DIR="$TARGET/.cursor/rules"
+CURSOR_COMMANDS_DIR="$TARGET/.cursor/commands"
+# Codex discovers skills from $REPO_ROOT/.agents/skills/<name>/SKILL.md.
+CODEX_SKILLS_DIR="$TARGET/.agents/skills"
+AGENTS_MD="$TARGET/AGENTS.md"
 
 echo "Initialising agents tooling in: $TARGET"
 echo ""
 
-mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$LOOPS_DIR" "$CURSOR_RULES_DIR"
+mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$LOOPS_DIR" \
+         "$CURSOR_RULES_DIR" "$CURSOR_COMMANDS_DIR" "$CODEX_SKILLS_DIR"
 touch "$CLAUDE_MD"
 
 echo "Copying rules..."
@@ -54,6 +59,20 @@ for skill_dir in "$REPO/skills"/*/; do
     cp "$f" "$SKILLS_DIR/$name/$(basename "$f")"
   done
   echo "  ✓ $name"
+done
+
+echo ""
+echo "Copying Codex skills..."
+# Same content, Codex's layout: .agents/skills/<name>/SKILL.md. The name/description
+# frontmatter our skills already carry is exactly what Codex requires, so this is a
+# copy plus a rename — no transformation.
+for skill_dir in "$REPO/skills"/*/; do
+  name=$(basename "$skill_dir")
+  src="$skill_dir$name.md"
+  [ -f "$src" ] || { echo "  ⚠ $name: no $name.md — skipping"; continue; }
+  mkdir -p "$CODEX_SKILLS_DIR/$name"
+  cp "$src" "$CODEX_SKILLS_DIR/$name/SKILL.md"
+  echo "  ✓ $name/SKILL.md"
 done
 
 echo ""
@@ -93,4 +112,18 @@ for rule in "$REPO/.cursor/rules"/*.mdc; do
 done
 
 echo ""
-echo "Done. Commit .claude/ and .cursor/ to share the tooling with your team."
+echo "Copying Cursor commands..."
+for cmd in "$REPO/.cursor/commands"/*.md; do
+  [ -f "$cmd" ] || continue
+  name=$(basename "$cmd")
+  cp "$cmd" "$CURSOR_COMMANDS_DIR/$name"
+  echo "  ✓ $name"
+done
+
+echo ""
+echo "Writing AGENTS.md (Codex, Cursor, Copilot, Aider, …)..."
+# Splices a marker-delimited block. An existing hand-written AGENTS.md is preserved.
+bash "$REPO/scripts/sync-agents-md.sh" "$AGENTS_MD"
+
+echo ""
+echo "Done. Commit AGENTS.md, .claude/, .cursor/ and .agents/ to share the tooling."
