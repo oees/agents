@@ -34,7 +34,7 @@ if [ -f "$CLAUDE_MD" ]; then
     import="@$rule"
     if grep -qF "$import" "$CLAUDE_MD" 2>/dev/null; then
       grep -vF "$import" "$CLAUDE_MD" > "$CLAUDE_MD.tmp" && mv "$CLAUDE_MD.tmp" "$CLAUDE_MD"
-      echo "  ✓ $(basename $rule)"
+      echo "  ✓ $(basename "$rule")"
     fi
   done
 fi
