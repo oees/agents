@@ -1,5 +1,5 @@
 ---
-description: TDD: write failing tests before implementation, red-green-refactor
+description: "TDD: write failing tests before implementation, red-green-refactor"
 ---
 
 # TDD
