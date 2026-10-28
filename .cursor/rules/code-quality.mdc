@@ -10,4 +10,6 @@ Run lint, format, type checks, and tests before merge. Run security scans on bac
 
 Backend: fast linter, formatter, dependency scanner, type checks. Frontend: lint, format, strict typing, no `any`. Prefer pre-commit hooks for local feedback.
 
+Keep hooks and required checks enabled, following the Git rule. Fix failures instead of weakening assertions, checks or their configuration to get a pass, then rerun affected checks. Report checks as passed, failed, blocked by the environment, or explicitly waived; a blocked or waived check is not a pass. Name the exact check and reason for each failure, blocker or human waiver, following the repository's waiver policy.
+
 Exceptions: legacy modules may use ignore lists only with an issue reference and expiry date. Typed escape hatches (`any`, `# type: ignore`) require a justification comment.

@@ -38,7 +38,7 @@ git status --short
 git diff --stat
 ```
 
-If there are unstaged changes but nothing staged, ask the user which files to stage — do not stage everything automatically.
+If there are unstaged changes but nothing staged, stage only the files already authorised by the task. Ask which files to stage only when the scope is unclear; do not stage everything automatically.
 
 ### 2. Assess commit scope
 
@@ -85,6 +85,8 @@ If any check fails, revise before proceeding.
 
 ### 5. Execute the commit
 
+Run the repository's required checks and let Git hooks run normally. Follow the Git and code-quality rules: never autonomously use `--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories, or edits that weaken checks to make the commit succeed. Fix a hook failure, rerun the hook and affected checks, then retry. If the environment blocks a check, report the exact check and blocker. Bypass only a specific check explicitly waived by the human under the repository's waiver policy, and report that waiver; blocked or waived checks are not passes. Do not request fresh permission for a commit already authorised by the task.
+
 Run the commit using a heredoc to preserve formatting:
 
 ```bash
@@ -98,4 +100,4 @@ EOF
 )"
 ```
 
-Show the user the final commit hash and subject line to confirm success.
+Show the user the final commit hash and subject line, the check results, and any exact checks blocked or explicitly waived.

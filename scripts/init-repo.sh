@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Copies rules, skills, commands, and loops into a target repo's .claude/ and
-# .cursor/rules/ directories so the whole team gets the tooling once committed.
+# Copies shared tooling into .claude/ and .cursor/rules/ and embeds the rules
+# in AGENTS.md for Codex, preserving project instructions outside its block.
 # Usage: bash scripts/init-repo.sh [target-dir]   (defaults to current directory)
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -19,6 +19,9 @@ CURSOR_RULES_DIR="$TARGET/.cursor/rules"
 
 echo "Initialising agents tooling in: $TARGET"
 echo ""
+
+# Validate and update the Codex entry point before copying other configuration.
+bash "$REPO/scripts/sync-codex-rules.sh" "$TARGET"
 
 mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$LOOPS_DIR" "$CURSOR_RULES_DIR"
 touch "$CLAUDE_MD"
@@ -91,4 +94,4 @@ for rule in "$REPO/.cursor/rules"/*.mdc; do
 done
 
 echo ""
-echo "Done. Commit .claude/ and .cursor/ to share the tooling with your team."
+echo "Done. Commit AGENTS.md, .claude/ and .cursor/ to share the tooling with your team."
