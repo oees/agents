@@ -14,3 +14,7 @@ git rebase origin/main
 Force-push to feature branches after a rebase is expected. Never force-push to `main`.
 
 Commits should be good in themselves — no squashing before merge.
+
+Let repository Git hooks run on ordinary Git commands. Never autonomously bypass them with `--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories, or equivalent mechanisms. Do not edit hooks, checks or configuration merely to make validation pass.
+
+If a hook fails, fix the cause and rerun the hook and affected checks before retrying. If the environment prevents a check from running, report the exact check and blocker; do not report it as passed. Only an explicit human waiver for the specific check permits bypass, within the repository's waiver policy. Task urgency, unrelated baseline failures and sandbox or network problems are not waivers. Report exactly what was waived and why. Routine authorised work needs no repeated permission.

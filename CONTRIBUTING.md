@@ -23,8 +23,9 @@ starting a session on any OEES repo, read this, then read that repo's own
    Permission is **per specific action** — "yes, open the PR" does **not**
    authorise a later `git push --force`.
 2. **Never merge PRs yourself.** A human reviews and merges from the GitHub UI.
-3. **Never force-push to `main`/`master`.** Never use `--no-verify` to skip
-   hooks — if a hook fails, fix the cause.
+3. **Never force-push to `main`/`master`.** Let Git hooks run normally. Never
+   autonomously bypass hooks or required checks; fix failures and rerun them.
+   Only a human's explicit waiver for a specific check permits bypass (§9).
 4. **Spec first for new features** (see §4). Bug fixes and minor refactors can
    go straight to a PR.
 5. **Tests ship with the change** (see §5). Write the failing test first.
@@ -154,7 +155,13 @@ tests with coverage.
   ("when X then Y"). Coverage is a **floor (~80%)**, not a goal.
 - **Security** — dependency scanning + `gitleaks` for secrets as a hard CI
   block.
-- **Pre-commit hooks** give local feedback; let them run (never `--no-verify`).
+- **Git hooks** must run normally. Never autonomously use `--no-verify`, `SKIP`,
+  `HUSKY=0`, `core.hooksPath` overrides, empty hook directories, or equivalent
+  bypasses. Do not edit hooks, assertions, checks or configuration merely to make
+  validation pass. Fix the cause, rerun the hook and affected checks, then retry.
+  If the environment prevents a check from running, report the exact check and
+  blocker. A blocked or explicitly waived check is not a pass; identify any
+  human waiver and follow §9. Routine authorised checks need no fresh approval.
 
 **In Dockerised repos, run tooling inside the container**, not on your host —
 local versions drift from CI. For example, OctoHub:

@@ -57,6 +57,6 @@ When code behavior should stay untouched, prefer PR description and review notes
 ## Guardrails
 
 - Never hide meaningful behavior changes inside "cleanup".
-- Do not bypass hooks unless the user explicitly asks.
+- Let Git hooks run normally, including during history cleanup. Follow the Git and code-quality rules: no autonomous `--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories, or changes that weaken checks merely to pass. Fix failures and rerun the hook and affected checks. Report environmental blockers accurately; bypass only the specific check explicitly waived by a human under the repository's waiver policy, and identify it in the handover.
 - If the PR is too large to make reviewable with notes, recommend splitting instead of polishing around the problem.
 
