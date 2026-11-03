@@ -38,6 +38,16 @@ for md_file in rules/*.md; do
   echo "  rules/${name}.md → .cursor/rules/${name}.mdc"
 done
 
+# A skill sharing a rule's name would overwrite that always-on rule with an
+# agent-requested one, silently disabling it. Rename the skill instead.
+for skill_dir in skills/*/; do
+  name=$(basename "$skill_dir")
+  if [ -f "rules/${name}.md" ]; then
+    echo "  ✗ $name: a rule of the same name exists. Rename the skill." >&2
+    exit 1
+  fi
+done
+
 # Skills become Cursor rules too, matching how Claude surfaces each one:
 #   *-patterns      → Auto Attached (glob-scoped) — passive guidance while
 #                     editing that language. Add a language by giving it a glob
