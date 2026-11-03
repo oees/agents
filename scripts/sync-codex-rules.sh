@@ -68,7 +68,11 @@ EOF
 } > "$BLOCK"
 
 if [ "$FIRST" -gt 0 ]; then
-  head -n "$((FIRST - 1))" "$AGENTS_MD" > "$OUTPUT"
+  # BSD head rejects a count of 0, so handle a block that starts at line 1.
+  : > "$OUTPUT"
+  if [ "$FIRST" -gt 1 ]; then
+    head -n "$((FIRST - 1))" "$AGENTS_MD" > "$OUTPUT"
+  fi
   cat "$BLOCK" >> "$OUTPUT"
   tail -n "+$((LAST + 1))" "$AGENTS_MD" >> "$OUTPUT"
 else
