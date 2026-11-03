@@ -39,6 +39,22 @@ Keep hooks and required checks enabled, following the Git rule. Fix failures ins
 
 Exceptions: legacy modules may use ignore lists only with an issue reference and expiry date. Typed escape hatches (`any`, `# type: ignore`) require a justification comment.
 
+<!-- Source: rules/data-protection.md -->
+
+# Data protection
+
+Personal data is any value identifying a person alone or combined with another: name, email, phone, address, DNI/NIE, IBAN, CUPS and meter serial, geolocation, consumption tied to a supply point. Log the surrogate id (account, supply, request, task) instead.
+
+Never write it to a sink that outlives the request: logs and log context, traces, span attributes, metric labels, exception messages, URLs, cache keys, queue arguments, analytics events, alerts, tickets, or prompts sent to a model or external API.
+
+Redact at one boundary per service, not at each call site, and prove it with a test that sends a known value through the real pipeline and asserts it never reaches the sink. An untested convention is not a safeguard.
+
+Serializers, exports and outbound payloads carry the fields the caller needs and no more. Fixtures, docs, screenshots and agent prompts use synthetic or approved anonymised data. Every store holding personal data needs a retention period and an erasure path that reaches it.
+
+A leak is an incident: tell the data protection officer (dpd@octopusenergy.es) the same day, purge the sink, then close the path. Deleting the line in a later commit is not enough.
+
+Exceptions: the system of record stores what its lawful basis allows, and the UI shows it to an authorised user. Debugging with real data needs a named approver, an access-controlled destination and a deletion deadline.
+
 <!-- Source: rules/git.md -->
 
 # Git

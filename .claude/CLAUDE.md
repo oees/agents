@@ -3,3 +3,4 @@
 @rules/observability.md
 @rules/code-quality.md
 @rules/standards.md
+@rules/data-protection.md

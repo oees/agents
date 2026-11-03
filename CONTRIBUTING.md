@@ -63,6 +63,7 @@ These are loaded into every agent session from the repo's `.claude/rules/`:
 | `standards` | Frontend/backend/deploy/API conventions (see §3). |
 | `git` | Rebase-always, no merge commits on `main`, no squashing, never force-push `main`. |
 | `secrets` | No credentials in version control; env vars + secret managers; `gitleaks` in CI. |
+| `data-protection` | Personal data never reaches logs, traces, errors, exports, fixtures or model prompts; redaction is a tested boundary. |
 | `migrations` | Backwards-compatible, reversible schema changes; migration ships before the code that needs it. |
 
 ### Slash commands
@@ -193,11 +194,16 @@ do not hot-reload**: restart them after changing polling/telemetry code.
 
 ---
 
-## 7. Secrets, migrations, observability
+## 7. Secrets, personal data, migrations, observability
 
 - **Secrets**: never commit credentials — not in code, tests, comments, or
   example configs. Runtime secrets via env vars; commit only `.env.example` with
   placeholders. If a secret leaks: **rotate immediately**, then scrub history.
+- **Personal data**: name, email, address, DNI/NIE, IBAN, CUPS, consumption
+  series. Log the surrogate id instead, and keep it out of traces, exception
+  messages, URLs, Celery arguments, analytics and model prompts. Redact in one
+  place per service, with a test that proves it. Fixtures use synthetic data; a
+  leak is an incident: tell dpd@octopusenergy.es the same day.
 - **Migrations**: backwards-compatible and reversible. Ship the migration first,
   verify, then ship the code that needs it — never bundle them. Destructive
   changes (drop/rename) need a deprecate → remove references → deploy → drop

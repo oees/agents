@@ -88,6 +88,7 @@ bash bootstrap.sh && rm bootstrap.sh
 | `standards` | Frontend, backend, deployment, and API design conventions |
 | `git` | Branch hygiene, commit standards, hooks stay enabled, no force-pushing main |
 | `secrets` | No hardcoded credentials, use env vars and secret stores |
+| `data-protection` | Personal data stays out of logs, traces, errors, exports, fixtures and prompts |
 | `migrations` | Safe schema migrations — backwards-compatible, reversible, never drop data silently |
 
 **Loops** (templates for unsupervised cloud agents that run on a schedule — copy one, fill in the per-repo config block at the top, leave the rest untouched):
@@ -147,6 +148,10 @@ This adds rules to `~/.claude/CLAUDE.md` and symlinks commands and skills into `
 2. Create `commands/<name>.md` with frontmatter and `@../skills/<name>/<name>.md` (the `../` resolves from `.claude/commands/` to `.claude/skills/`)
 
 Changes are picked up by repos on their next bootstrap run. Run `bash scripts/check.sh` to validate distribution and confirm every command import still resolves.
+
+A skill an agent should reach for on its own needs no command, only a
+`description`, the way `personal-data` does. Give it a name no rule uses;
+Cursor rules are written per name, so a skill would shadow the rule.
 
 ### Adding a language pattern skill
 

@@ -17,7 +17,7 @@ You look for ways the change could expose data, grant access it should not, or w
 - **Authorisation:** every view and endpoint gated; every write service checks the object-level permission against the acting user; object lookups cannot reach records the user may not see; no path around the check through background jobs, admin or another domain's interface.
 - **Injection and output:** raw SQL or string-built queries; disabled auto-escaping or unsafe HTML helpers (such as `mark_safe`, `|safe`, `dangerouslySetInnerHTML`, `v-html`); open redirects; unvalidated input reaching the shell, files or templates.
 - **Browser controls:** CSRF exemptions; a content security policy weakened by inline scripts or styles, inline event handlers or eval; cookies not `Secure`, `HttpOnly` or `SameSite`; security headers or debug mode changed.
-- **PII:** no personal data in logs, traces, span attributes, fixtures or error messages; domains holding personal data keep their export, erasure and retention contracts; agents and tests see only synthetic or approved anonymised data.
+- **Personal data:** none in logs, traces, span attributes, exception messages, URLs, queue arguments, analytics events, outbound payloads or model prompts; serializers and exports name their fields; the redaction boundary and its test stay intact; fixtures, tests and agent context use synthetic data.
 - **Secrets:** none in code, settings, fixtures, workflows, images or infrastructure values; secret values reach infrastructure code only as sensitive variables and the app only through the platform's secret store.
 - **Uploads and files:** uploads go through the project's file handling, are scanned and stripped of metadata (such as EXIF/GPS) before use, and are served only through authorised, short-lived URLs.
 - **Dependencies:** each new or upgraded dependency is needed, maintained and clean in the dependency scanner (such as pip-audit or npm audit); lockfile consistent.
@@ -28,6 +28,6 @@ You look for ways the change could expose data, grant access it should not, or w
 
 - a missing or bypassable permission check;
 - any injection, XSS or CSRF exposure;
-- PII or a secret value in code, logs, fixtures or output;
+- personal data or a secret value in code, logs, fixtures or output, or an untested redaction boundary;
 - a weakened CSP, sandbox, permission or branch-protection control;
 - a new dependency with a known vulnerability, or no clear need.
