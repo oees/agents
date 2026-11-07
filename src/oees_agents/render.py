@@ -5,12 +5,14 @@ from collections.abc import Callable, Mapping
 from oees_agents.content import Content
 from oees_agents.manifest import Manifest, Target
 from oees_agents.output import Output, RenderError, merge_outputs
-from oees_agents.targets import claude
+from oees_agents.targets import claude, codex, cursor
 
 TargetRenderer = Callable[[Manifest, Content], Output]
 
 RENDERERS: Mapping[Target, TargetRenderer] = {
     "claude": claude.render,
+    "cursor": cursor.render,
+    "codex": codex.render,
 }
 
 
@@ -20,10 +22,7 @@ def render(manifest: Manifest, content: Content) -> Output:
     _check_names("loop", manifest.extras.loops, content.loops)
     outputs = []
     for target in manifest.targets:
-        renderer = RENDERERS.get(target)
-        if renderer is None:
-            raise RenderError(f"target {target!r} has no renderer yet")
-        outputs.append(renderer(manifest, content))
+        outputs.append(RENDERERS[target](manifest, content))
     return merge_outputs(outputs)
 
 

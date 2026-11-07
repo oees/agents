@@ -1,8 +1,11 @@
+import posixpath
+import re
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
+from oees_agents.blocks import splice
 from oees_agents.content import load_content
 from oees_agents.context import context_block
 from oees_agents.manifest import Extras, Manifest, Project
@@ -102,3 +105,40 @@ def test_merging_outputs_refuses_two_owners_for_one_path() -> None:
 
     with pytest.raises(RenderError, match=r"a\.md"):
         merge_outputs([one, two])
+
+
+def test_all_three_targets_render_together(content_root: Path) -> None:
+    rendered = render(manifest(targets=("claude", "cursor", "codex")), load_content(content_root))
+
+    assert {".claude/CLAUDE.md", "AGENTS.md"} <= set(rendered.blocks)
+    assert ".cursor/rules/00-project-context.mdc" in rendered.files
+    assert ".claude/settings.json" in rendered.files
+
+
+def test_this_repositorys_content_renders_every_target_with_resolvable_imports() -> None:
+    content = load_content(Path(__file__).resolve().parents[1])
+    everything = manifest(
+        targets=("claude", "cursor", "codex"),
+        defaults=tuple(content.defaults),
+        kits=tuple(content.kits),
+        extras=Extras(subagents="extended", loops=tuple(content.loops)),
+    )
+
+    rendered = render(everything, content)
+
+    paths = set(rendered.files)
+    sources = {
+        **{path: data.decode() for path, data in rendered.files.items() if path.endswith(".md")},
+        ".claude/CLAUDE.md": rendered.blocks[".claude/CLAUDE.md"].body,
+    }
+    for path, text in sources.items():
+        for target in re.findall(r"^@(\S+\.md)$", text, re.MULTILINE):
+            resolved = posixpath.normpath(posixpath.join(posixpath.dirname(path), target))
+            assert resolved in paths, f"{path} imports {target}"
+    agents_md = splice(None, rendered.blocks["AGENTS.md"])
+    assert len(agents_md) < 32 * 1024
+    assert all(
+        data.startswith(b"---\ndescription: ")
+        for path, data in rendered.files.items()
+        if path.startswith(".cursor/")
+    )
