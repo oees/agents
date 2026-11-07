@@ -4,6 +4,8 @@ description: Structured logging, contextual errors, no silent exceptions
 
 # Observability
 
+Default for OEES projects. A project opts out in its manifest.
+
 Emit structured logs for backend operations and failures as well as frontend failures. Include contextual identifiers (request/task IDs) in all log entries and error paths. Never swallow exceptions silently — log with context and re-raise or handle explicitly.
 
 Use consistent log levels (DEBUG/INFO/WARNING/ERROR/CRITICAL), one structured logger per service, consistent API error envelopes, and stack traces for unexpected exceptions.

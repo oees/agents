@@ -52,13 +52,15 @@ OUTPUT="$TMP/AGENTS.md"
   cat <<'EOF'
 ## Shared engineering rules
 
-Generated from `rules/*.md` in the OEES agents repository. Edit the
-canonical rules and regenerate; keep project instructions outside this block.
+Generated from `content/conduct/` and `content/defaults/` in the OEES agents
+repository. Edit the canonical rules and regenerate; keep project
+instructions outside this block.
 Apply these rules to every task, including delegated work. Project-specific
 instructions specialize the defaults. Report unresolved instruction conflicts.
 EOF
-  for rule in "$REPO/rules"/*.md; do
-    printf '\n<!-- Source: rules/%s -->\n' "$(basename "$rule")"
+  for rule in "$REPO/content/conduct"/*.md "$REPO/content/defaults"/*.md; do
+    [ -f "$rule" ] || continue
+    printf '\n<!-- Source: %s -->\n' "${rule#"$REPO"/}"
     awk '{ sub(/\r$/, "") }
       NR == 1 && $0 == "---" { frontmatter = 1; next }
       frontmatter && $0 == "---" { frontmatter = 0; next }

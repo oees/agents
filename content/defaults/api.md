@@ -1,0 +1,11 @@
+---
+description: Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs
+---
+
+# API design
+
+Default for OEES projects. A project opts out in its manifest.
+
+Version all endpoints under `/api/<version>/`. Return consistent error envelopes with appropriate HTTP status codes. Paginate all list endpoints. Use typed schema validation, token-based auth with secure refresh handling, and auto-generated API docs.
+
+Exceptions: public endpoints may skip auth when explicitly documented and rate-limited. Internal-only endpoints may use alternate auth patterns with a recorded security review.

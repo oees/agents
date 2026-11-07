@@ -30,7 +30,8 @@ done
 echo ""
 echo "Removing rules..."
 if [ -f "$CLAUDE_MD" ]; then
-  for rule in "$REPO/rules"/*.md; do
+  for rule in "$REPO/content/conduct"/*.md "$REPO/content/defaults"/*.md; do
+    [ -f "$rule" ] || continue
     import="@$rule"
     if grep -qF "$import" "$CLAUDE_MD" 2>/dev/null; then
       grep -vF "$import" "$CLAUDE_MD" > "$CLAUDE_MD.tmp" && mv "$CLAUDE_MD.tmp" "$CLAUDE_MD"

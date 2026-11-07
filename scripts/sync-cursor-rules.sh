@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Generates .cursor/rules/*.mdc from canonical sources in rules/ and
-# skills/python-patterns/. Run after editing any rule or that skill.
+# Generates .cursor/rules/*.mdc from the canonical rules in content/conduct/
+# and content/defaults/, and from skills/. Run after editing any of them.
 
 mkdir -p .cursor/rules
 
@@ -27,7 +27,8 @@ write_mdc() {
   } > "$out"
 }
 
-for md_file in rules/*.md; do
+for md_file in content/conduct/*.md content/defaults/*.md; do
+  [ -f "$md_file" ] || continue
   name=$(basename "$md_file" .md)
   description=$(get_description "$md_file")
   [ -z "$description" ] && description="${name} standards"
@@ -35,7 +36,7 @@ for md_file in rules/*.md; do
   strip_frontmatter "$md_file" > "$tmp"
   write_mdc ".cursor/rules/${name}.mdc" "$description" "true" "" "$tmp"
   rm "$tmp"
-  echo "  rules/${name}.md → .cursor/rules/${name}.mdc"
+  echo "  ${md_file} → .cursor/rules/${name}.mdc"
 done
 
 # Skills become Cursor rules too, matching how Claude surfaces each one:
