@@ -1,6 +1,6 @@
 ---
 name: migration-reviewer
-description: Use, in a fresh read-only context, on every change containing a schema migration, data-import code or a destructive data operation. Give it the requirement, the diff with its base and head, the migration linter output (such as Squawk), and the checks run on that head against the real database engine.
+description: Use, in a fresh read-only context, on every change containing a schema migration, data-import code or a destructive data operation. Give it the requirement, the diff with its base and head, the migration linter output if the project has one, and the checks run on that head against the real database engine.
 tools: Read, Grep, Glob
 model: inherit
 skills:
@@ -21,7 +21,7 @@ You check that schema and data changes are safe to deploy and to undo. Follow th
 - **Reversibility:** every migration has a working reverse unless the operation is genuinely irreversible, and that is stated.
 - **Database rules:** audit and ledger-like tables stay append-only in the database; audit triggers cover the intended fields; the project's database role and schema rules hold.
 - **Data import:** raw source data lands through the project's import pipeline; transforms are tested code; imports are idempotent; reconciliation covers counts, checksums and key fields.
-- **Evidence:** the migration linter passed or its findings are justified, and tests ran against the real database engine.
+- **Evidence:** the migration linter, if the project has one, passed or its findings are justified, and tests ran against the real database engine.
 
 ## Presumptive blockers
 
@@ -30,4 +30,4 @@ You check that schema and data changes are safe to deploy and to undo. Follow th
 - a NOT NULL column without a default or backfill;
 - a table rewrite or long lock on a large table;
 - a missing reverse with no stated reason;
-- a destructive data operation without a multi-step plan and the tech lead's review.
+- a destructive data operation without a multi-step plan and human review.

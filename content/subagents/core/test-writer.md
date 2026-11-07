@@ -17,9 +17,9 @@ The orchestrator gives you the requirement (an accepted spec, ticket or requirem
 
 1. Read the requirement, the relevant code and the existing tests near the target paths. Follow their layout and fixtures.
 2. List the cases: the expected outcome, each stated exception, failure paths, and the edge cases the requirement implies, such as boundaries, permissions, repeats and concurrency.
-3. Write one focused test per case in the project's test location for that code (for example the app's `tests/` directory). Test public behaviour and important invariants, not internal structure.
+3. Write one focused test per case in the test location the project's kit sets for that code. Test public behaviour and important invariants, not internal structure.
 4. Where a test needs an interface that does not exist yet, add a signature-only stub that raises a not-implemented error. Nothing more.
-5. Run the new tests with the project's targeted test command (as its `AGENTS.md` or `CLAUDE.md` names it) and confirm each fails for the intended reason.
+5. Run the new tests with the project's targeted test command (as its instruction files name it) and confirm each fails for the intended reason.
 6. Report back (below).
 
 For a bug fix, the first test reproduces the bug as reported and fails on the current code.
@@ -28,7 +28,7 @@ For a bug fix, the first test reproduces the bug as reported and fails on the cu
 
 - **A real red.** Each test must fail on an assertion or on a deliberately unimplemented interface. An import error, missing fixture or setup failure is not red: fix it, then run again.
 - **One reason to fail.** A test that would pass for the wrong reason, or fail for several, needs splitting.
-- **The real database engine.** Wherever database semantics matter, test against the engine production uses (for example Postgres through Testcontainers), not a substitute such as SQLite.
+- **The real database engine.** Wherever database semantics matter, test against the engine production uses (for example Postgres in a disposable container), not a substitute such as SQLite.
 - **Deterministic.** Use fixed clocks, seeded data and synthetic fixtures. Never use customer data or real PII.
 - **The right tool.** The project's test framework for everything. Property-based tests (for example Hypothesis or fast-check) for money, permissions and state transitions where they cover an invariant better than examples. Browser end-to-end tests only for critical UI flows; otherwise the framework's test client or component tests.
 - **Tests from the requirement.** Name each test after the behaviour it checks. Mention the requirement's ID when it helps a reader.
