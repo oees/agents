@@ -387,6 +387,34 @@ def test_verbose_logs_each_file_operation_as_json_with_a_run_id(
     assert records[0]["run_id"]
 
 
+def test_check_reports_a_missing_block_without_creating_it(
+    project: Path, content_root: Path
+) -> None:
+    init(project, content_root, "--target", "codex")
+    (project / "AGENTS.md").unlink()
+
+    result = invoke("check", project, "--content-dir", content_root)
+
+    assert result.exit_code == 1
+    assert "stale or missing: AGENTS.md" in result.output
+    assert not (project / "AGENTS.md").exists()
+
+
+def test_check_reports_stale_rules_after_a_content_change(
+    project: Path, content_root: Path
+) -> None:
+    init(project, content_root, "--target", "codex")
+    before = (project / "AGENTS.md").read_bytes()
+    with (content_root / "content/defaults/tdd.md").open("a") as handle:
+        handle.write("\nAn additional canonical rule.\n")
+
+    result = invoke("check", project, "--content-dir", content_root)
+
+    assert result.exit_code == 1
+    assert "stale or missing: AGENTS.md" in result.output
+    assert (project / "AGENTS.md").read_bytes() == before
+
+
 LEGACY_FIXTURE = Path(__file__).resolve().parent / "fixtures/legacy/main"
 REPO = Path(__file__).resolve().parents[1]
 

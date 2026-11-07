@@ -22,9 +22,6 @@
       "Bash(echo*)",
       "Bash(head*)",
       "Bash(tail*)",
-      "Bash(python -m pytest*)",
-      "Bash(python -m mypy*)",
-      "Bash(python -m ruff*)",
       "Bash(pytest*)",
       "Bash(ruff*)",
       "Bash(mypy*)",
@@ -42,26 +39,17 @@
       "Bash(jest*)",
       "Bash(docker build*)",
       "Bash(docker ps*)",
-      "Bash(docker logs*)"
+      "Bash(docker logs*)",
+      "Bash(make check*)",
+      "Bash(node --test*)"
     ],
     "deny": [
       "Bash(git push*)",
-      "Bash(git reset*)",
-      "Bash(git checkout .)",
-      "Bash(rm*)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'i=$(cat); for f in content/conduct/*.md content/defaults/*.md; do [ -f \"$f\" ] || continue; l=$(wc -l < \"$f\"); [ \"$l\" -gt 40 ] && echo \"Warning: $f has $l lines — keep rules compact\"; done; if echo \"$i\" | grep -qF content/ || echo \"$i\" | grep -qF skills/; then bash scripts/sync-cursor-rules.sh; fi'"
-          }
-        ]
-      }
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git rebase -i*)",
+      "Bash(git rebase --interactive*)",
+      "Bash(git filter-branch*)"
     ]
   }
 }

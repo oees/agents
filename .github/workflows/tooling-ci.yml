@@ -5,10 +5,20 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  validate:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate tooling distribution
-        run: bash scripts/check.sh
+        with:
+          # The legacy-migration test regenerates its known hashes from history.
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: uv sync --frozen
+      - run: make check

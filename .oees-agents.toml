@@ -1,0 +1,33 @@
+version = 1
+source = "local"
+targets = [
+    "codex",
+]
+
+[project]
+name = "agents"
+description = "Shared AI-agent configuration (conduct, defaults, skills, kits, subagents and the oees-agents installer) that every Octopus Energy España project installs."
+users = "OEES engineers and every OEES project that installs it"
+blast_radius = "customer-facing"
+default_branch = "main"
+check = "make check"
+check_fast = "make check-fast"
+
+[rules]
+defaults = [
+    "api",
+    "git",
+    "migrations",
+    "observability",
+    "quality-gates",
+    "standards",
+    "tdd",
+]
+
+[kits]
+enabled = []
+
+[extras]
+commands = true
+subagents = "core"
+loops = []

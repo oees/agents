@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Remote bootstrap: clones agents into a temp directory, runs init-repo.sh
-# in the current directory, then cleans up. No permanent local clone needed.
-# Usage: curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | bash
-
-REPO_URL="https://github.com/oees/agents.git"
-TARGET="$(pwd)"
-TMPDIR="$(mktemp -d)"
-
-cleanup() { rm -rf "$TMPDIR"; }
-trap cleanup EXIT
-
-echo "Fetching agents tooling..."
-git clone --quiet --depth=1 "$REPO_URL" "$TMPDIR/agents"
-
-bash "$TMPDIR/agents/scripts/init-repo.sh" "$TARGET"
+# Install OEES agent tooling: installs uv if missing, then runs `oees-agents init` at the latest tag.
+# Usage: curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | bash -s -- [init flags]
+REPO="https://github.com/oees/agents"
+if ! command -v uv >/dev/null 2>&1; then
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+REF="${OEES_AGENTS_REF:-$(git ls-remote --tags --refs "$REPO" 'v*' | sed 's#.*refs/tags/##' | sort -V | tail -n 1)}"
+[ -n "$REF" ] || { echo "No release tag found in $REPO; set OEES_AGENTS_REF (for example main)." >&2; exit 1; }
+exec uvx --from "git+$REPO@$REF" oees-agents init "$@"

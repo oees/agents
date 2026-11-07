@@ -1,0 +1,6 @@
+version = 1
+
+[files]
+
+[blocks]
+"AGENTS.md" = "sha256:c1881e403ab3682a63679f7f9f3cd9dedee7dab5f5fa641832f66652dfd5d1d6"
