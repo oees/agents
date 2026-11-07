@@ -157,6 +157,47 @@ def test_hidden_files_in_a_skill_directory_are_not_carried(content_root: Path) -
     assert ".DS_Store" not in load_content(content_root).kits["fastapi"].files
 
 
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "templates/.github/workflows/ci.yml",
+        "templates/.do/app.yaml",
+        "templates/.dockerignore",
+        "templates/.env.example",
+        "templates/static/.gitkeep",
+    ],
+)
+def test_dotfiles_under_templates_are_carried(content_root: Path, relative: str) -> None:
+    write(content_root / "content/kits/fastapi" / relative, "kept\n")
+
+    assert load_content(content_root).kits["fastapi"].files[relative] == b"kept\n"
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "templates/.DS_Store",
+        "templates/.git/HEAD",
+        "templates/app/__pycache__/main.cpython-313.pyc",
+        "templates/app/main.pyc",
+        "templates/.ruff_cache/0.13/cache",
+        "templates/.mypy_cache/3.13/app.json",
+        "templates/.pytest_cache/v/cache/nodeids",
+        "templates/.venv/bin/python",
+    ],
+)
+def test_tool_and_os_junk_under_templates_is_not_carried(content_root: Path, relative: str) -> None:
+    write(content_root / "content/kits/fastapi" / relative, "junk")
+
+    assert relative not in load_content(content_root).kits["fastapi"].files
+
+
+def test_pycache_outside_templates_is_not_carried(content_root: Path) -> None:
+    write(content_root / "skills/commit/__pycache__/x.cpython-313.pyc", "junk")
+
+    assert load_content(content_root).skills["commit"].files.keys() == {"SKILL.md"}
+
+
 def test_a_tree_without_kits_has_no_kits(content_root: Path) -> None:
     shutil.rmtree(content_root / "content/kits")
 

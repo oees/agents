@@ -18,6 +18,12 @@ from types import MappingProxyType
 
 SUBAGENT_TIERS = ("core", "extended")
 CONTEXT_TEMPLATE = "content/blocks/project-context.md"
+TEMPLATES_DIR = "templates"
+# Tool caches and OS litter a skill directory can pick up; never carried.
+JUNK_NAMES = frozenset(
+    {".DS_Store", ".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv"}
+)
+JUNK_SUFFIXES = (".pyc",)
 
 Meta = Mapping[str, str | tuple[str, ...]]
 
@@ -206,11 +212,17 @@ def _load_skill(root: Path, directory: Path) -> Skill:
     files = {
         path.relative_to(directory).as_posix(): path.read_bytes()
         for path in sorted(directory.rglob("*"))
-        if path.is_file()
-        and not any(part.startswith(".") for part in path.relative_to(directory).parts)
+        if path.is_file() and _carried(path.relative_to(directory).parts)
     }
     return Skill(
         name=directory.name,
         document=replace(document, name=directory.name),
         files=MappingProxyType(files),
     )
+
+
+def _carried(parts: tuple[str, ...]) -> bool:
+    """Templates mirror a project root, so their dotfiles (.github/, .env.example) are kept."""
+    if any(part in JUNK_NAMES for part in parts) or parts[-1].endswith(JUNK_SUFFIXES):
+        return False
+    return parts[0] == TEMPLATES_DIR or not any(part.startswith(".") for part in parts)

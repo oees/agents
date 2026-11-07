@@ -22,6 +22,7 @@ from conftest import (
     KITS,
     LOOPS,
     PATTERN_SKILLS,
+    write,
 )
 
 PROJECT = Project(
@@ -248,6 +249,17 @@ def test_kit_templates_land_under_the_kit_skill(content: Content) -> None:
     for disabled in KITS:
         if disabled != "fastapi":
             assert not [path for path in output.paths if f"/{disabled}/" in path]
+
+
+def test_kit_template_dotfiles_land_under_the_kit_skill(content_root: Path) -> None:
+    dotfiles = ("templates/.github/workflows/ci.yml", "templates/.env.example")
+    for relative in dotfiles:
+        write(content_root / "content/kits/fastapi" / relative, f"{relative}\n")
+
+    output = render(manifest(kits=("fastapi",)), load_content(content_root))
+
+    for relative in dotfiles:
+        assert output.files[f".claude/skills/fastapi/{relative}"] == f"{relative}\n".encode()
 
 
 def test_only_selected_loops_install(content: Content) -> None:
