@@ -1,0 +1,62 @@
+# Local development only; production runs on DigitalOcean App Platform (.do/app.yaml).
+#   cp .env.example .env
+#   docker compose up --build              app on http://localhost:8000
+#   docker compose run --rm dev make check the CI gate, inside a container
+
+services:
+  db:
+    image: postgres:16.15@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    configs:
+      - source: create-test-database
+        target: /docker-entrypoint-initdb.d/10-create-test-database.sql
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      target: runtime
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dev:
+    build:
+      context: .
+      target: dev
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app
+      TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_test
+    volumes:
+      - .:/app
+      - uv-cache:/root/.cache/uv
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["make", "check-fast"]
+
+configs:
+  create-test-database:
+    content: |
+      CREATE DATABASE app_test;
+
+volumes:
+  db-data:
+  uv-cache:

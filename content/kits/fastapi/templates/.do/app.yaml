@@ -1,0 +1,82 @@
+# DigitalOcean App Platform spec, applied by .github/workflows/deploy.yml (deploy_on_push is off).
+# Edit only the lines marked EDIT.
+# Secrets: `value: ${NAME}` with `type: SECRET`. NAME is a secret of the GitHub `production`
+# environment, passed in deploy.yml's job `env:`; the deploy action substitutes it before applying
+# the spec. Bindable variables such as ${db.DATABASE_URL} are left for App Platform to resolve.
+name: app # EDIT: app name
+region: fra # EDIT: region
+
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: oees/app # EDIT: github repo
+      branch: main
+      deploy_on_push: false
+    http_port: 8000
+    instance_count: 2
+    instance_size_slug: apps-s-1vcpu-1gb
+    health_check:
+      http_path: /healthz
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 3
+    envs:
+      - key: APP_ENV
+        value: production
+        scope: RUN_TIME
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+        type: SECRET
+        scope: RUN_TIME
+      - key: WEB_CONCURRENCY
+        value: "2"
+        scope: RUN_TIME
+      - key: LOG_LEVEL
+        value: INFO
+        scope: RUN_TIME
+      # A secret looks like this (and is added to the migrate job too if migrations need it):
+      # - key: PARTNER_API_KEY
+      #   value: ${PARTNER_API_KEY}
+      #   type: SECRET
+      #   scope: RUN_TIME
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: oees/app # EDIT: github repo
+      branch: main
+      deploy_on_push: false
+    run_command: alembic upgrade head
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    envs:
+      - key: APP_ENV
+        value: production
+        scope: RUN_TIME
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+        type: SECRET
+        scope: RUN_TIME
+
+ingress:
+  rules:
+    - match:
+        path:
+          prefix: /
+      component:
+        name: web
+
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    production: true
+    cluster_name: app-db # EDIT: managed Postgres cluster name
+    db_name: app # EDIT: database name
+    db_user: app # EDIT: database user

@@ -1,0 +1,68 @@
+name: deploy
+
+# Production deploys only after `ci` has passed on a push to main.
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    # App secrets: one line per `${NAME}` in .do/app.yaml, from the `production` environment's
+    # secrets. The deploy action substitutes them into the spec; bindables like ${db.DATABASE_URL}
+    # are left for App Platform. Uncomment and fill in when the spec gains a secret:
+    # env:
+    #   NAME: ${{ secrets.NAME }}
+    steps:
+      # App Platform builds the tip of main, so deploy only if the commit ci tested is still the
+      # tip. When main has moved on, the ci run for the newer commit triggers its own deploy.
+      - name: Check the tested commit is still the tip of main
+        id: tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          tip="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
+          if [ "$tip" = "$TESTED_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::main is at ${tip}, not ${TESTED_SHA}; skipping, the newer run deploys."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.tip.outputs.current == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      # An unset secret would be substituted as an empty string and wipe the value in App Platform.
+      - name: Check every spec variable is set
+        if: steps.tip.outputs.current == 'true'
+        run: |
+          missing=0
+          names="$(grep -v '^[[:space:]]*#' .do/app.yaml | grep -oE '[$][{][A-Za-z_][A-Za-z0-9_]*[}]' | tr -d '{}$' | sort -u || true)"
+          for name in $names; do
+            case "$name" in APP_DOMAIN | APP_URL | APP_ID) continue ;; esac
+            if [ -z "${!name:-}" ]; then
+              echo "::error file=.do/app.yaml::${name} is referenced in the spec but not set in the job env."
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - if: steps.tip.outputs.current == 'true'
+        uses: digitalocean/app_action/deploy@cc55bc9b848d25f9c1c9f831cf843fbab3fbfb15 # v2.0.11
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          app_spec_location: .do/app.yaml
+          print_build_logs: true
+          print_deploy_logs: true

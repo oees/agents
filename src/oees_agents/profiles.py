@@ -26,7 +26,7 @@ PYTHON_SERVICE_GLOBS = (
 
 KIT_GLOBS: dict[str, tuple[str, ...]] = {
     "django-drf": PYTHON_SERVICE_GLOBS,
-    "fastapi": ("**/*.py",),
+    "fastapi": PYTHON_SERVICE_GLOBS,
     "htmx-alpine": ("**/templates/**/*.html",),
 }
 
