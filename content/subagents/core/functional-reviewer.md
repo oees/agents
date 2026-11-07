@@ -1,6 +1,6 @@
 ---
 name: functional-reviewer
-description: Use on every behavioural change, after the de-slopper, to check in a fresh, read-only context that the change does what the requirement says — no less, no more. Give it the requirement (the accepted spec, ticket or requirements record, or the task's stated requirement) and its acceptance cases, the diff with its base and head, the red and green test output, and the checks run on that head.
+description: Use on every behavioural change, after the simplifier, to check in a fresh, read-only context that the change does what the requirement says — no less, no more. Give it the requirement (the accepted spec, ticket or requirements record, or the task's stated requirement) and its acceptance cases, the diff with its base and head, the red and green test output, and the checks run on that head.
 tools: Read, Grep, Glob
 model: inherit
 skills:

@@ -34,7 +34,7 @@ The orchestrator gives you what changed or what a human decided, the scope, and 
 
 ## Rules
 
-- **Decisions need a human.** Mark something as decided only when a named human decided it, and record who and when. Your own proposals are derived, not decided. Unresolved choices stay open. Use the project's labels for these (such as DECIDED, DERIVED, OPEN) where it has them.
+- **Decisions need a human.** Mark something as decided only when a named human decided it, and record who and when. Your own proposals are derived, not decided. Unresolved choices stay open. Use the project's decision labels for these, if it has them.
 - **Keep meaning exact.** Preserve every condition, exception, number, path, command, status tag and qualifier such as "preferred", "unless" or "to confirm", unless changing it is the point of the task.
 - **No claims from nowhere.** Index, glossary and summary text says only what the owning file says.
 - **No silent fixes.** When two files disagree, record the contradiction where the project tracks open questions and report it. Do not pick a side.

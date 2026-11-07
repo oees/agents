@@ -17,7 +17,7 @@ Besides the diff, you get the list of intended changes. Do not report those. If 
 
 ## What to check
 
-Go through the old text section by section. For every bullet, table row and sentence that states a rule or a fact, find where it lives now and check its meaning is unchanged. Every rule, condition, exception, number, name, version, path, command, stable identifier (such as a section ID) and status tag (such as DECIDED, DERIVED, OPEN, PARKED) must survive. Only history and bookkeeping may be dropped. Watch especially for:
+Go through the old text section by section. For every bullet, table row and sentence that states a rule or a fact, find where it lives now and check its meaning is unchanged. Every rule, condition, exception, number, name, version, path, command, stable identifier (such as a section ID) and status tag (the project's decision labels, if it has them) must survive. Only history and bookkeeping may be dropped. Watch especially for:
 
 - dropped conditions or exceptions: only, unless, except, at least, never, preferred, to confirm;
 - status tags changed or lost, including a tag that sat on a heading and was not carried to each bullet;
