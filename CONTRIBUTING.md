@@ -4,7 +4,8 @@ This is the master guide for contributing to **Octopus Energy España / Octopus
 Energy Services (OEES / OES)** repositories. It is written for **AI coding
 agents** first (Claude Code, Cursor) and humans second. If you are an agent
 starting a session on any OEES repo, read this, then read that repo's own
-`CLAUDE.md` / `README.md` — the repo always wins where they differ.
+`CLAUDE.md` / `README.md` — the project context and manifest always win where
+they differ.
 
 > **Why this exists.** We build energy software that customers and internal
 > teams depend on. Our job is to make energy *fair, clean, and simple*, backed
@@ -15,6 +16,10 @@ starting a session on any OEES repo, read this, then read that repo's own
 
 ## 0. Golden rules (read these first)
 
+The always-on, machine-loaded form of rules 1–3 is
+[`content/conduct/conduct.md`](content/conduct/conduct.md); every project gets
+it, with no opt-out.
+
 1. **Never write, delete, or perform an externally-visible action without
    explicit permission from the human in the current interaction.** This
    covers: pushing to a remote, deleting branches/files/DB rows, opening,
@@ -23,7 +28,7 @@ starting a session on any OEES repo, read this, then read that repo's own
    Permission is **per specific action** — "yes, open the PR" does **not**
    authorise a later `git push --force`.
 2. **Never merge PRs yourself.** A human reviews and merges from the GitHub UI.
-3. **Never force-push to `main`/`master`.** Let Git hooks run normally. Never
+3. **Never force-push the default branch.** Let Git hooks run normally. Never
    autonomously bypass hooks or required checks; fix failures and rerun them.
    Only a human's explicit waiver for a specific check permits bypass (§9).
 4. **Spec first for new features** (see §4). Bug fixes and minor refactors can
@@ -37,34 +42,41 @@ starting a session on any OEES repo, read this, then read that repo's own
 ## 1. The shared tooling: the `agents` repo
 
 All OEES repos share one set of rules, slash commands, and skills, maintained in
-the `agents` repo and installed into each project's `.claude/` and `.cursor/`
-directories.
+the `agents` repo and installed into each project's `AGENTS.md`, `.claude/` and
+`.cursor/`.
 
 **Install / update tooling in a repo** (run from the repo root):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | bash
-git add .claude/ .cursor/ && git commit -m "chore: sync Claude Code and Cursor tooling"
+git add AGENTS.md .claude/ .cursor/ && git commit -m "Sync shared agent tooling"
 ```
 
 Once committed, every engineer and agent on that repo inherits the same rules
 automatically.
 
-### Always-on rules
+### Rules
 
-These are loaded into every agent session from the repo's `.claude/rules/`:
+Rules come in two tiers, loaded into every agent session from the repo's
+`.claude/rules/`. **Conduct** (`content/conduct/`) is always on. **Defaults**
+(`content/defaults/`) are on unless a project opts out in its manifest; the
+current bootstrap installs all of them until the manifest-driven installer
+lands.
 
-| Rule | Enforces |
-|---|---|
-| `tdd` | Failing test before behavioural change; red → green → refactor; tests in the same commit. |
-| `code-quality` | Lint, format, type-check, test, and dependency-scan before merge. No merging known-failing checks. |
-| `observability` | Structured logs with correlation IDs; never swallow exceptions silently. |
-| `no-inline-imports` | Imports at module top, except documented circular-dependency cases. |
-| `standards` | Frontend/backend/deploy/API conventions (see §3). |
-| `git` | Rebase-always, no merge commits on `main`, no squashing, never force-push `main`. |
-| `secrets` | No credentials in version control; env vars + secret managers; `gitleaks` in CI. |
-| `data-protection` | Personal data never reaches logs, traces, errors, exports, fixtures or model prompts; redaction is a tested boundary. |
-| `migrations` | Backwards-compatible, reversible schema changes; migration ships before the code that needs it. |
+| Rule | Tier | Enforces |
+|---|---|---|
+| `conduct` | conduct | Per-action permission for visible actions, never merge, never force-push the default branch, hooks and checks never bypassed or weakened, faithful reporting. |
+| `secrets` | conduct | No credentials in version control; env vars + secret managers; `gitleaks` in CI. |
+| `data-protection` | conduct | Personal data never reaches logs, traces, errors, exports, fixtures or model prompts; redaction is a tested boundary. |
+| `tdd` | default | Failing test before behavioural change; red → green → refactor; tests in the same commit. |
+| `git` | default | Rebase onto the detected default branch, no merge commits, no squashing. |
+| `observability` | default | Structured logs with correlation IDs; never swallow exceptions silently. |
+| `migrations` | default | Backwards-compatible, reversible schema changes; migration ships before the code that needs it. |
+| `api` | default | Versioned endpoints, error envelopes, pagination, typed validation, token auth, generated docs. |
+| `standards` | default | Backend owns the truth, organise by domain, frontend orchestrates (see §3). |
+| `quality-gates` | default | Lint, format, types, tests and dependency scan before merge, through `make check` / `make check-fast`. |
+
+Imports at module top now live in the `python-patterns` skill.
 
 ### Slash commands
 
@@ -84,16 +96,19 @@ Prefer a repo's own PR/sync skills when present.
 
 ## 2. The repositories at a glance
 
-| Repo | What it is | Stack |
-|---|---|---|
-| `octosentinel` | Multi-vendor energy-device monitoring platform (3,000+ plants, scaling to 50k+) | Django 5 + DRF, Celery, RabbitMQ, Redis, TimescaleDB/PostgreSQL 15, MQTT (Mosquitto), React 18 + Vite |
-| `octohub` | B2B multi-tenant platform for selling/installing energy products (Partners + Vendors) | Django 5 + DRF, Celery, Redis 7, PostgreSQL 16, React 19 + TS + Vite + Tailwind + TanStack Query |
-| `franklin` | Web app for OEES ambassadors to create energy accounts in Kraken | Django 6, Bootstrap 5 + vanilla JS, PostgreSQL, Kraken GraphQL API |
-| `hermes` | Middleware to external services (Zoho CRM, etc.) — OAuth, retries, webhooks | FastAPI, SQLAlchemy 2.0, Celery, HTTPX, PostgreSQL |
-| `bill-e` | Microservice: PDF electricity bill → plain-language explanation via local LLM | FastAPI, `uv`, pytest/hypothesis |
-| `consumer-site-embeds` | Embeddable widgets (e.g. World Cup vote) | FastAPI, async SQLAlchemy + asyncpg, Alembic, Docker, DigitalOcean App Platform |
-| `octopanel` | Internal panel (brand/design assets) | — |
-| `vercel-deployer` | Internal app to publish pre-built static sites to Vercel without git | Next.js, TypeScript |
+| Repo | What it is | Stack | Kits |
+|---|---|---|---|
+| `octosentinel` | Multi-vendor energy-device monitoring platform (3,000+ plants, scaling to 50k+) | Django 5 + DRF, Celery, RabbitMQ, Redis, TimescaleDB/PostgreSQL 15, MQTT (Mosquitto), React 18 + Vite | `django-drf` |
+| `octohub` | B2B multi-tenant platform for selling/installing energy products (Partners + Vendors) | Django 5 + DRF, Celery, Redis 7, PostgreSQL 16, React 19 + TS + Vite + Tailwind + TanStack Query | `django-drf` |
+| `franklin` | Web app for OEES ambassadors to create energy accounts in Kraken | Django 6, Bootstrap 5 + vanilla JS, PostgreSQL, Kraken GraphQL API | `django-drf`, `htmx-alpine` |
+| `hermes` | Middleware to external services (Zoho CRM, etc.) — OAuth, retries, webhooks | FastAPI, SQLAlchemy 2.0, Celery, HTTPX, PostgreSQL | `fastapi` |
+| `bill-e` | Microservice: PDF electricity bill → plain-language explanation via local LLM | FastAPI, `uv`, pytest/hypothesis | `fastapi` |
+| `consumer-site-embeds` | Embeddable widgets (e.g. World Cup vote) | FastAPI, async SQLAlchemy + asyncpg, Alembic, Docker, DigitalOcean App Platform | `fastapi` |
+| `octopanel` | Internal panel (brand/design assets) | — | — |
+| `vercel-deployer` | Internal app to publish pre-built static sites to Vercel without git | Next.js, TypeScript | — |
+
+Kits (`django-drf`, `fastapi`, `htmx-alpine`) are opt-in, stack-specific skills
+and templates; a project's manifest lists the ones it uses.
 
 **Patterns you'll see repeatedly:** Django + DRF or FastAPI on the backend;
 Celery + Redis/RabbitMQ for async work; PostgreSQL (TimescaleDB for telemetry);
@@ -109,8 +124,9 @@ React + TypeScript + Vite + TanStack Query on the frontend; everything runs in
   services/domain apps — **never** duplicated in clients. Cosmetic derivation on
   the client is fine; authoritative rules are not.
 - **Organise by domain, not by technical layer.** Files that change together
-  live together. Keep tests in per-app `tests/` directories. Split Django
-  settings by environment (`base` / `development` / `test` / `production`).
+  live together. Test layout follows the project's kit. Split settings by
+  environment (`base` / `local` / `test` / `production`; `staging` only where
+  a project has one).
 - **Frontend** handles UI, state orchestration, and API calls only. Strong
   static typing, schema validation at boundaries, a server-state cache
   (TanStack Query) with explicit invalidation — not `useState` for server data.
@@ -141,9 +157,9 @@ React + TypeScript + Vite + TanStack Query on the frontend; everything runs in
 
 ## 5. Quality gates (non-negotiable before merge)
 
-Run the **same checks locally and in CI**. Prefer a single command (`make check`
-/ `npm run check` / the repo's `doctor.sh`) that runs lint + format + types +
-tests with coverage.
+Run the **same checks locally and in CI**. Every project exposes `make check`
+(everything CI runs) and `make check-fast` (lint, format, types and targeted
+tests while working); the project context names them.
 
 - **Lint & format** — Python: `ruff check` / `ruff format`. JS/TS: ESLint +
   Prettier.
@@ -181,12 +197,14 @@ do not hot-reload**: restart them after changing polling/telemetry code.
 
 ## 6. Git discipline
 
-- **Rebase, never merge** onto the target branch. No merge commits on `main`.
+- **Rebase, never merge** onto the target branch. No merge commits on the
+  default branch, which is detected rather than assumed:
   ```bash
-  git fetch origin && git rebase origin/main
+  git rev-parse --abbrev-ref origin/HEAD   # e.g. origin/main
+  git fetch origin && git rebase origin/<default-branch>
   ```
 - Force-pushing **feature** branches after a rebase is expected. **Never**
-  force-push `main`.
+  force-push the default branch.
 - **Small, atomic commits.** Imperative subject ≤50 chars, no trailing period;
   body (wrapped ~72 chars) explains what and why, links tickets. Don't mix
   unrelated refactors with features. **No squashing** — each commit should stand
@@ -194,16 +212,11 @@ do not hot-reload**: restart them after changing polling/telemetry code.
 
 ---
 
-## 7. Secrets, personal data, migrations, observability
+## 7. Secrets, migrations, observability
 
 - **Secrets**: never commit credentials — not in code, tests, comments, or
   example configs. Runtime secrets via env vars; commit only `.env.example` with
   placeholders. If a secret leaks: **rotate immediately**, then scrub history.
-- **Personal data**: name, email, address, DNI/NIE, IBAN, CUPS, consumption
-  series. Log the surrogate id instead, and keep it out of traces, exception
-  messages, URLs, Celery arguments, analytics and model prompts. Redact in one
-  place per service, with a test that proves it. Fixtures use synthetic data; a
-  leak is an incident: tell dpd@octopusenergy.es the same day.
 - **Migrations**: backwards-compatible and reversible. Ship the migration first,
   verify, then ship the code that needs it — never bundle them. Destructive
   changes (drop/rename) need a deprecate → remove references → deploy → drop
@@ -244,8 +257,8 @@ follow-up. Silent debt is not acceptable; visible, tracked debt is.
 
 - **Read before you write.** Start with this file, then the repo's `CLAUDE.md`
   and `README.md`. Use progressive disclosure — read only the docs you need.
-- **Ask when unclear.** Don't default to the same framework or approach every
-  time; confirm the choice fits the context.
+- **Follow the project context.** Use the stack and conventions it names; ask
+  only when it is missing or does not cover the decision.
 - **Encourage cross-team communication.** When work touches another team's
   domain (CRM/Zoho, billing, Kraken, a partner integration), flag it so the
   right people are looped in.
@@ -258,5 +271,6 @@ follow-up. Silent debt is not acceptable; visible, tracked debt is.
 ---
 
 *This document is a living reference. The authoritative, machine-loaded source
-for behavioural rules is the `agents` repo's `.claude/rules/`; when in doubt,
-that and the target repo's own `CLAUDE.md` take precedence over this summary.*
+for behavioural rules is the `agents` repo's `content/conduct/` and
+`content/defaults/`; when in doubt, those, the project context and the target
+repo's manifest take precedence over this summary.*

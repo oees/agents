@@ -15,6 +15,8 @@ bash scripts/sync-codex-rules.sh
 After changing `skills/`, run `bash scripts/sync-cursor-rules.sh`.
 Run `bash scripts/check.sh` before handing over changes. It validates installation,
 imports, preservation of project instructions, and generated Codex guidance.
+Run `uv run pytest` too: the content lint tests guard skill layout, skill
+references, loop sections and generic subagent wording.
 Codex must run these commands explicitly; do not assume Claude's tool hooks ran.
 Do not bootstrap into this source checkout to regenerate its configuration.
 
