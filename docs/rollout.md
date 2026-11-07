@@ -7,8 +7,9 @@ real use, feedback folded back into the kits, then the rest. Source: Task 4.3 of
 ## Before the pilot
 
 - Phases 1 to 4.1 are merged to `main` and `make check` passes there.
-- `v1.0.0` is tagged on `main` and the release workflow has run green: the
-  `check` job passed and `@oees/agents` is published pinned to `v1.0.0`.
+- `pyproject.toml` says `version = "1.0.0"`, `v1.0.0` is tagged on `main`, and
+  the release workflow has run green: the `check` job passed and
+  `@oees/agents` is published pinned to `v1.0.0`.
 - From a scratch directory, all three entry points reach the same CLI:
 
   ```bash
@@ -36,10 +37,17 @@ For each pilot repository:
 2. Run `init` from the repository root. Where the repository carries a
    pre-manifest install, `init` takes the legacy path: it builds a manifest
    from what is present, asks only the context questions, removes the files it
-   can prove came from this repo and lists everything it kept.
+   can prove came from this repo and lists everything it kept. The legacy
+   path starts with no kits and no subagents, so name them:
 
    ```bash
-   uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents init
+   uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents init \
+     --kit fastapi --subagents core          # hermes
+   ```
+
+   ```bash
+   uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents init \
+     --kit django-drf --kit htmx-alpine --subagents core   # franklin
    ```
 
 3. Answer the context questions with the owning team, not alone. The
@@ -59,8 +67,12 @@ For each pilot repository:
    git commit -m "Adopt oees-agents v1.0.0"
    ```
 
-8. Add `oees-agents check` to the repository's CI so stale generated files fail
-   the build.
+8. Add `oees-agents check` to the repository's CI, at the version the manifest
+   pins, so stale or hand-edited generated files fail the build:
+
+   ```bash
+   uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents check
+   ```
 
 ### The pilot week
 
@@ -86,9 +98,10 @@ At the end of the week, triage each note into one of:
 - **Project-specific**: belongs in that repository's own instructions outside
   the managed blocks, or as a recorded opt-out. No change here.
 
-Tag a release with the fixes (`v1.1.0` or a patch), then run
-`oees-agents update --ref <new tag>` in both pilots and check the diff contains
-only the expected changes. The pilot is done when both pilot repositories are on
+Release the fixes (bump `pyproject.toml`, tag `v1.1.0` or a patch), then run
+`uvx --from git+https://github.com/oees/agents@<new tag> oees-agents update` in
+both pilots, check the diff contains only the expected changes, and move each
+pilot's CI `check` to the new tag. The pilot is done when both pilot repositories are on
 the new tag and their open notes are resolved or deliberately deferred with an
 issue.
 
@@ -147,7 +160,8 @@ Rules for the comment:
 - Conduct (`conduct`, `secrets`) cannot be opted out.
 
 Then run `oees-agents update` so the generated files drop the rule, and commit
-the manifest and the generated diff together.
+the manifest and the generated diff together. `update` rewrites only the
+manifest's `source` line, so the comments survive later updates.
 
 When the same opt-out appears in three or more repositories, raise it here: the
 default is probably wrong for OEES, not for those projects.
