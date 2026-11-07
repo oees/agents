@@ -33,7 +33,7 @@ The generated layout:
 AGENTS.md            # canonical rule bodies in a managed block — Codex reads these at startup
 .claude/
   CLAUDE.md          # @imports for every rule — Claude Code loads these automatically
-  rules/             # always-on behavioural rules
+  rules/             # conduct and default rules, flat
   commands/          # slash commands (/commit, /code-review, etc.)
   skills/            # skill definitions used by commands
   loops/             # scheduled cloud-agent templates (fill in the per-repo config block)
@@ -77,19 +77,20 @@ bash bootstrap.sh && rm bootstrap.sh
 | `/test` | Write well-structured tests following TDD — mocking discipline, naming, coverage decisions |
 | `/shipped` | Summary of everything you've committed across all local repos in a time period |
 
-**Rules** (loaded through each tool's configuration in adopting repos):
+**Rules** (loaded through each tool's configuration in adopting repos). Conduct rules are always on; defaults are on unless a project opts out:
 
-| Rule | Enforces |
-|---|---|
-| `tdd` | Write failing tests before implementation, red-green-refactor |
-| `observability` | Structured logging, contextual errors, no silent exceptions |
-| `code-quality` | Lint, format, type checks, tests, and security scans before merge |
-| `no-inline-imports` | Imports at top of module only |
-| `standards` | Frontend, backend, deployment, and API design conventions |
-| `git` | Branch hygiene, commit standards, hooks stay enabled, no force-pushing main |
-| `secrets` | No hardcoded credentials, use env vars and secret stores |
-| `data-protection` | Personal data stays out of logs, traces, errors, exports, fixtures and prompts |
-| `migrations` | Safe schema migrations — backwards-compatible, reversible, never drop data silently |
+| Rule | Tier | Enforces |
+|---|---|---|
+| `conduct` | conduct | Per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
+| `secrets` | conduct | No hardcoded credentials, use env vars and secret stores |
+| `data-protection` | conduct | Personal data stays out of logs, traces, errors, exports, fixtures and prompts |
+| `tdd` | default | Write failing tests before implementation, red-green-refactor |
+| `git` | default | Rebase onto the detected default branch, no merge commits, no squashing |
+| `observability` | default | Structured logging, contextual errors, no silent exceptions |
+| `migrations` | default | Safe schema migrations — backwards-compatible, reversible, never drop data silently |
+| `api` | default | Versioned endpoints, error envelopes, pagination, typed validation |
+| `standards` | default | Backend owns the truth, organise by domain, frontend orchestrates |
+| `quality-gates` | default | Lint, format, types, tests and dependency scan before merge, via `make check` / `make check-fast` |
 
 **Loops** (templates for unsupervised cloud agents that run on a schedule — copy one, fill in the per-repo config block at the top, leave the rest untouched):
 
@@ -104,10 +105,14 @@ bash bootstrap.sh && rm bootstrap.sh
 ## Structure of this repo
 
 ```
-rules/        canonical always-on rules
-skills/       skill definitions — command-backed actions and language guidance
+content/
+  conduct/    always-on rules (conduct, secrets, data-protection)
+  defaults/   opt-out rules (tdd, git, observability, migrations, api, standards, quality-gates)
+  subagents/  core/ and extended/ subagent definitions (see content/subagents/README.md)
+skills/       <name>/SKILL.md — command-backed actions, language guidance, shared reviewing protocol
 commands/     slash command entry points
 loops/        templates for scheduled, unsupervised cloud agents (tiers 0-2)
+tests/        pytest content lint tests (run with `uv run pytest`; pyproject.toml holds pytest only for now)
 .claude/      Claude Code config for this repo (CLAUDE.md, settings.json — permissions and hooks)
 .cursor/      generated Cursor rules (do not edit directly)
 AGENTS.md     project guidance plus generated shared rules for Codex
@@ -116,8 +121,8 @@ scripts/
   init-repo.sh      local install — run directly if you have this repo cloned
   install.sh        global install — symlinks into ~/.claude/ for all repos on your machine
   uninstall.sh      reverses install.sh
-  sync-cursor-rules.sh  regenerates .cursor/rules/ from rules/ and skills/
-  sync-codex-rules.sh   updates the managed AGENTS.md block from rules/
+  sync-cursor-rules.sh  regenerates .cursor/rules/ from content/conduct/, content/defaults/ and skills/
+  sync-codex-rules.sh   updates the managed AGENTS.md block from content/conduct/ and content/defaults/
   check.sh          validates distribution, imports and Codex rule updates (run in CI)
 ```
 
@@ -138,20 +143,16 @@ This adds rules to `~/.claude/CLAUDE.md` and symlinks commands and skills into `
 
 ### Adding a rule
 
-1. Create `rules/<name>.md` with a `description:` frontmatter field
-2. Add `@rules/<name>.md` to `.claude/CLAUDE.md`
+1. Create `content/defaults/<name>.md` (or `content/conduct/` for an always-on rule) with a `description:` frontmatter field
+2. Add `@../content/defaults/<name>.md` to `.claude/CLAUDE.md`
 3. Run `bash scripts/sync-cursor-rules.sh` and `bash scripts/sync-codex-rules.sh` to regenerate the Cursor and Codex guidance
 
 ### Adding a skill and command
 
-1. Create `skills/<name>/<name>.md`
-2. Create `commands/<name>.md` with frontmatter and `@../skills/<name>/<name>.md` (the `../` resolves from `.claude/commands/` to `.claude/skills/`)
+1. Create `skills/<name>/SKILL.md` with `name` and `description` frontmatter (Claude Code loads only `SKILL.md`)
+2. Create `commands/<name>.md` with frontmatter and `@../skills/<name>/SKILL.md` (the `../` resolves from `.claude/commands/` to `.claude/skills/`)
 
-Changes are picked up by repos on their next bootstrap run. Run `bash scripts/check.sh` to validate distribution and confirm every command import still resolves.
-
-A skill an agent should reach for on its own needs no command, only a
-`description`, the way `personal-data` does. Give it a name no rule uses;
-Cursor rules are written per name, so a skill would shadow the rule.
+Changes are picked up by repos on their next bootstrap run. Run `bash scripts/check.sh` to validate distribution and confirm every command import still resolves, and `uv run pytest` for the content lint tests.
 
 ### Adding a language pattern skill
 
@@ -159,11 +160,11 @@ Language guidance (e.g. Python, TypeScript) lives in `skills/<lang>-patterns/` a
 
 ## Cursor
 
-Cursor rules are generated from `rules/` and `skills/` into `.cursor/rules/*.mdc` and committed to this repo. The bootstrap copies them directly — no extra steps needed for per-repo installs. Each source maps to the matching Cursor rule type:
+Cursor rules are generated from `content/conduct/`, `content/defaults/` and `skills/` into `.cursor/rules/*.mdc` and committed to this repo. The bootstrap copies them directly — no extra steps needed for per-repo installs. Each source maps to the matching Cursor rule type:
 
 | Source | Cursor rule type | When it loads |
 |---|---|---|
-| `rules/*` | Always | every request |
+| `content/conduct/*`, `content/defaults/*` | Always | every request |
 | `skills/*-patterns/` | Auto Attached (glob-scoped) | while editing that language's files |
 | other `skills/*` | Agent Requested (by `description`) | when Cursor's agent judges it relevant |
 
@@ -175,7 +176,7 @@ Codex [reads `AGENTS.md` at startup](https://learn.chatgpt.com/docs/agent-config
 
 An `AGENTS.override.md` in the same directory takes precedence over `AGENTS.md`, and Codex's combined instruction size defaults to 32 KiB. Check for overrides and large instruction files, and verify the active instruction sources after restarting. The installer leaves overrides unchanged and warns if it finds one or the generated file alone exceeds that default limit.
 
-In this tooling repo, run `bash scripts/sync-codex-rules.sh` after changing `rules/`. Use `bash scripts/sync-codex-rules.sh --check` to detect stale guidance without writing. Reinstallation replaces only the managed block, preserves local text, and rejects malformed markers or a symlinked `AGENTS.md` rather than overwriting them.
+In this tooling repo, run `bash scripts/sync-codex-rules.sh` after changing `content/conduct/` or `content/defaults/`. Use `bash scripts/sync-codex-rules.sh --check` to detect stale guidance without writing. Reinstallation replaces only the managed block, preserves local text, and rejects malformed markers or a symlinked `AGENTS.md` rather than overwriting them.
 
 Git hooks run through ordinary Git commands in every client. Agents must fix failures and rerun checks; environmental blockers must be reported, never silently bypassed or called a pass. These instructions guide the agent; repository hooks and CI provide the checks.
 

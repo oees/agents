@@ -2,6 +2,9 @@
 @../content/conduct/secrets.md
 @../content/conduct/data-protection.md
 @../content/defaults/tdd.md
+@../content/defaults/git.md
 @../content/defaults/observability.md
-@../content/defaults/quality-gates.md
+@../content/defaults/migrations.md
+@../content/defaults/api.md
 @../content/defaults/standards.md
+@../content/defaults/quality-gates.md
