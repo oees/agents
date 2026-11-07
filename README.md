@@ -28,10 +28,11 @@ npx @oees/agents init
 bash <(curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh)
 ```
 
-The bootstrap script installs uv if it is missing, then runs `init` from the latest release tag. Do not pipe it into bash (`curl ... | bash`): `init` asks questions, and a piped script cannot read your answers because its stdin is the pipe. Arguments after the script go to `init`:
+The bootstrap script installs uv if it is missing, then runs `init` from the latest release tag (set `OEES_AGENTS_REF` to pick another tag or branch). Arguments after the script go to `init`. Run it as above for the interactive questions: piped into bash, the script's stdin is the pipe, so `init` cannot read your answers. Piping works only for a run that asks nothing:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh) --yes
+curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | bash -s -- --yes \
+  --description "..." --users "..."
 ```
 
 To read the script before running it:
@@ -54,36 +55,37 @@ Once committed, everyone on the project gets the same configuration. The rest of
 
 ## What `init` asks
 
-`init` asks once and records the answers in `.oees-agents.toml`. In order:
+`init` asks once and records the answers in `.oees-agents.toml`. It refuses to run where a manifest already exists; use `update` there. In order:
 
 | # | Question | Default | Flag |
 |---|---|---|---|
-| 1 | Targets (Claude Code, Cursor, Codex; multi-select) | Detected from the repo: `.cursor/` present selects Cursor, and so on | `--target` |
-| 2 | Project name | The directory name | see `--help` |
-| 3 | One-paragraph description of the project | none | `--description "..."` |
-| 4 | Who uses it | none | see `--help` |
-| 5 | Blast radius: `internal`, `customer-facing` or `regulated` | none | see `--help` |
-| 6 | Default branch | Detected from the remote | see `--help` |
-| 7 | Check commands, full and fast | `make check` / `make check-fast` | see `--help` |
-| 8 | Kits (multi-select) | Suggested from the repo: `manage.py` suggests `django-drf`, `fastapi` in a dependency manifest suggests `fastapi`, `hx-` in templates suggests `htmx-alpine` | `--kit` |
-| 9 | Defaults to keep (multi-select) | All on | `--no-default <name>` |
-| 10 | Subagents: `none`, `core` or `extended` | `core` | see `--help` |
-| 11 | Loops (multi-select) | None | see `--help` |
+| 1 | Targets: `claude`, `cursor`, `codex` (multi-select) | Detected: `.claude/` or `CLAUDE.md` selects Claude Code, `.cursor/` selects Cursor, `AGENTS.md` selects Codex; all three when none is found | `--target` (repeat) |
+| 2 | Project name | The directory name | `--name` |
+| 3 | One-paragraph description | none | `--description` |
+| 4 | Who uses it | none | `--users` |
+| 5 | Blast radius: `internal`, `customer-facing` or `regulated` | `internal` | `--blast-radius` |
+| 6 | Default branch | `origin/HEAD`, else `main` | `--default-branch` |
+| 7 | Full and fast check commands | `make check` / `make check-fast` | `--check`, `--check-fast` |
+| 8 | Kits (multi-select) | Suggested from the repo: `manage.py` suggests `django-drf`, `fastapi` in `pyproject.toml` or `requirements*.txt` suggests `fastapi`, `hx-` in a `templates/**/*.html` file suggests `htmx-alpine` | `--kit` (repeat), `--no-kits` |
+| 9 | Defaults to keep (multi-select) | All of them | `--no-default <name>` (repeat) |
+| 10 | Subagents: `none`, `core` or `extended` | `core` | `--subagents` |
+| 11 | Loops (multi-select) | None | `--loop` (repeat) |
 
-Every question has a flag; `oees-agents init --help` lists them. `--yes` accepts the default for every question you did not answer with a flag, so CI and scripts can run `init` without prompts. Questions with no default (users, blast radius) need their flags when you use `--yes`.
+The slash commands are not a question: they install unless you pass `--no-commands`. `--yes` (`-y`) asks nothing and takes each flag, else the default; the description and users have no default, so `--yes` needs `--description` and `--users`. `init` also takes `--force`, `--ref` and `--content-dir`, described under [Updating](#updating), and the project root as an optional argument (default `.`).
 
 ```bash
 uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents init --yes \
   --target claude --target codex \
+  --description "Middleware that relays meter readings from partner APIs to Kraken." \
+  --users "OEES operations, partner integrations" \
+  --blast-radius customer-facing \
   --kit fastapi \
-  --no-default migrations \
-  --description "Middleware that relays meter readings from partner APIs to Kraken."
-  # plus the users and blast radius flags from --help
+  --no-default migrations
 ```
 
 ## The manifest
 
-`.oees-agents.toml` sits at the project root, is committed, and is the single source of truth for what the project takes. Every later run reads it. Re-runs never re-add something the project removed. Unknown keys fail validation, and the error names the key.
+`.oees-agents.toml` sits at the project root, is committed, and is the single source of truth for what the project takes. Every later run reads it. Re-runs never re-add something the project removed. Unknown keys and values outside the allowed choices fail validation, and the error names the key.
 
 ```toml
 version = 1
@@ -114,7 +116,7 @@ loops = []
 | Field | Meaning |
 |---|---|
 | `version` | Manifest format version. Currently `1`. |
-| `source` | The content version (a release tag, or `main`) the generated files came from. |
+| `source` | The content version the generated files came from: `v<version>` of the CLI that rendered them, the `--ref` it was given, or `local` for `--content-dir`. `update` rewrites this line and nothing else. |
 | `targets` | Which tools to generate files for: any of `claude`, `cursor`, `codex`. |
 | `project.name` | The project's name, as agents should refer to it. |
 | `project.description` | One paragraph on what the project is and does. |
@@ -125,8 +127,8 @@ loops = []
 | `project.check_fast` | The fast check (lint, format, types, targeted tests), run while working. |
 | `rules.defaults` | The default rules this project keeps. May be empty. Conduct is not listed here because it is always on. |
 | `kits.enabled` | The stack kits this project uses. |
-| `extras.commands` | Install the slash commands. |
-| `extras.subagents` | `none`, `core` or `extended`. |
+| `extras.commands` | Install the slash commands (`.claude/commands/`). The skills behind them install either way. |
+| `extras.subagents` | `none`, `core` or `extended` (core plus the extended set). |
 | `extras.loops` | The loop templates to install. Empty by default. |
 
 `blast_radius` takes one of three values, and agents calibrate their caution to it:
@@ -137,7 +139,7 @@ loops = []
 | `customer-facing` | External customers or partners use it directly. | Treat behaviour changes, compatibility and data handling as visible to people outside OEES. |
 | `regulated` | Subject to regulatory or contractual obligations. | Highest care; ask before anything that could affect those obligations. |
 
-`.oees-agents.lock` records the path and hash of every file the CLI wrote. Commit it alongside the manifest; `update` and `check` use it to know which files the CLI owns.
+`.oees-agents.lock` records the sha256 of every file the CLI wrote and of every managed block it keeps inside a file you also edit. Commit it alongside the manifest; `update` and `check` use it to know what the CLI owns and whether someone edited it since.
 
 ### The project-context block
 
@@ -146,7 +148,7 @@ The `[project]` answers become a managed block that tells every agent what it is
 ```markdown
 <!-- BEGIN OEES PROJECT CONTEXT -->
 ## Project context
-**octohub** is a B2B multi-tenant platform where partners and vendors sell and install energy products.
+**octohub**: B2B multi-tenant platform where partners and vendors sell and install energy products.
 Used by: external partners, vendors, OEES operations. Blast radius: customer-facing.
 Stack: django-drf, htmx-alpine. Default branch: main.
 Checks: `make check-fast` while working, `make check` before handing over.
@@ -154,7 +156,7 @@ Calibrate every judgement call to this context. Never assume the code is a throw
 <!-- END OEES PROJECT CONTEXT -->
 ```
 
-It lands at the top of `.claude/CLAUDE.md`, first inside the managed Codex block in `AGENTS.md`, and in `.cursor/rules/00-project-context.mdc`. Text you write outside the managed blocks in `CLAUDE.md` and `AGENTS.md` is preserved byte for byte.
+It opens the managed block at the top of `.claude/CLAUDE.md` and the managed block at the bottom of `AGENTS.md`, and is `.cursor/rules/00-project-context.mdc` for Cursor. Those managed blocks sit between `<!-- BEGIN OEES SHARED RULES -->` and `<!-- END OEES SHARED RULES -->`; text you write outside them is preserved byte for byte, with its line endings.
 
 ## What you get
 
@@ -211,7 +213,7 @@ It lands at the top of `.claude/CLAUDE.md`, first inside the managed Codex block
 | `htmx-alpine` | Use when building or reviewing server-rendered Django screens with htmx and Alpine, covering templates, partials, forms, static assets, CSP, translations and accessibility. |
 <!-- END GENERATED: kits -->
 
-Each kit ships a `SKILL.md` describing the stack's layout, settings, logging, errors, tests, Makefile targets, container and deploy path, plus `templates/` you can copy unchanged (Makefile, Dockerfile, compose file, CI workflow, health endpoint, logging config, `.env.example`). Every kit's Makefile provides both `make check` and `make check-fast`.
+Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors, tests, Makefile targets, container and deploy path, plus `templates/` mirroring a project root, installed under `.claude/skills/<kit>/`. `django-drf` and `fastapi` ship a whole service skeleton to copy (Makefile with `check` and `check-fast`, Dockerfile, `compose.yml`, `.github/workflows/ci.yml` and `deploy.yml`, `.do/app.yaml`, `.env.example`, starter code and tests). `htmx-alpine` sits on a Django project and ships `make/htmx-alpine.mk`, which adds its template and asset checks to the existing `check` and `check-fast` targets, plus templates, static assets and settings fragments.
 
 ### Slash commands (`extras.commands`, on by default)
 
@@ -261,33 +263,39 @@ Templates for unsupervised cloud agents that run on a schedule. Fill in the per-
 
 ### Generated Claude Code settings
 
-`.claude/settings.json` is generated from the manifest. Its allowlist comes from the enabled kits (for example `pytest`, `ruff`, `mypy` and `uv` for the Python kits). Its deny list is exactly `git push`, `git push --force`, `git reset --hard`, `git rebase -i` and `git filter-branch`. `rm` is not denied. It configures no hooks.
+`.claude/settings.json` is generated from the manifest:
+
+- **Allow**: read-only and local Git commands (`git status`, `diff`, `log`, `show`, `branch`, `add`, `commit`, `stash`, `rebase`, `fetch`), basic file commands (`ls`, `find`, `grep`, `cat`, `head`, `tail`, `wc`, `mkdir`, `mv`, `cp`, `touch`), the project's `check` and `check_fast` commands, and the Python toolchain (`uv`, `pytest`, `ruff`, `mypy`) when a kit needs it. All three current kits do.
+- **Deny**: `git push`, `git push --force`, `git reset --hard`, `git rebase -i`, `git rebase --interactive` and `git filter-branch`. `rm` is not denied.
+- **Hooks**: none.
+
+A `settings.json` the project already had and the CLI did not write is left alone and reported; `--force` replaces it.
 
 ### Generated files per target
 
 ```
-.oees-agents.toml             the manifest (always)
-.oees-agents.lock             files the CLI owns, with hashes (always)
+.oees-agents.toml             the manifest
+.oees-agents.lock             what the CLI owns, with hashes
 
 claude:
 .claude/
-  CLAUDE.md                   context block, then @rules/ imports for conduct and kept defaults
+  CLAUDE.md                   managed block at the top: context, then @rules/ imports
   rules/                      conduct and kept defaults
-  skills/                     command skills, pattern skills, enabled kits (with templates/), reviewing
-  commands/                   slash commands
-  agents/                     core or extended subagents
+  skills/                     every skill, enabled kits with templates/; reviewing only with subagents
+  commands/                   slash commands, unless extras.commands = false
+  agents/                     core, or core and extended, subagents
   loops/                      selected loop templates
-  settings.json               allowlist and deny list as above
+  settings.json               as above
 
 cursor:
 .cursor/rules/
   00-project-context.mdc      context block, always applied
   <conduct and defaults>.mdc  always applied
   <pattern skills, kits>.mdc  attached by file glob
-  <command skills>.mdc        agent-requested, by description
+  <other skills>.mdc          agent-requested, by description
 
 codex:
-AGENTS.md                     managed block: context block, then conduct and kept defaults
+AGENTS.md                     managed block at the bottom: context, then conduct and kept defaults in full
 ```
 
 ## Updating
@@ -298,7 +306,9 @@ oees-agents update --ref v1.1.0
 oees-agents update --ref main
 ```
 
-`update` re-renders every generated file from the manifest. `--ref` picks the content version; by default it uses the latest release tag. Files the CLI wrote before that the new render no longer produces are removed, so disabling a kit cleans up after it. A file whose hash differs from the lock (someone edited it) is never overwritten without `--force`; `update` lists such files instead. Review the diff and commit it.
+`update` re-renders every generated file from the manifest. The content comes from the CLI you run: `uvx --from git+https://github.com/oees/agents@v1.1.0 oees-agents update` renders `v1.1.0`, and `npx @oees/agents update` renders the tag that shim was published with. `--ref <tag or branch>` instead clones that version of this repository (it needs `git`), and `--content-dir <path>` renders from a local checkout. `update` then pins the manifest's `source` to what it rendered, rewriting that one line only, so comments in the manifest survive.
+
+Files the CLI wrote before that the new render no longer produces are removed, so disabling a kit cleans up after it. A file or managed block whose hash differs from the lock (someone edited it), or a file the CLI did not write, is never overwritten without `--force`; `update` lists it and leaves it alone. Symlinks and malformed markers are refused even with `--force`. Review the diff and commit it.
 
 ## Checking
 
@@ -306,7 +316,11 @@ oees-agents update --ref main
 oees-agents check
 ```
 
-`check` exits non-zero when the generated files are stale against the manifest. Add it to the project's CI so the manifest and the files cannot drift apart.
+`check` exits non-zero when a generated file or block is missing, stale, edited by hand or no longer rendered, and lists each one. It renders the same way `update` does, so run it at the version the manifest pins (it prints a note when they differ). Add it to the project's CI so the manifest and the files cannot drift apart:
+
+```bash
+uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents check
+```
 
 ## Opting out of a default
 
@@ -320,11 +334,11 @@ defaults = ["tdd", "git", "observability", "api", "standards", "quality-gates"]
 
 At install, `--no-default migrations` does the same. Conduct (`conduct`, `secrets`, `data-protection`) cannot be opted out.
 
-Kits and extras work the same way: remove the kit from `kits.enabled`, set `commands = false`, set `subagents = "none"` or drop a loop from `loops`, add the reason above it, and run `update`. The files that are no longer produced are removed.
+Kits and extras work the same way: remove the kit from `kits.enabled`, set `commands = false`, set `subagents = "none"` or drop a loop from `loops`, add the reason above it, and run `update`. The files that are no longer produced are removed. `update` never rewrites the manifest beyond its `source` line, so the reason comments stay.
 
 ## Existing installs
 
-If the project was set up with the old bootstrap script, run `oees-agents init` as for a new install. It detects the old install, builds a manifest from what is present (which rules exist, whether Cursor is set up), and asks only the project-context questions. It removes old files it can prove came from this repo (their hash matches a known published version), keeps everything else, and lists what it kept so you can decide. Lines you added to the old `CLAUDE.md` survive.
+If the project was set up with the old bootstrap script, run `oees-agents init` as for a new install. It detects the old install and takes the targets, kept defaults, loops and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
 
 ## Codex notes
 
@@ -332,7 +346,7 @@ Codex [reads `AGENTS.md` at startup](https://learn.chatgpt.com/docs/agent-config
 
 - Keep project commands and conventions outside the managed block. The CLI replaces only the block, preserves text around it and CRLF line endings, and refuses without changing anything if the markers are malformed or duplicated or if `AGENTS.md` is a symlink.
 - An `AGENTS.override.md` in the same directory takes precedence over `AGENTS.md`. The CLI never touches it; check whether one exists.
-- Codex's combined instruction size defaults to 32 KiB. The CLI warns when the generated `AGENTS.md` alone exceeds that. Keep an eye on large project-specific instruction files too.
+- Codex's combined instruction size defaults to 32 KiB. The CLI warns when `AGENTS.md`, with its managed block, exceeds that. Keep an eye on other instruction files too.
 - Restart running Codex sessions after `init` or `update`, then verify which instruction sources are active.
 
 Three kinds of hook are easy to confuse:
@@ -346,27 +360,31 @@ The rules guide the agent; the project's Git hooks and CI do the checking.
 ## Working on this repo
 
 ```
-src/oees_agents/   the CLI: init, update, check, list; manifest, renderer, targets, legacy migration
+src/oees_agents/   the CLI: init, update, check, list; manifest, content loader, renderer,
+                   targets/, writer and lock, legacy migration, content lint, docs tables
 content/
   conduct/         always-on rules
   defaults/        opt-out rules
-  skills/          SKILL.md per skill
   kits/            SKILL.md plus templates/ per kit
   subagents/       core/ and extended/
-  loops/           loop templates
   blocks/          the project-context block template
-skills/            skill sources the content loader also reads
-npm/               the @oees/agents shim
+skills/            <name>/SKILL.md per skill
+commands/          slash commands, each importing its skill
+loops/             loop templates
+npm/               the @oees/agents shim and its test
+scripts/           bootstrap.sh, and generate_legacy_hashes.py for the legacy migration
 tests/             pytest, one file per module plus content lint tests
+hatch_build.py     bundles content/, skills/, commands/ and loops/ into the wheel
 ```
 
 ```bash
 uv sync
-make check-fast   # lint, format, types, targeted tests
-make check        # everything, including oees-agents check against this repo's own manifest
-make docs         # regenerate the tables in CONTRIBUTING.md
+make check-fast   # lint, format, types and the fast tests, while working
+make check        # the contributor gate: ruff, format, mypy, every test, the npm shim test,
+                  # and oees-agents check against this repo's own manifest
+make docs         # regenerate the tables in README.md and CONTRIBUTING.md
 ```
 
-CI runs `make check` and fails if the CONTRIBUTING.md tables are stale. Releases are tag-driven: pushing a `v*` tag runs `make check` and publishes the npm shim pinned to that tag.
+This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/`, `commands/` or `loops/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. CI (`tooling-ci.yml`) runs `make check`. Releases are tag-driven: pushing a `v*` tag that matches the version in `pyproject.toml` runs `make check` and publishes the npm shim pinned to that tag.
 
 [CONTRIBUTING.md](CONTRIBUTING.md) explains why the rules are what they are, and how to add a rule, kit or subagent.

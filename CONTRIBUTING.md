@@ -262,8 +262,9 @@ Platform** or **Vercel**.
 
 Run the **same checks locally and in CI**. Use `make check-fast` (lint,
 format, types, targeted tests) while working and `make check` (the full gate)
-before handing over. Every kit ships both targets; the project context names
-the actual commands where a project differs.
+before handing over. The service kits' Makefiles define both and `htmx-alpine`
+extends them; the project context names the actual commands where a project
+differs.
 
 - **Lint and format**: Python `ruff check` / `ruff format`; JS/TS ESLint +
   Prettier.
@@ -311,12 +312,18 @@ Celery prefork workers do not hot-reload.
 
 ---
 
-## 10. Secrets, migrations, observability
+## 10. Secrets, personal data, migrations, observability
 
 - **Secrets**: never commit credentials, not in code, tests, comments or
   example configs. Runtime secrets come from environment variables; commit only
   `.env.example` with placeholders. If a secret leaks: **rotate immediately**,
   then scrub history. Deleting it in a new commit is not enough.
+- **Personal data**: name, email, address, DNI/NIE, IBAN, CUPS, consumption
+  series. Log the surrogate id instead, and keep it out of traces, exception
+  messages, URLs, queue arguments, analytics and model prompts. Redact in one
+  place per service, with a test that proves it. Fixtures use synthetic data;
+  a leak is an incident: tell dpd@octopusenergy.es the same day. The
+  `personal-data` skill holds the detail.
 - **Migrations**: backwards-compatible and reversible. Ship the migration
   first, verify, then ship the code that needs it; never bundle them.
   Destructive changes (drop, rename) need a deprecate, remove references,
@@ -331,14 +338,16 @@ Celery prefork workers do not hot-reload.
 
 - **Containerised runtimes with health checks.** Multi-stage Docker builds.
 - **CI runs the full quality gate** on PRs to protected branches. Name
-  workflows clearly (`*-ci.yml`, `*-deploy.yml`).
+  workflows by purpose: the kits ship `ci.yml` and `deploy.yml`; a repository
+  with several prefixes them (`tooling-ci.yml`).
 - **No deploy of unvalidated changes to production.** Configuration is
   environment-specific.
 - Common targets: **DigitalOcean App Platform** (Django and FastAPI services,
   Postgres) and **Vercel** (static and Next.js). Apply database migrations as a
   pre-deploy step.
-- The kits ship the concrete templates: Dockerfile, compose file, CI workflow,
-  health endpoint and, for the backend kits, the App Platform spec.
+- The `django-drf` and `fastapi` kits ship the concrete templates: Makefile,
+  Dockerfile, `compose.yml`, CI and deploy workflows, `.do/app.yaml` and
+  `.env.example`.
 - Emergency hotfixes may bypass the normal flow **only** with a named approver,
   a recorded incident severity, and a follow-up task to restore the CI/CD path.
 
@@ -375,28 +384,37 @@ one-line reason. Silent debt is not acceptable; visible, tracked debt is.
 
 ## 13. Changing this repo
 
-- **A rule** is a `.md` file under `content/conduct/` or `content/defaults/`
-  with `name` and `description` frontmatter. Conduct is deliberately short;
+- **A rule** is a `.md` file under `content/conduct/` or `content/defaults/`,
+  named after the rule, with a one-line `description` in its frontmatter. Conduct is deliberately short;
   add to it only what no project should ever be able to opt out of. Every
   default opens with "Default for OEES projects. A project opts out in its
   manifest."
 - **A skill** is `skills/<name>/SKILL.md` with `name` and `description`
   frontmatter. A skill backed by a slash command also gets `commands/<name>.md`,
   which imports `@../skills/<name>/SKILL.md`.
-- **A kit** is `content/kits/<name>/SKILL.md` plus `templates/`. The SKILL.md
+- **A kit** is `content/kits/<name>/SKILL.md` (with `name` and `description`
+  frontmatter) plus `templates/`, which mirrors a project root. The SKILL.md
   covers, in this order: layout, settings, logging, errors, tests, Makefile
   targets, container, deploy path, and says which template to copy for each.
-  Templates are real files a project can copy unchanged, and every kit ships
-  both `make check` and `make check-fast`.
+  Templates are real files a project can copy unchanged, and every kit gives a
+  project both `make check` and `make check-fast`. Add the kit's Cursor globs
+  and toolchain to `src/oees_agents/profiles.py`.
 - **A subagent** goes in `content/subagents/core/` or
-  `content/subagents/extended/`. It contains no project vocabulary (refer to
+  `content/subagents/extended/`, with `name` and `description` frontmatter. It
+  contains no project vocabulary (refer to
   "the fast checks named in the project context", not a specific command or
   tool) and preloads the skills it needs through `skills:` frontmatter rather
   than copying their text.
 
-Then run `make docs` to regenerate the tables above and `make check` before
-opening a PR. Commits stand alone, as everywhere else. Releases are cut by
-pushing a `v*` tag, which runs the release workflow; never publish by hand.
+Then run `make docs` to regenerate the tables above, `uv run --frozen
+oees-agents update . --content-dir .` to regenerate this repository's own
+`AGENTS.md` block, and `make check` before opening a PR; `make check` fails
+until both are current. Commits stand alone, as everywhere else.
+
+Releases are cut by bumping `version` in `pyproject.toml` and pushing a
+matching `v*` tag on `main`, which runs `.github/workflows/release.yml`: it
+checks the tag, runs `make check` and publishes `@oees/agents` pinned to that
+tag. Never publish by hand.
 
 ---
 
