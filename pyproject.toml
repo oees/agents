@@ -45,3 +45,7 @@ ignore = ["PLR2004", "PLR0913"]
 python_version = "3.11"
 strict = true
 files = ["src", "tests"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["oees_agents"]
+known-local-folder = ["conftest"]
