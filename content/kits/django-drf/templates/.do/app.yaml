@@ -1,0 +1,94 @@
+# DigitalOcean App Platform spec, applied by .github/workflows/deploy.yml after ci passes
+# on main. Edit only the lines marked EDIT.
+# Secrets live in the GitHub `production` environment; deploy.yml exports them and the
+# deploy action substitutes each ${NAME} below. Bindables (${db.DATABASE_URL},
+# ${APP_DOMAIN}, ${APP_URL}) are left for App Platform to resolve.
+name: app # EDIT: the App Platform app name
+region: fra # EDIT: the App Platform region
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+
+envs:
+  - key: DJANGO_SETTINGS_MODULE
+    value: config.settings.production
+    scope: RUN_AND_BUILD_TIME
+  - key: DJANGO_SECRET_KEY
+    value: ${DJANGO_SECRET_KEY}
+    type: SECRET
+    scope: RUN_TIME
+  - key: DATABASE_URL
+    value: ${db.DATABASE_URL}
+    scope: RUN_TIME
+  # The managed Redis/Valkey URL, ending in ?ssl_cert_reqs=required so Celery accepts rediss://.
+  - key: REDIS_URL
+    value: ${REDIS_URL}
+    type: SECRET
+    scope: RUN_TIME
+  - key: DJANGO_ALLOWED_HOSTS
+    value: ${APP_DOMAIN}
+    scope: RUN_TIME
+  - key: DJANGO_CSRF_TRUSTED_ORIGINS
+    value: ${APP_URL}
+    scope: RUN_TIME
+  - key: LOG_LEVEL
+    value: INFO
+    scope: RUN_TIME
+
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: oees/app # EDIT: the GitHub repository (owner/name)
+      branch: main
+      deploy_on_push: false
+    http_port: 8000
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 2
+    health_check:
+      http_path: /healthz
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 3
+      failure_threshold: 3
+
+workers:
+  - name: worker
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: oees/app # EDIT: the GitHub repository (owner/name)
+      branch: main
+      deploy_on_push: false
+    run_command: celery -A config worker --loglevel INFO --concurrency 2
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 1
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: oees/app # EDIT: the GitHub repository (owner/name)
+      branch: main
+      deploy_on_push: false
+    run_command: python manage.py migrate --noinput
+    instance_size_slug: apps-s-1vcpu-1gb
+
+ingress:
+  rules:
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /
+
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    production: true
+    cluster_name: app-db # EDIT: the managed Postgres cluster name

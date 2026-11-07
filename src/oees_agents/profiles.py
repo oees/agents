@@ -13,8 +13,19 @@ PATTERN_GLOBS: dict[str, tuple[str, ...]] = {
     "typescript-patterns": ("**/*.ts", "**/*.tsx"),
 }
 
+# A service kit also covers the container, CI and deploy files its templates ship.
+PYTHON_SERVICE_GLOBS = (
+    "**/*.py",
+    "**/pyproject.toml",
+    "**/Makefile",
+    "**/Dockerfile",
+    "**/compose.yml",
+    ".github/workflows/*.yml",
+    ".do/app.yaml",
+)
+
 KIT_GLOBS: dict[str, tuple[str, ...]] = {
-    "django-drf": ("**/*.py",),
+    "django-drf": PYTHON_SERVICE_GLOBS,
     "fastapi": ("**/*.py",),
     "htmx-alpine": ("**/templates/**/*.html",),
 }

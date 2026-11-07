@@ -1,0 +1,92 @@
+[project]
+name = "app" # EDIT: the project name
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "celery[redis]>=5.5,<6",
+    "django>=5.2,<5.3",
+    "django-environ>=0.12",
+    "djangorestframework>=3.18.2,<3.19",
+    "djangorestframework-simplejwt>=5.5",
+    "drf-spectacular>=0.28",
+    "gunicorn>=23",
+    "psycopg[binary]>=3.2",
+    "structlog>=25",
+    "whitenoise>=6.9",
+]
+
+[dependency-groups]
+dev = [
+    "celery-types>=0.23",
+    "django-stubs[compatible-mypy]>=5.2,<5.3",
+    "djangorestframework-stubs[compatible-mypy]>=3.16.9",
+    "mypy>=1.15",
+    "pip-audit>=2.9",
+    "pytest>=8.3",
+    "pytest-cov>=6",
+    "pytest-django>=4.10",
+    "ruff>=0.11",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "C4", "SIM", "S", "DJ", "PT", "RUF", "TID", "N"]
+# Django Meta options and DRF view attributes are mutable class attributes by design.
+ignore = ["RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+# Settings modules layer on base.py with a star import; that is the Django settings idiom.
+"config/settings/*.py" = ["F403", "F405"]
+# Asserts are how pytest tests express expectations; fixtures use placeholder passwords.
+"**/tests/**/*.py" = ["S101", "S105", "S106"]
+"conftest.py" = ["S101", "S105", "S106"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ["/migrations/"]
+
+# django-environ ships no type information; its values are checked by the settings tests.
+[[tool.mypy.overrides]]
+module = ["environ"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+testpaths = ["apps"]
+python_files = ["test_*.py"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+markers = ["slow: excluded from make check-fast"]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["apps", "config"]
+# Entry points and the developer-machine settings never load under pytest.
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "config/asgi.py",
+    "config/settings/local.py",
+    "config/wsgi.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
