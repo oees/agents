@@ -224,16 +224,7 @@ def list_command(ref: Ref = None, content_dir: ContentDir = None) -> None:
 def _section(title: str, documents: Iterable[tuple[str, Document]]) -> None:
     typer.echo(title)
     for name, document in documents:
-        typer.echo(f"  {name}  {_summary(document)}".rstrip())
-
-
-def _summary(document: Document) -> str:
-    if document.description:
-        return " ".join(document.description.split())
-    for line in document.body.splitlines():
-        if line.startswith("# "):
-            return line[2:].strip()
-    return ""
+        typer.echo(f"  {name}  {document.summary}".rstrip())
 
 
 def _with_legacy_answers(

@@ -45,6 +45,16 @@ class Document:
         value = self.meta.get("description", "")
         return value if isinstance(value, str) else ""
 
+    @property
+    def summary(self) -> str:
+        """One line: the description, else the first `# ` heading."""
+        if self.description:
+            return " ".join(self.description.split())
+        for line in self.body.splitlines():
+            if line.startswith("# "):
+                return line[2:].strip()
+        return ""
+
 
 @dataclass(frozen=True)
 class Skill:
