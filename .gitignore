@@ -2,3 +2,6 @@ local/*
 !local/.gitkeep
 .DS_Store
 *.backup-*
+.venv/
+__pycache__/
+.pytest_cache/
