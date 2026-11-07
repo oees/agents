@@ -1,0 +1,19 @@
+{
+  "name": "@oees/agents",
+  "version": "0.1.0",
+  "description": "Runs the oees-agents Python CLI through uvx",
+  "license": "UNLICENSED",
+  "bin": {
+    "oees-agents": "bin/oees-agents.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
