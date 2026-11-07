@@ -122,65 +122,76 @@ project opts out of one individually, with a one-line reason comment in its
 manifest. **Kits** are opted into per stack and carry that stack's concrete
 layout, settings, templates and commands.
 
-### Rules
+### Conduct (always on)
 
-Generated from `content/` by `make docs`; do not edit by hand (CI fails if stale).
-<!-- BEGIN GENERATED: rules -->
-| Rule | Tier | What it covers |
-|---|---|---|
-| `conduct` | conduct | No externally visible action without per-action permission; never merge; never force-push the default branch; checks never bypassed or weakened; report outcomes faithfully. |
-| `secrets` | conduct | No credentials in version control; runtime secrets from the environment; rotate then scrub on a leak; secret scanning in CI. |
-| `data-protection` | conduct | Personal data never reaches logs, traces, exception messages, URLs, queue arguments, exports, fixtures or model prompts; redaction is one tested boundary per service. |
-| `tdd` | default | Failing test before every behavioural change; red, green, refactor; tests in the same commit. |
-| `git` | default | Rebase onto the detected default branch; no merge commits, no squash; never force-push the default branch. |
-| `observability` | default | Structured logs with request and task ids; never swallow exceptions; redact sensitive fields. |
-| `migrations` | default | Backwards-compatible, reversible schema changes; the migration ships before the code that needs it. |
-| `api` | default | Versioned `/api/<version>/` endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs. |
-| `standards` | default | Backend owns the truth, organise by domain, the frontend orchestrates. |
-| `quality-gates` | default | Lint, format, types, tests and dependency scan before merge; `make check` and `make check-fast`. |
-<!-- END GENERATED: rules -->
+Generated from `content/` by `make docs`; do not edit by hand (`make check` fails if stale).
+<!-- BEGIN GENERATED: conduct -->
+| Rule | What it covers |
+|---|---|
+| `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
+| `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
+| `secrets` | Never commit secrets; use env vars and secret managers |
+<!-- END GENERATED: conduct -->
+
+### Defaults (opt out per project)
+
+Generated from `content/` by `make docs`; do not edit by hand (`make check` fails if stale).
+<!-- BEGIN GENERATED: defaults -->
+| Rule | What it covers |
+|---|---|
+| `api` | Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs |
+| `git` | Rebase onto the default branch, no merge commits, no squashing, commits that stand alone |
+| `migrations` | Safe, backwards-compatible database schema migrations |
+| `observability` | Structured logging, contextual errors, no silent exceptions |
+| `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |
+| `standards` | Backend owns the truth, organise by domain, frontend orchestrates, validated deploys |
+| `tdd` | TDD: write failing tests before implementation, red-green-refactor |
+<!-- END GENERATED: defaults -->
 
 ### Kits
 
-Generated from `content/` by `make docs`; do not edit by hand (CI fails if stale).
+Generated from `content/` by `make docs`; do not edit by hand (`make check` fails if stale).
 <!-- BEGIN GENERATED: kits -->
 | Kit | What it is for |
 |---|---|
-| `django-drf` | Django + DRF services: per-app tests, settings split by environment, Celery, Postgres, structured logging, `/api/v1/`, pre-deploy migrations, App Platform spec. |
-| `fastapi` | FastAPI services: SQLAlchemy 2, Alembic, uv, top-level tests, Pydantic settings, HTTPX with retries, health endpoint, App Platform spec. |
-| `htmx-alpine` | Server-rendered UI on Django: one URL per screen, named partials, strict CSP, design tokens, translations, accessibility, template linting. |
+| `django-drf` | Use when building or changing a Django + Django REST Framework service, its Celery workers, or how it is tested, containerised and deployed to DigitalOcean App Platform. |
+| `fastapi` | Use when building or changing a FastAPI service (API-only backends, middleware to external services, embeddable widget backends) in an OEES project. |
+| `htmx-alpine` | Use when building or reviewing server-rendered Django screens with htmx and Alpine, covering templates, partials, forms, static assets, CSP, translations and accessibility. |
 <!-- END GENERATED: kits -->
 
 ### Subagents
 
-Generated from `content/` by `make docs`; do not edit by hand (CI fails if stale).
+Generated from `content/` by `make docs`; do not edit by hand (`make check` fails if stale).
 <!-- BEGIN GENERATED: subagents -->
 | Subagent | Set | What it does |
 |---|---|---|
-| `test-writer` | core | Red step: derives acceptance cases from the requirement and writes failing tests before any implementation. |
-| `implementer` | core | Green step: makes the failing tests pass within its assigned paths, backend or UI, guided by the preloaded kit skills. |
-| `simplifier` | core | Simplifies the changed code without changing behaviour once tests are green, then reruns the affected checks. |
-| `functional-reviewer` | core | Read-only check that the change does what the requirement says, no less, no more. |
-| `engineering-reviewer` | core | Read-only maintainability review: structure, domain boundaries, layering, contracts, error handling, logging, test quality. |
-| `security-reviewer` | core | Read-only review of changes touching auth, PII, secrets, exposed endpoints, uploads, dependencies, workflows or agent protections. |
-| `migration-reviewer` | extended | Read-only review of schema migrations, data imports and destructive data operations. |
-| `infra-implementer` | extended | Writes infrastructure as code, CI workflows, the Dockerfile, the Makefile and tool configuration; never touches live infrastructure. |
-| `infra-reviewer` | extended | Read-only review of infrastructure, CI, container and tool-configuration changes. |
-| `ui-reviewer` | extended | Read-only review of templates, components, static assets and the views that render them. |
-| `documentation-writer` | extended | Records decisions and updates docs a change made stale, in the owning file, keeping links and indexes consistent. |
-| `docs-verifier` | extended | Read-only check that a docs change kept its meaning, ownership and links. |
+| `engineering-reviewer` | core | Use on every code change, after the simplifier, to review maintainability in a fresh, read-only context: the code-review bar plus domain boundaries, layering, atomicity, error handling, logging and test quality. Give it the requirement, the diff with its base and head, and the output of the checks run on that head. |
+| `functional-reviewer` | core | Use on every behavioural change, after the simplifier, to check in a fresh, read-only context that the change does what the requirement says — no less, no more. Give it the requirement (the accepted spec, ticket or requirements record, or the task's stated requirement) and its acceptance cases, the diff with its base and head, the red and green test output, and the checks run on that head. |
+| `implementer` | core | Use for the green step after the test-writer has produced failing tests. Makes those tests pass within its assigned paths, which decide the surface (backend code, UI code or both). Several may run in parallel on paths that do not overlap. Give it the failing tests and their red output, the requirement, its paths and any contract it depends on. |
+| `security-reviewer` | core | Use, in a fresh read-only context, on any change touching authentication, authorisation, PII, secrets, exposed endpoints, uploads, dependencies, workflows or agent protections (.claude/, .agents/, hooks, settings). Give it the requirement, the diff with its base and head, and the output of the checks run on that head, including the secret scan and the dependency scan. |
+| `simplifier` | core | Use on every code change once the tests are green and before the reviewers. In a fresh context, simplifies the task's changed code without changing behaviour, then repeats the affected checks. Give it the requirement, the authorised paths and the diff range to simplify, not the implementer's reasoning. |
+| `test-writer` | core | Use for the red step of every behavioural change or bug fix, before any implementation. Derives acceptance cases from the requirement and writes failing tests, plus signature-only stubs where needed. Give it the requirement, the acceptance cases and the target paths. |
+| `docs-verifier` | extended | Use, in a fresh read-only context, on every docs change beyond a typo, and always after rewording, splitting or moving files. Checks that the change kept its meaning, ownership and links. Never run it on a change it wrote. Give it the diff with its base and head (with renames detected, so old text is visible), and the documentation writer's list of intended changes. |
+| `documentation-writer` | extended | Use for every docs change: recording a human decision, updating docs a code change made stale, restructuring or rewording, and drafting requirement records. Writes in the owning file and keeps links, tags and indexes consistent. Give it what changed or what was decided (with who and when), the scope, and the owning files if known. |
+| `infra-implementer` | extended | Use for infrastructure and delivery code: infrastructure as code, platform app specs, CI workflows, the Dockerfile, the Makefile and tool configuration. Writes code and runs local checks; never applies changes or touches live infrastructure. Give it the requirement, the authorised scope and its paths. |
+| `infra-reviewer` | extended | Use, in a fresh read-only context, on every change to infrastructure code, CI workflows, the Dockerfile, the Makefile or tool configuration. Give it the requirement, the diff with its base and head, the infrastructure plan posted by CI when available, and the output of the project's infrastructure checks (its validators, linters and security scanners). |
+| `migration-reviewer` | extended | Use, in a fresh read-only context, on every change containing a schema migration, data-import code or a destructive data operation. Give it the requirement, the diff with its base and head, the migration linter output if the project has one, and the checks run on that head against the real database engine. |
+| `ui-reviewer` | extended | Use, in a fresh read-only context, on every change to templates, components, client code, static assets or the views that render them. Give it the requirement, the diff with its base and head, and the output of the checks run on that head, including template and frontend linters, type checks, translation checks and any browser test runs. |
 <!-- END GENERATED: subagents -->
 
 ### Slash commands
 
+Generated from `content/` by `make docs`; do not edit by hand (`make check` fails if stale).
+<!-- BEGIN GENERATED: commands -->
 | Command | What it does |
 |---|---|
-| `/plan` | Implementation plan from a spec, broken into commit-sized tasks with their files and failing tests. |
-| `/test` | Write well-structured tests following TDD (mocking discipline, naming, coverage). |
-| `/commit` | Well-formed atomic commit following team standards. |
-| `/code-review` | Strict maintainability review (abstraction quality, file size, spaghetti growth). |
-| `/pr-tidy` | Prepare a PR for review: clean history, rewrite description, add reviewer guidance. |
-| `/shipped` | Summary of what you've committed across all local repos in a time period. |
+| `/code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
+| `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
+| `/plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
+| `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
+| `/shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |
+| `/test` | Write well-structured tests following TDD. Test design, mocking discipline, naming, and coverage decisions. Use when writing tests or reviewing test quality. |
+<!-- END GENERATED: commands -->
 
 Some repos add their own (for example OctoHub has `/create-pr` and
 `/sync-github`). Prefer a repo's own PR and sync skills when present.

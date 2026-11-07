@@ -158,63 +158,106 @@ It lands at the top of `.claude/CLAUDE.md`, first inside the managed Codex block
 
 ## What you get
 
-Run `oees-agents list` for every available rule, kit and extra with one line each. CONTRIBUTING.md has the full tables, generated from the content.
+`oees-agents list` prints the same catalogue for the content version you run. The tables below are generated from `content/` by `make docs`; do not edit them by hand.
 
 ### Conduct (always on)
 
-| Rule | Covers |
+<!-- BEGIN GENERATED: conduct -->
+| Rule | What it covers |
 |---|---|
-| `conduct` | No externally visible action (push, merge, close, comment, message, delete) without explicit permission for that action; never merge; never force-push the default branch; hooks and checks run normally and are never bypassed or weakened; a blocked or waived check is not a pass; report outcomes faithfully. |
-| `secrets` | No credentials in version control; runtime secrets from environment variables; `.env` stays local and only `.env.example` is committed; a leaked secret is rotated, then scrubbed from history. |
-| `data-protection` | Personal data stays out of logs, traces, exception messages, URLs, queue arguments, exports, fixtures and model prompts; redaction happens at one tested boundary per service. |
+| `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
+| `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
+| `secrets` | Never commit secrets; use env vars and secret managers |
+<!-- END GENERATED: conduct -->
 
 ### Defaults (on unless the project opts out)
 
-| Rule | Covers |
+<!-- BEGIN GENERATED: defaults -->
+| Rule | What it covers |
 |---|---|
-| `tdd` | Failing test before every behavioural change; red, green, refactor. |
-| `git` | Rebase onto the default branch (detected, never hard-coded); no merge commits on it, no squashing; squash-merge only where the project opts in. |
-| `observability` | Structured logs with contextual ids; no swallowed exceptions. |
-| `migrations` | Backwards-compatible, reversible schema changes; destructive changes in several steps. |
-| `api` | Versioned endpoints, a consistent error envelope, paginated lists, typed validation. |
-| `standards` | The backend owns the truth, code is organised by domain, the frontend orchestrates. |
-| `quality-gates` | Lint, format, types, tests and a dependency scan before merge; `make check` and `make check-fast` as the named commands. |
+| `api` | Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs |
+| `git` | Rebase onto the default branch, no merge commits, no squashing, commits that stand alone |
+| `migrations` | Safe, backwards-compatible database schema migrations |
+| `observability` | Structured logging, contextual errors, no silent exceptions |
+| `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |
+| `standards` | Backend owns the truth, organise by domain, frontend orchestrates, validated deploys |
+| `tdd` | TDD: write failing tests before implementation, red-green-refactor |
+<!-- END GENERATED: defaults -->
 
 ### Skills
 
+<!-- BEGIN GENERATED: skills -->
 | Skill | What it does |
 |---|---|
-| `commit` | Well-formed commit following team standards (`/commit`). |
-| `code-review` | Strict maintainability review: abstraction quality, file size, spaghetti growth (`/code-review`). |
-| `plan` | Implementation plan from a spec, one commit-sized task at a time (`/plan`). |
-| `pr-tidy` | Prepares a PR for review: history, description, reviewer guidance (`/pr-tidy`). |
-| `test` | Well-structured tests following TDD: mocking discipline, naming, coverage (`/test`). |
-| `shipped` | Summary of what you committed across local repos in a period (`/shipped`). |
-| `python-patterns` | Python guidance with the Octopus stack as the default: Django + DRF or FastAPI, as the project context says. |
-| `typescript-patterns` | React + TypeScript + Vite with TanStack Query. Server-rendered projects use `htmx-alpine` instead. |
-| `reviewing` | Shared review guidance for the reviewer subagents. Installed only with subagents. |
+| `code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
+| `commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
+| `personal-data` | Keep personal data out of logs, traces, errors, analytics, exports, fixtures and model prompts. Use when adding logging or error handling, writing a serializer, export, webhook or analytics event, sending data to a third party or an LLM, creating test fixtures, or reviewing a change for PII exposure. |
+| `plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
+| `pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
+| `python-patterns` | How OEES builds Python backends — Django + DRF or FastAPI, typed boundaries, domain exceptions, structured logging, settings per environment, imports at module top. Use when writing or reviewing Python code. |
+| `reviewing` | The shared protocol for reviewer subagents and the docs verifier — inputs, read-only working, severity levels and the findings report. Use whenever reviewing a change. |
+| `shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |
+| `test` | Write well-structured tests following TDD. Test design, mocking discipline, naming, and coverage decisions. Use when writing tests or reviewing test quality. |
+| `typescript-patterns` | How OEES builds TypeScript frontends — React + TypeScript + Vite with TanStack Query, strict types, schema validation at boundaries, feature-first layout. Use when writing or reviewing TypeScript or React code. |
+<!-- END GENERATED: skills -->
 
 ### Kits (opt-in)
 
-| Kit | For |
+<!-- BEGIN GENERATED: kits -->
+| Kit | What it is for |
 |---|---|
-| `django-drf` | Full-stack and admin-heavy products on Django 5 + DRF, with Celery and Postgres. |
-| `fastapi` | API-only services and middleware on FastAPI, SQLAlchemy 2 and Alembic. |
-| `htmx-alpine` | Server-rendered UI on Django with HTMX and Alpine. |
+| `django-drf` | Use when building or changing a Django + Django REST Framework service, its Celery workers, or how it is tested, containerised and deployed to DigitalOcean App Platform. |
+| `fastapi` | Use when building or changing a FastAPI service (API-only backends, middleware to external services, embeddable widget backends) in an OEES project. |
+| `htmx-alpine` | Use when building or reviewing server-rendered Django screens with htmx and Alpine, covering templates, partials, forms, static assets, CSP, translations and accessibility. |
+<!-- END GENERATED: kits -->
 
 Each kit ships a `SKILL.md` describing the stack's layout, settings, logging, errors, tests, Makefile targets, container and deploy path, plus `templates/` you can copy unchanged (Makefile, Dockerfile, compose file, CI workflow, health endpoint, logging config, `.env.example`). Every kit's Makefile provides both `make check` and `make check-fast`.
 
-### Extras
+### Slash commands (`extras.commands`, on by default)
 
-- **Commands** (`commands = true`): the slash commands listed with the skills above.
-- **Subagents** (`subagents`): `core` installs `test-writer`, `implementer`, `simplifier`, `functional-reviewer`, `engineering-reviewer` and `security-reviewer`. `extended` adds `migration-reviewer`, `infra-implementer`, `infra-reviewer`, `ui-reviewer`, `documentation-writer` and `docs-verifier`. `none` installs no subagents.
-- **Loops** (`loops`, opt-in): templates for unsupervised cloud agents that run on a schedule. Fill in the per-repo config block at the top and leave the rest untouched.
+<!-- BEGIN GENERATED: commands -->
+| Command | What it does |
+|---|---|
+| `/code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
+| `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
+| `/plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
+| `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
+| `/shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |
+| `/test` | Write well-structured tests following TDD. Test design, mocking discipline, naming, and coverage decisions. Use when writing tests or reviewing test quality. |
+<!-- END GENERATED: commands -->
 
+### Subagents (`extras.subagents`: `none`, `core` or `extended`)
+
+`core` installs the core set; `extended` installs both sets; `none` installs no subagents.
+
+<!-- BEGIN GENERATED: subagents -->
+| Subagent | Set | What it does |
+|---|---|---|
+| `engineering-reviewer` | core | Use on every code change, after the simplifier, to review maintainability in a fresh, read-only context: the code-review bar plus domain boundaries, layering, atomicity, error handling, logging and test quality. Give it the requirement, the diff with its base and head, and the output of the checks run on that head. |
+| `functional-reviewer` | core | Use on every behavioural change, after the simplifier, to check in a fresh, read-only context that the change does what the requirement says — no less, no more. Give it the requirement (the accepted spec, ticket or requirements record, or the task's stated requirement) and its acceptance cases, the diff with its base and head, the red and green test output, and the checks run on that head. |
+| `implementer` | core | Use for the green step after the test-writer has produced failing tests. Makes those tests pass within its assigned paths, which decide the surface (backend code, UI code or both). Several may run in parallel on paths that do not overlap. Give it the failing tests and their red output, the requirement, its paths and any contract it depends on. |
+| `security-reviewer` | core | Use, in a fresh read-only context, on any change touching authentication, authorisation, PII, secrets, exposed endpoints, uploads, dependencies, workflows or agent protections (.claude/, .agents/, hooks, settings). Give it the requirement, the diff with its base and head, and the output of the checks run on that head, including the secret scan and the dependency scan. |
+| `simplifier` | core | Use on every code change once the tests are green and before the reviewers. In a fresh context, simplifies the task's changed code without changing behaviour, then repeats the affected checks. Give it the requirement, the authorised paths and the diff range to simplify, not the implementer's reasoning. |
+| `test-writer` | core | Use for the red step of every behavioural change or bug fix, before any implementation. Derives acceptance cases from the requirement and writes failing tests, plus signature-only stubs where needed. Give it the requirement, the acceptance cases and the target paths. |
+| `docs-verifier` | extended | Use, in a fresh read-only context, on every docs change beyond a typo, and always after rewording, splitting or moving files. Checks that the change kept its meaning, ownership and links. Never run it on a change it wrote. Give it the diff with its base and head (with renames detected, so old text is visible), and the documentation writer's list of intended changes. |
+| `documentation-writer` | extended | Use for every docs change: recording a human decision, updating docs a code change made stale, restructuring or rewording, and drafting requirement records. Writes in the owning file and keeps links, tags and indexes consistent. Give it what changed or what was decided (with who and when), the scope, and the owning files if known. |
+| `infra-implementer` | extended | Use for infrastructure and delivery code: infrastructure as code, platform app specs, CI workflows, the Dockerfile, the Makefile and tool configuration. Writes code and runs local checks; never applies changes or touches live infrastructure. Give it the requirement, the authorised scope and its paths. |
+| `infra-reviewer` | extended | Use, in a fresh read-only context, on every change to infrastructure code, CI workflows, the Dockerfile, the Makefile or tool configuration. Give it the requirement, the diff with its base and head, the infrastructure plan posted by CI when available, and the output of the project's infrastructure checks (its validators, linters and security scanners). |
+| `migration-reviewer` | extended | Use, in a fresh read-only context, on every change containing a schema migration, data-import code or a destructive data operation. Give it the requirement, the diff with its base and head, the migration linter output if the project has one, and the checks run on that head against the real database engine. |
+| `ui-reviewer` | extended | Use, in a fresh read-only context, on every change to templates, components, client code, static assets or the views that render them. Give it the requirement, the diff with its base and head, and the output of the checks run on that head, including template and frontend linters, type checks, translation checks and any browser test runs. |
+<!-- END GENERATED: subagents -->
+
+### Loops (`extras.loops`, opt-in)
+
+Templates for unsupervised cloud agents that run on a schedule. Fill in the per-repo config block at the top and leave the rest untouched.
+
+<!-- BEGIN GENERATED: loops -->
 | Loop | What it does |
 |---|---|
-| `tier-0-daily-health-scan` | Read-only daily scan for dependency vulnerabilities and health issues; posts one Slack summary and never writes to the repo. |
-| `tier-1-increase-test-coverage` | Weekly coverage filler; opens small PRs adding tests for one production module at a time. |
-| `tier-2-behavioural-improvements` | Behavioural-change fixer; at most one PR at a time, gated behind explicit human authorisation. |
+| `tier-0-daily-health-scan` | Tier-0 Daily Health Scan — Automation Instructions |
+| `tier-1-increase-test-coverage` | Tier-1 Weekly Test-Coverage Filler — Automation Instructions |
+| `tier-2-behavioural-improvements` | Tier-2 Behavioral-Change Fixer — Automation Instructions |
+<!-- END GENERATED: loops -->
 
 ### Generated Claude Code settings
 

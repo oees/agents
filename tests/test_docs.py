@@ -13,7 +13,7 @@ from oees_agents.docs import (
     write_docs,
 )
 
-from conftest import CONDUCT, CORE_SUBAGENTS, EXTENDED_SUBAGENTS, KITS, write
+from conftest import CONDUCT, CORE_SUBAGENTS, EXTENDED_SUBAGENTS, KITS, REPO, write
 
 
 def region(name: str, inner: str = "stale\n") -> str:
@@ -172,3 +172,7 @@ def test_main_check_fails_without_writing_when_a_region_is_stale(content_root: P
     assert main(["--check", str(content_root)]) == 1
 
     assert "stale" in (content_root / "README.md").read_text(encoding="utf-8")
+
+
+def test_the_committed_readme_and_contributing_tables_match_the_content() -> None:
+    assert stale_docs(REPO, load_content(REPO)) == [], "tables are stale; run `make docs`"
