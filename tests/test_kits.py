@@ -65,6 +65,18 @@ KITS = (
             "app/core/health.py",
         ),
     ),
+    Kit(
+        name="htmx-alpine",
+        globs=("**/templates/**/*.html", "**/static/css/**/*.css", "**/static/js/**/*.js"),
+        templates=(
+            "templates/base.html",
+            "apps/core/htmx.py",
+            "config/settings/csp.py",
+            "make/htmx-alpine.mk",
+            "static/vendor/SHA256SUMS",
+            "locale/.gitkeep",
+        ),
+    ),
 )
 
 

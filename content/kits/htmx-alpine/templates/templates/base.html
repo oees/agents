@@ -1,0 +1,35 @@
+{% load i18n static %}
+<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>
+      {% block title %}
+      {% endblock title %}
+    </title>
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+    <script src="{% static 'js/app.js' %}" defer></script>
+    <script src="{% static 'vendor/alpine-csp.min.js' %}" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{% translate "Skip to main content" %}</a>
+    {% block header %}
+    {% endblock header %}
+    {% include "core/partials/messages.html" %}
+    <main id="main" tabindex="-1">
+      {% block content %}
+      {% endblock content %}
+    </main>
+    <div id="live-region"
+         class="visually-hidden"
+         role="status"
+         aria-live="polite"
+         aria-atomic="true"
+         data-error-message="{% translate 'Something went wrong. Please try again.' %}"></div>
+  </body>
+</html>

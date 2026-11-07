@@ -1,0 +1,9 @@
+# htmx-alpine is layered on the django-drf kit, so its Python is linted with
+# that kit's settings, re-anchored at templates/ (the project root it mirrors).
+# Hidden at the kit root, so it is not rendered.
+extend = "../django-drf/templates/pyproject.toml"
+src = ["templates"]
+
+[lint.extend-per-file-ignores]
+"templates/config/settings/*.py" = ["F403", "F405"]
+"templates/**/tests/**/*.py" = ["S101", "S105", "S106"]
