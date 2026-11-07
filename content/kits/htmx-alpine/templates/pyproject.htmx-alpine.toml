@@ -1,0 +1,22 @@
+# Merge into the project's pyproject.toml: add the dependencies to the existing
+# arrays and the [tool.djlint] table as it stands. This file is not read on its own.
+
+[project]
+dependencies = [
+  "django-csp>=4.0,<5",
+  "django-htmx>=1.29,<2",
+]
+
+[dependency-groups]
+dev = [
+  "djlint>=1.49,<2",
+  "pytest-django>=4.13",  # the kit tests type the settings fixture as pytest_django.Settings
+]
+
+[tool.djlint]
+profile = "django"
+extension = "html"
+indent = 2
+max_line_length = 120
+format_attribute_template_tags = true
+use_gitignore = true

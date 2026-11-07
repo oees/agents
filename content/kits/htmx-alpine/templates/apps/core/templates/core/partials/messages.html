@@ -1,0 +1,23 @@
+{% load i18n %}
+<div id="messages"
+     class="messages"
+     role="status"
+     aria-live="polite"
+     {% if oob %}hx-swap-oob="innerHTML"{% endif %}>
+  {% for message in messages %}
+    <p class="message message--{{ message.level_tag }}">
+      <span class="message__label">
+        {% if message.level_tag == "error" %}
+          {% translate "Error:" %}
+        {% elif message.level_tag == "warning" %}
+          {% translate "Warning:" %}
+        {% elif message.level_tag == "success" %}
+          {% translate "Done:" %}
+        {% else %}
+          {% translate "Note:" %}
+        {% endif %}
+      </span>
+      {{ message }}
+    </p>
+  {% endfor %}
+</div>
