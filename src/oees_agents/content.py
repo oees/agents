@@ -17,6 +17,7 @@ from pathlib import Path
 from types import MappingProxyType
 
 SUBAGENT_TIERS = ("core", "extended")
+CONTEXT_TEMPLATE = "content/blocks/project-context.md"
 
 Meta = Mapping[str, str | tuple[str, ...]]
 
@@ -64,6 +65,7 @@ class Content:
     subagents: Mapping[str, Mapping[str, Document]]
     loops: Mapping[str, Document]
     commands: Mapping[str, Document]
+    context_template: str
 
 
 def load_content(root: Path) -> Content:
@@ -84,6 +86,7 @@ def load_content(root: Path) -> Content:
         ),
         loops=_documents(root, ("content/loops", "loops")),
         commands=_documents(root, ("content/commands", "commands")),
+        context_template=_text(root, CONTEXT_TEMPLATE),
     )
 
 
@@ -151,6 +154,13 @@ def _load_document(root: Path, path: Path, required: tuple[str, ...] = ()) -> Do
         if not isinstance(meta.get(key), str) or not meta[key]:
             raise ContentError(f"{source}: frontmatter needs a '{key}'")
     return Document(name=path.stem, source=source, meta=meta, body=body, raw=raw)
+
+
+def _text(root: Path, relative: str) -> str:
+    path = root / relative
+    if not path.is_file():
+        raise ContentError(f"missing content file: {relative}")
+    return path.read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
 def _existing(root: Path, candidates: tuple[str, ...], optional: bool = False) -> list[Path]:

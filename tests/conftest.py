@@ -1,10 +1,13 @@
 """A content tree in the target layout of the restructure plan, for tests that must
 not depend on the real content while it is being reorganised."""
 
+import shutil
 from pathlib import Path
 
 import pytest
 
+REPO = Path(__file__).resolve().parents[1]
+CONTEXT_TEMPLATE = "content/blocks/project-context.md"
 CONDUCT = ("conduct", "data-protection", "secrets")
 DEFAULTS = ("tdd", "git", "observability", "migrations", "api", "standards", "quality-gates")
 COMMAND_SKILLS = ("commit", "code-review", "plan", "pr-tidy", "test", "shipped")
@@ -75,6 +78,8 @@ def build_content_tree(root: Path) -> Path:
             )
     for name in LOOPS:
         write(root / "content/loops" / f"{name}.md", f"# {name}\n\n## Steps\n\nDo it.\n")
+    (root / CONTEXT_TEMPLATE).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(REPO / CONTEXT_TEMPLATE, root / CONTEXT_TEMPLATE)
     return root
 
 
