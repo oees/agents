@@ -1,9 +1,10 @@
 name: release
 
-# Cut a release by pushing a `v*` tag that points at a commit on main.
-# The tag is the content version every install resolves to: `uvx --from
-# git+https://github.com/oees/agents@<tag>` reads it directly, and the npm
-# shim published here pins the same tag through its package version.
+# Cut a release by bumping `version` in pyproject.toml on main and pushing a
+# matching `v*` tag. The tag is the content version every install resolves
+# to: `uvx --from git+https://github.com/oees/agents@<tag>` reads it directly,
+# the CLI records `v<pyproject version>` as the manifest's `source`, and the
+# npm shim published here pins the same tag through its package version.
 
 on:
   push:
@@ -40,8 +41,18 @@ jobs:
             echo "::error::Tag '$TAG' points at $GITHUB_SHA, which is not on main"
             exit 1
           fi
+          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          if [ "v$VERSION" != "$TAG" ]; then
+            echo "::error::Tag '$TAG' does not match pyproject.toml version '$VERSION'"
+            exit 1
+          fi
 
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      # make check runs the npm shim's tests with `node --test`.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
 
       - name: Install
         run: uv sync --locked
