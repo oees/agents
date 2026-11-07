@@ -8,6 +8,7 @@ from oees_agents.content import load_content
 from oees_agents.context import context_block
 from oees_agents.manifest import Extras, Manifest, Project
 from oees_agents.output import RenderError
+from oees_agents.profiles import KIT_GLOBS
 from oees_agents.targets.cursor import render
 
 from conftest import COMMAND_SKILLS, CONDUCT, DEFAULTS, write
@@ -123,7 +124,7 @@ def test_typescript_patterns_attach_to_both_typescript_extensions(content_root: 
 def test_an_enabled_kit_with_known_globs_is_glob_attached(content_root: Path) -> None:
     fields, body = rule(rendered(content_root), "django-drf")
 
-    assert fields["globs"] == '["**/*.py"]'
+    assert fields["globs"] == json.dumps(list(KIT_GLOBS["django-drf"]))
     assert fields["alwaysApply"] == "false"
     assert fields["description"] == "The django-drf stack kit."
     assert body == "# django-drf\n"
