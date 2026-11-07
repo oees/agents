@@ -23,7 +23,7 @@ done
 
 echo ""
 echo "Installing skills..."
-# Commands import @../skills/<name>/... which resolves from ~/.claude/commands/
+# Commands import @../skills/<name>/SKILL.md which resolves from ~/.claude/commands/
 # to ~/.claude/skills/, so the skills must live there too.
 for skill_dir in "$REPO/skills"/*/; do
   name=$(basename "$skill_dir")
