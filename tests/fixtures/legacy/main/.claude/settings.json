@@ -1,0 +1,67 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git stash*)",
+      "Bash(git rebase*)",
+      "Bash(find . *)",
+      "Bash(ls*)",
+      "Bash(grep*)",
+      "Bash(cat*)",
+      "Bash(wc*)",
+      "Bash(mkdir*)",
+      "Bash(mv*)",
+      "Bash(cp*)",
+      "Bash(touch*)",
+      "Bash(echo*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(python -m pytest*)",
+      "Bash(python -m mypy*)",
+      "Bash(python -m ruff*)",
+      "Bash(pytest*)",
+      "Bash(ruff*)",
+      "Bash(mypy*)",
+      "Bash(uv*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run test*)",
+      "Bash(npm run build*)",
+      "Bash(npm run format*)",
+      "Bash(npm run typecheck*)",
+      "Bash(npm test*)",
+      "Bash(tsc*)",
+      "Bash(eslint*)",
+      "Bash(prettier*)",
+      "Bash(vitest*)",
+      "Bash(jest*)",
+      "Bash(docker build*)",
+      "Bash(docker ps*)",
+      "Bash(docker logs*)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(git reset*)",
+      "Bash(git checkout .)",
+      "Bash(rm*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'i=$(cat); for f in rules/*.md; do [ -f \"$f\" ] || continue; l=$(wc -l < \"$f\"); [ \"$l\" -gt 40 ] && echo \"Warning: $f has $l lines — keep rules compact\"; done; if echo \"$i\" | grep -qF rules/ || echo \"$i\" | grep -qF skills/; then bash scripts/sync-cursor-rules.sh; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}
