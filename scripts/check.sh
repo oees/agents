@@ -102,7 +102,8 @@ check_codex_install() {
   actual="$(cat "$target/AGENTS.md")"
   [ "$(grep -Fxc "$BEGIN_MARKER" "$target/AGENTS.md")" -eq 1 ] || return 1
   [ "$(grep -Fxc "$END_MARKER" "$target/AGENTS.md")" -eq 1 ] || return 1
-  for rule in "$REPO/rules"/*.md; do
+  for rule in "$REPO/content/conduct"/*.md "$REPO/content/defaults"/*.md; do
+    [ -f "$rule" ] || continue
     body="$(awk 'NR == 1 && $0 == "---" { frontmatter = 1; next }
       frontmatter && $0 == "---" { frontmatter = 0; next }
       !frontmatter { print }' "$rule")"
@@ -134,7 +135,7 @@ check_codex_updates() {
   bash "$CODEX_GENERATOR" "$CODEX_FIXTURE" || return 1
   cmp -s "$instructions" "$TMP/first-generation.md" || return 1
   printf '%s\n' '---' 'description: Fixture rule' '---' '# Test policy' \
-    'Use the updated test policy.' > "$CODEX_FIXTURE/rules/example.md" || return 1
+    'Use the updated test policy.' > "$CODEX_FIXTURE/content/defaults/example.md" || return 1
   bash "$CODEX_GENERATOR" "$CODEX_FIXTURE" || return 1
   grep -Fqx 'Use the updated test policy.' "$instructions" || return 1
   if grep -Fq 'Use the original test policy.' "$instructions"; then return 1; fi
@@ -199,7 +200,7 @@ check_codex_check_mode() {
   cp "$target/AGENTS.md" "$TMP/fresh-before.md" || return 1
   bash "$CODEX_GENERATOR" --check "$target" || return 1
   cmp -s "$target/AGENTS.md" "$TMP/fresh-before.md" || return 1
-  printf '%s\n' 'An additional canonical rule.' >> "$CODEX_FIXTURE/rules/example.md" || return 1
+  printf '%s\n' 'An additional canonical rule.' >> "$CODEX_FIXTURE/content/defaults/example.md" || return 1
   if bash "$CODEX_GENERATOR" --check "$target" > "$TMP/generator.log" 2>&1; then
     echo "    --check accepted stale shared rule content"
     return 1
@@ -209,10 +210,10 @@ check_codex_check_mode() {
 
 check_codex_crlf() {
   local source="$TMP/CRLF source" target="$TMP/CRLF target" result=0
-  mkdir -p "$source/scripts" "$source/rules" "$target" || return 1
+  mkdir -p "$source/scripts" "$source/content/defaults" "$target" || return 1
   cp "$REPO/scripts/sync-codex-rules.sh" "$source/scripts/" || return 1
   printf '%s\r\n' '---' 'description: CRLF fixture rule' '---' \
-    '# CRLF policy' 'Use the current CRLF policy.' > "$source/rules/example.md" || return 1
+    '# CRLF policy' 'Use the current CRLF policy.' > "$source/content/defaults/example.md" || return 1
   printf '%s\r\n' 'Local instructions before the block.' '' > "$TMP/crlf-prefix.md" || return 1
   printf '%s\r\n' '' 'Local instructions after the block.' > "$TMP/crlf-suffix.md" || return 1
   {
@@ -256,11 +257,11 @@ if [ -f "$REPO/scripts/sync-codex-rules.sh" ]; then
   run_check 'Repository Codex guidance matches canonical rules' \
     bash "$REPO/scripts/sync-codex-rules.sh" --check
   CODEX_FIXTURE="$TMP/codex source"
-  mkdir -p "$CODEX_FIXTURE/scripts" "$CODEX_FIXTURE/rules"
+  mkdir -p "$CODEX_FIXTURE/scripts" "$CODEX_FIXTURE/content/defaults"
   cp "$REPO/scripts/sync-codex-rules.sh" "$CODEX_FIXTURE/scripts/"
   CODEX_GENERATOR="$CODEX_FIXTURE/scripts/sync-codex-rules.sh"
   printf '%s\n' '---' 'description: Fixture rule' '---' '# Test policy' \
-    'Use the original test policy.' > "$CODEX_FIXTURE/rules/example.md"
+    'Use the original test policy.' > "$CODEX_FIXTURE/content/defaults/example.md"
   run_check 'Updates preserve local instructions and are idempotent' check_codex_updates
   run_check 'Malformed or multiple marker blocks are rejected without changes' check_codex_invalid_markers
   run_check 'Symlink instructions are rejected without changing the link or target' check_codex_symlink

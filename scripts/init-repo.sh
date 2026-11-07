@@ -27,7 +27,8 @@ mkdir -p "$RULES_DIR" "$COMMANDS_DIR" "$SKILLS_DIR" "$LOOPS_DIR" "$CURSOR_RULES_
 touch "$CLAUDE_MD"
 
 echo "Copying rules..."
-for rule in "$REPO/rules"/*.md; do
+for rule in "$REPO/content/conduct"/*.md "$REPO/content/defaults"/*.md; do
+  [ -f "$rule" ] || continue
   name=$(basename "$rule")
   cp "$rule" "$RULES_DIR/$name"
   echo "  ✓ $name"
@@ -35,7 +36,8 @@ done
 
 echo ""
 echo "Updating .claude/CLAUDE.md..."
-for rule in "$REPO/rules"/*.md; do
+for rule in "$REPO/content/conduct"/*.md "$REPO/content/defaults"/*.md; do
+  [ -f "$rule" ] || continue
   import="@rules/$(basename "$rule")"
   if grep -qF "$import" "$CLAUDE_MD" 2>/dev/null; then
     echo "  · $(basename "$rule") already present"
