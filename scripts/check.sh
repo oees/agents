@@ -39,6 +39,17 @@ for d in rules commands skills loops; do
 done
 
 echo ""
+echo "Checking every installed skill is a SKILL.md..."
+for skill_dir in "$CLAUDE_DIR/skills"/*/; do
+  [ -d "$skill_dir" ] || continue
+  if [ -f "${skill_dir}SKILL.md" ]; then
+    echo "  ✓ $(basename "$skill_dir")/SKILL.md"
+  else
+    note_fail "$(basename "$skill_dir") has no SKILL.md — Claude Code will not load it"
+  fi
+done
+
+echo ""
 echo "Checking command imports resolve..."
 for cmd in "$CLAUDE_DIR/commands"/*.md; do
   [ -f "$cmd" ] || continue

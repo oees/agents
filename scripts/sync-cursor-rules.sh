@@ -47,8 +47,8 @@ done
 #                     a skill by its description.
 for skill_dir in skills/*/; do
   name=$(basename "$skill_dir")           # e.g. commit, python-patterns
-  skill_file="$skill_dir$name.md"
-  [ -f "$skill_file" ] || { echo "  ⚠ $name: no $name.md — skipping"; continue; }
+  skill_file="${skill_dir}SKILL.md"
+  [ -f "$skill_file" ] || { echo "  ⚠ $name: no SKILL.md — skipping"; continue; }
   description=$(get_description "$skill_file")
 
   case "$name" in
