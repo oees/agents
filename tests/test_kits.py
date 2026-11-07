@@ -54,6 +54,17 @@ KITS = (
             "apps/core/views.py",
         ),
     ),
+    Kit(
+        name="fastapi",
+        globs=PYTHON_SERVICE_GLOBS,
+        templates=(
+            *SERVICE_TEMPLATES,
+            "alembic.ini",
+            "migrations/versions/.gitkeep",
+            "app/settings/production.py",
+            "app/core/health.py",
+        ),
+    ),
 )
 
 

@@ -1,0 +1,17 @@
+# The image needs only app/, migrations/, alembic.ini, pyproject.toml and uv.lock.
+.git
+.github
+.do
+.venv
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage
+htmlcov
+tests
+compose.yml
+*.md
