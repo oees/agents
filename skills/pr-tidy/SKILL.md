@@ -3,7 +3,7 @@ name: pr-tidy
 description: Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff".
 ---
 
-> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+> Calibrate every judgement call to the project context block in the instruction files. Where it is missing, ask before assuming anything about who depends on this code.
 
 # Make PR Easy to Review
 

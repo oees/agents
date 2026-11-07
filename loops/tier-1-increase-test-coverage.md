@@ -1,6 +1,6 @@
 # Tier-1 Weekly Test-Coverage Filler — Automation Instructions
 
-> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+> Calibrate every judgement call to the project context block in the instruction files. Where it is missing, ask before assuming anything about who depends on this code.
 
 ## ── PER-REPO CONFIG (fill this in, leave the rest untouched) ──
 REPO_NAME:          <e.g. proyecto_tesla>
