@@ -9,6 +9,7 @@ from typing import Annotated
 
 import typer
 
+from oees_agents import legacy
 from oees_agents.blocks import BlockError
 from oees_agents.content import ContentError, Document
 from oees_agents.log import configure
@@ -121,6 +122,9 @@ def init(
             loops=_tuple(loop),
             commands=not no_commands,
         )
+        install = legacy.detect(path, content)
+        if install is not None:
+            flags = _with_legacy_answers(flags, install, tuple(content.defaults))
         try:
             answers = ask(
                 flags,
@@ -141,7 +145,11 @@ def init(
             kits=answers.kits,
             extras=answers.extras,
         )
-        pending = plan(path, render(manifest, content), read_lock(path), force)
+        output = render(manifest, content)
+        if install is not None:
+            legacy.migrate(path, install)
+            _report_legacy(install)
+        pending = plan(path, output, read_lock(path), force)
         apply(path, pending)
         write_manifest(manifest_path, manifest)
         typer.echo(f"Wrote {MANIFEST_NAME}. Commit it with the generated files and the lock.")
@@ -226,6 +234,34 @@ def _summary(document: Document) -> str:
         if line.startswith("# "):
             return line[2:].strip()
     return ""
+
+
+def _with_legacy_answers(
+    flags: Flags, install: legacy.LegacyInstall, defaults: tuple[str, ...]
+) -> Flags:
+    """A pre-manifest install already answers everything but the project context."""
+    return replace(
+        flags,
+        targets=flags.targets or install.targets,
+        kits=flags.kits if flags.kits is not None else (),
+        no_defaults=flags.no_defaults
+        if flags.no_defaults is not None
+        else tuple(name for name in defaults if name not in install.defaults),
+        subagents=flags.subagents or "none",
+        loops=flags.loops if flags.loops is not None else install.loops,
+        commands=flags.commands and install.commands,
+    )
+
+
+def _report_legacy(install: legacy.LegacyInstall) -> None:
+    typer.echo(
+        f"Migrated a pre-manifest install: removed {_files(len(install.removable))} "
+        "copied unchanged from oees/agents."
+    )
+    if install.kept:
+        typer.echo("Kept, because they were edited after install (delete them if unneeded):")
+        for item in install.kept:
+            typer.echo(f"  {item}")
 
 
 def _report(pending: Plan) -> None:

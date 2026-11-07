@@ -86,7 +86,7 @@ def write_lock(root: Path, lock: Lock) -> None:
         "files": dict(sorted(lock.files.items())),
         "blocks": dict(sorted(lock.blocks.items())),
     }
-    _write_atomic(root / LOCK_NAME, tomli_w.dumps(data).encode("utf-8"))
+    write_atomic(root / LOCK_NAME, tomli_w.dumps(data).encode("utf-8"))
 
 
 def plan(root: Path, output: Output, lock: Lock | None, force: bool = False) -> Plan:
@@ -109,16 +109,16 @@ def plan(root: Path, output: Output, lock: Lock | None, force: bool = False) -> 
 def apply(root: Path, pending: Plan) -> None:
     root = root.resolve()
     for path, data in pending.writes.items():
-        _write_atomic(root / path, data)
+        write_atomic(root / path, data)
         logger.info("wrote file", extra={"path": path, "bytes": len(data)})
     for path, data in pending.unblocks.items():
         if data:
-            _write_atomic(root / path, data)
+            write_atomic(root / path, data)
         else:
-            _delete(root, path)
+            remove_file(root, path)
         logger.info("removed managed block", extra={"path": path})
     for path in pending.deletes:
-        _delete(root, path)
+        remove_file(root, path)
         logger.info("removed file", extra={"path": path})
     for conflict in pending.conflicts:
         logger.warning(
@@ -280,7 +280,8 @@ def _check_inside(path: str) -> None:
         raise WriterError(f"refusing to write outside the project: {path}")
 
 
-def _write_atomic(target: Path, data: bytes) -> None:
+def write_atomic(target: Path, data: bytes) -> None:
+    """Replace `target` in one step, keeping its permissions."""
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
     try:
@@ -296,7 +297,8 @@ def _write_atomic(target: Path, data: bytes) -> None:
         raise
 
 
-def _delete(root: Path, path: str) -> None:
+def remove_file(root: Path, path: str) -> None:
+    """Delete `path` and every directory it leaves empty, up to but not including `root`."""
     target = root / path
     target.unlink(missing_ok=True)
     parent = target.parent

@@ -1,0 +1,262 @@
+{
+  ".claude/commands/code-review.md": [
+    "6978fdd9a96f937f66dadf2846df1cf7e0feff932769d8b12bec60ba197c3ff2",
+    "d537cb90fa66d781d2c9f657f124f2a0784058bba5a574e90918c1c7093198b5"
+  ],
+  ".claude/commands/commit.md": [
+    "22fb99b52fe06f312367616fc7e673985fb63f31f477a181355a1b47e8ff0d0b",
+    "e85a235d777498af274dae92d48144a71f9c6c3461bdcdc6fbde5d849cda7a59"
+  ],
+  ".claude/commands/plan.md": [
+    "3d77d42cbf1b28d727c27d62fa81a05ad4397a078dc2960538387b52080b5fc6",
+    "798640a550452b8d265a30caf4d64f684a28502ec8f746e5d31391a35e544d37",
+    "c0f16102c95a3e289f4d0e7afff961b5a4883ad5037f828aff4af9659c604df9",
+    "de788d290c9b9cc921205b6529df6d7f10bf7b592e36abcfb3f13bee2c01b943"
+  ],
+  ".claude/commands/pr-tidy.md": [
+    "0bc97778eccd65cb4bd3afc28b275170d37628422d28797744241c7b26104eeb",
+    "7050ecd2c58d793bf41845c318ee76192673caceb67de51584cc3f361b558d1f",
+    "b3835764dba0224cd96d0da4d59e9aefdeedcbde376c6d91cc152cfa12e6893e"
+  ],
+  ".claude/commands/shipped.md": [
+    "2f5659a1c71fe167ec073bcd5d4a2bd97927e121326df7860d9345b7e700dd20",
+    "33badbe1c50c6c04c23e98ede41ce335bb518b60a04b59e5f20eae3eb7913d3a",
+    "ca3195bda213bf63fb2062705ead269234b90703fe6dd7e95c0970d630d56c05"
+  ],
+  ".claude/commands/test.md": [
+    "85baa408f28060a856d9f3632acd8dcaac86a4b98b625161429289b80c74020d",
+    "a8f5ee9430242bdc19f834f7a5d9d034d65f7c4711916514ebca688b4847409b"
+  ],
+  ".claude/loops/tier-0-daily-health-scan.md": [
+    "3f21caba9fac24ec1ceab931827696e172335f792bee084a279efd608278c284",
+    "7f32791afdf0047798ac5339865779c865847627a4a859c31811e8a06633b57a",
+    "a8060be22cd8dbef729ca68ef12e21c4e60d36a7849c3778aef902cc0b4d8e68",
+    "bc6640890a504f635f63948a069aa39265143bf887da7007eaa4bf772f6ef056",
+    "ef4ed279eec04de1b21123c674ff032def1168704a1234ec47259c74535e0ed9"
+  ],
+  ".claude/loops/tier-1-increase-test-coverage.md": [
+    "153f45059ec8c4955e7b0c86614815f5688f9a89274cd19cf0f211cf7f082b64",
+    "789466181b1d72a9c43d7f3b4e8cefd876d2dc0aff714e93d9c02355af7bbd79",
+    "eb3bcf549e77fc24fa235c3e378447fd019452756569a153dcb2431287bb751a"
+  ],
+  ".claude/loops/tier-2-behavioural-improvements.md": [
+    "0e190c901045b930b1a1137e5cf581c68648e6ddbe1ade0e967eb10a7105fe42",
+    "1579a206a6576d550f8b1dfc06238c9b45b66e43e68d410805f6b2986d5556ee",
+    "4c12081d0ccafd155c2cc0c8f48b3e14a712c6ab8021107326c9ed217b1595e2"
+  ],
+  ".claude/rules/api.md": [
+    "0bbeeeeda4fd7c4010a7ab23cfce4f7bd25ef694246069c27963e70ae76b67e0"
+  ],
+  ".claude/rules/code-quality.md": [
+    "108066d320b0e1a18a003f43ce1b5415b9eda4f353ae2988c74c4973e289760d",
+    "bc713357b9b855d2936a33dcde5e643b7345891d61ba9e361fba2ca6e0e14c1e"
+  ],
+  ".claude/rules/conduct.md": [
+    "15ab49e9fc6e2ab866b4e3643d65c12403f1c68dc55073b2f915fa44cbc098f8"
+  ],
+  ".claude/rules/data-protection.md": [
+    "af85f8e920f7f7307c6b1e73aca279ed4993badb580e2b83577800684a849ac0"
+  ],
+  ".claude/rules/git.md": [
+    "006b65a498ad14dacbbd716b3947720a1b8098b4e55810836672a4f55ac85363",
+    "185c1ae460c84ca9be403cde8cd880aa01e05441fb5da5614d6729ad03a974fa",
+    "f03cbb42ad3528e6abc2e31b17b749bd6ede7e3a3e251c7b3908c704ff80470b"
+  ],
+  ".claude/rules/migrations.md": [
+    "6297bbe38515d3970bbd17bfe98237940703dcf522a323a68593cdbacefb2fc9",
+    "cc030b4b6559251b0abc4b050fe0b1e72a470cbef1a7a7fa9870e1c691652bee"
+  ],
+  ".claude/rules/no-inline-imports.md": [
+    "7e5198f52a3b85d9d75e6ebc3d3807c4478bc17e05ffc059e0a5dab7fe929b1b"
+  ],
+  ".claude/rules/observability.md": [
+    "4cd9249eb630c5109b68d0e74211ad82d4e9bdd1db7265e46f6fa51611faa392",
+    "67821f90fe115d2d18a97eb5618df82945c772b71c92e48fac1de21b8cc6df38"
+  ],
+  ".claude/rules/quality-gates.md": [
+    "b45e7960f424fe1ac0c9c84b672d9d890934e1da3aedeaa520403eebe1bf42a0"
+  ],
+  ".claude/rules/secrets.md": [
+    "ed7bd0cf19e7ecafd40c931409eeea224616522292331f21ad2b65d578792a31"
+  ],
+  ".claude/rules/standards.md": [
+    "6cd7bf996d7621a08ec719b9dc6106eb218b9632ad5ac1c3feedcdd63c7063ae",
+    "db66aa0140fe5ec663e40b12c4bf4f184ec8c05ca1958796c4aeebcded6ab08a"
+  ],
+  ".claude/rules/tdd.md": [
+    "5bc160026509135e626f0a0393f7d61b9660ac54520c286317d0ec702b087787",
+    "9a50a7a6c3a6052f3632942e184b6ee7e465919c6890dc86c7fadf09c507f280"
+  ],
+  ".claude/settings.json": [
+    "1d20d22e85d24f40459cbf4dc725ec8643a47fff34a0f9bb47e1c3e726ac54a9",
+    "ed4915802a4b372ce7fed9d31e974a4ecdaa5353aa213da15f6d10ef9d92da82",
+    "f4d253159ed1a8c5c9d14bb9c6c3c69d8e52136aca69c309547aa21ce38204fe"
+  ],
+  ".claude/skills/code-review/SKILL.md": [
+    "333435d9fb5dbec33d035d7649867e3c775483d2ad124e4d572419ec5104b16b",
+    "f3216e4d66340cc248014baca6e60da675be2edf63989db413ffa3e0c6c09362"
+  ],
+  ".claude/skills/code-review/code-review.md": [
+    "333435d9fb5dbec33d035d7649867e3c775483d2ad124e4d572419ec5104b16b",
+    "f2ef475f3b703394df6d8c84446791881614efbfadfffe59e48e5f1f32b73ee6"
+  ],
+  ".claude/skills/commit/SKILL.md": [
+    "3a32c4b803be9dcbed069ae7842830541e77c7aac25e9a69c0f8a90d8f35c1a2",
+    "3c3429605c7aded4cdb6e680f5386ac63bfbab944cfed85d090839c6dbf9d110"
+  ],
+  ".claude/skills/commit/commit.md": [
+    "3a32c4b803be9dcbed069ae7842830541e77c7aac25e9a69c0f8a90d8f35c1a2",
+    "3b7d474af540320acff60d5ceba002a1e5285c1a8431b22c7e9d4aee25f4a979",
+    "941567fca2e77a7dcd0a21d5390926cf1fd61ff008cd178f3dbf6cffe5d61d1f"
+  ],
+  ".claude/skills/personal-data/SKILL.md": [
+    "44e772e2f65dbcc899f8dea2364cd035d033587f54690641ab9ccd8f017fa8d2"
+  ],
+  ".claude/skills/personal-data/personal-data.md": [
+    "44e772e2f65dbcc899f8dea2364cd035d033587f54690641ab9ccd8f017fa8d2"
+  ],
+  ".claude/skills/plan/SKILL.md": [
+    "1f95edb9042a860fd5ac4c6b0265ae8d85a630fbf6cf68fb34aa277061eca9d5",
+    "5b7b51e1a1646357e6dbec9f04ada6156e2bb4bf3fcce1222edf1d442ae891f7",
+    "e283d3e4e57413ae6fdb0b2c48d83bd1d8b43bacc16a071f9b4eccf8654abb5a"
+  ],
+  ".claude/skills/plan/plan.md": [
+    "5b7b51e1a1646357e6dbec9f04ada6156e2bb4bf3fcce1222edf1d442ae891f7",
+    "79c589b09607286fbe8f0c44cfa2996d45a734bdd63faddc4d4e7cf86564551a"
+  ],
+  ".claude/skills/pr-tidy/SKILL.md": [
+    "8cd4abe77214a084858c5545cc1bbbc1dceeb193776ae21d8060e574aba4e203",
+    "99f9e45f5e5873134296812f3dc3890d0e65500410c5eddff101300a001dcffa"
+  ],
+  ".claude/skills/pr-tidy/pr-tidy.md": [
+    "4268db005d7a93644ce3a9a185cf5fc93dd52a1f491d424d716469b77323f487",
+    "70af135fc6f268d988a60083f9312e3c26a16689f68592506515647492c577c5",
+    "99f9e45f5e5873134296812f3dc3890d0e65500410c5eddff101300a001dcffa"
+  ],
+  ".claude/skills/pr-tidying/pr-tidying.md": [
+    "4268db005d7a93644ce3a9a185cf5fc93dd52a1f491d424d716469b77323f487"
+  ],
+  ".claude/skills/python-patterns/SKILL.md": [
+    "1d0b6c264c97c0445df90c12297afe5af2771d83a1c593151310b2c9dc72195c"
+  ],
+  ".claude/skills/python-patterns/python-patterns.md": [
+    "3e64697b240aa4a2cf902014e794b2c67bc4fc16012267da9c12bfe48ebe8eb1"
+  ],
+  ".claude/skills/reviewing/SKILL.md": [
+    "3289422932a2173985d18ff00275b59aa2d932c727c6eb9d1531a8e380cf3762"
+  ],
+  ".claude/skills/shipped/SKILL.md": [
+    "e545df933373d371995f154da6a0015a266658f4cfaa9a86b13b57677188079a",
+    "fe09f97cbe2a27d7b209da61ff41a63b5cf25b446f004a30df7fd6f6832d627b"
+  ],
+  ".claude/skills/shipped/shipped.md": [
+    "32374e435d1a95807d48b836ff8eb629b2d21fc6bd6302ac3a1cc61fb5e395b3",
+    "fe09f97cbe2a27d7b209da61ff41a63b5cf25b446f004a30df7fd6f6832d627b"
+  ],
+  ".claude/skills/test/SKILL.md": [
+    "2627f3c821c7381b3d0f117034c62c0950c420c2dad677264853bb8cd00f35ad"
+  ],
+  ".claude/skills/test/test.md": [
+    "2627f3c821c7381b3d0f117034c62c0950c420c2dad677264853bb8cd00f35ad"
+  ],
+  ".claude/skills/typescript-patterns/SKILL.md": [
+    "1ac9b99089bf8e350e5df50c204d3dfa88d66a0a62bfd61089347850d76fc94f"
+  ],
+  ".claude/skills/typescript-patterns/typescript-patterns.md": [
+    "ba2086e88bf08dae543e1a06d2612cf0e1ea399173f48f2bdd4cab99da938d28"
+  ],
+  ".claude/skills/what-i-shipped/shipped.md": [
+    "32374e435d1a95807d48b836ff8eb629b2d21fc6bd6302ac3a1cc61fb5e395b3"
+  ],
+  ".claude/skills/writing-plans/writing-plans.md": [
+    "79c589b09607286fbe8f0c44cfa2996d45a734bdd63faddc4d4e7cf86564551a"
+  ],
+  ".cursor/rules/api.mdc": [
+    "70c94843145c3b709a106ed1304c943ba3e2e251412550defc774ef1fe7a3874"
+  ],
+  ".cursor/rules/code-quality.mdc": [
+    "1c2b93cf289b49fc4790f0c07022e463607f2ba808449e85023253c3cb3c5634",
+    "a208d2869b27d9668e0cd61287551313883a78e4245ac3c5895458c025b585c3"
+  ],
+  ".cursor/rules/code-review.mdc": [
+    "7170a924525e0f4645e9f1b7c608a9a3e2fe82978635dbb492389144b430c54b",
+    "aecdfbdce484e073369556b3057b3fae2bdbe2b0e1ddf92ed33e491add0e22c7",
+    "bdc0f71c6e06b607ebd7ef6922f3c53156a5d06be5c1be63305b3d064971a291"
+  ],
+  ".cursor/rules/commit.mdc": [
+    "2f8ee7b8cb324623f7861c34833fd8e15fd20661f8d0a56211bbf73b5c6643ca",
+    "300404da71e7ce70515ad60bd39de5af1249225f5534d2dc95d1de5aa1226699",
+    "975003a2680020324b3324bc33fd5e39b7fed5a44dd9ff2b370a4ed16175e9cc",
+    "ff8063a4c1adbf5308ea39cbc3b2adf9ffdc4f5d3b665312d8db5ff9ff78f8ff"
+  ],
+  ".cursor/rules/conduct.mdc": [
+    "740c748269a4c54f3445ec618e475745b4897317d57e47506eddb49781b98c3a"
+  ],
+  ".cursor/rules/data-protection.mdc": [
+    "05e39fea8d75f4ff803b2d2a71ac28d2a6a091d85d69828debd0635dfc1f8afb"
+  ],
+  ".cursor/rules/git.mdc": [
+    "04752a4b249f155bd6cb4c4f2ab020c70610a846adadfb04d85f1be36d6acac0",
+    "72c428c51c46ba6cb3514e4a11e1356c997dcb44020d41fa622713873d0e2920",
+    "9e9794a8e3f4a6e9f6d20df76b171a396287822acc3abd504e4f884b356cceda"
+  ],
+  ".cursor/rules/migrations.mdc": [
+    "94f48ca66bd54de791155d2044ca67c6d69e33e8e95df5f4a64a7c7c52a8d71b",
+    "e4836eec8fed1b07cb8798484d3615e193ef9bb395d42304ce8a78a3ad11d459"
+  ],
+  ".cursor/rules/no-inline-imports.mdc": [
+    "22980d6181f0bf7c6fe64dc4d210787f72cd5410765bc6400b4de7a76b49a4cd"
+  ],
+  ".cursor/rules/observability.mdc": [
+    "99846d7fb24a183198929f625e92de157edaac5aea8dc070fe80ff95e011d441",
+    "a3bec62df1c9a237e946985be3f25abde7020a88273ef88379c69c52092e38b1"
+  ],
+  ".cursor/rules/personal-data.mdc": [
+    "94f41b128abd7307cae9b0862f8d012fed9a3a372081692b1b5d541f137bc4a5"
+  ],
+  ".cursor/rules/plan.mdc": [
+    "3c8f757ed68f678f70f1e2a9ccf1aca85ffba216640765b5c9fedaf9428fe6ae",
+    "c4e629ffa493330786df48aa31bb406cced5194847eb7e399a78aab12e8e4c0c",
+    "d5d4565910757083e62602d1e713841879db7715af8423e48ab1180461039ce4",
+    "fd1b0ffa0a97ba82e92ed2917bbc61e091792bb7733a98466c65c5214560e309"
+  ],
+  ".cursor/rules/pr-tidy.mdc": [
+    "aa55848ca86d83dc53de5c40244fa4be9741d144fb7827243cc82d5ce457a0a8",
+    "d1f6bd4a0484de4f737d7f3acafc0cc9b9c61758208b24e9863e4ac2e87ed6d8",
+    "da5340c38fc5cdb8e61ddeb73e27a62bc3a310e5958748ad49ce92b0ed2359be",
+    "f057c3878aa496245ead960b517d510c325e7e5eef2389200567dc1f3105d8b4"
+  ],
+  ".cursor/rules/python-patterns.mdc": [
+    "4d9abd6ee354e8a57036277c66bc2fa0f45d9bf26cd015e044c6b629bc6bdba6",
+    "850347ac910c750195507fae0f1e35bb22e387601b00b47b0987b3835b188314"
+  ],
+  ".cursor/rules/quality-gates.mdc": [
+    "5d489227b40894f30700f73fcd5e336869c493450559a6d89c73ffb7ee80b481"
+  ],
+  ".cursor/rules/reviewing.mdc": [
+    "05739da02a848f1314a43c1304c8543bcb1c87640dcc9d48ae55ec86919d66c8"
+  ],
+  ".cursor/rules/secrets.mdc": [
+    "87630eec9b7965ddd5af4fb2183b6feff5f4acc064ca031c9879e538186faf01"
+  ],
+  ".cursor/rules/shipped.mdc": [
+    "6e27e2323730b20165598cdc944c353520441bd5cbb27c018d41fa2e8030643c",
+    "d7364418679380bbd454bd8898dac43fb293063e59950f57eac9cfc2d0d8a70f",
+    "ddc8a2fff3a966fa2c93147f176558421ba2e6f551b03745314cfb0ef23a021f"
+  ],
+  ".cursor/rules/standards.mdc": [
+    "34ae110545c5818a10f1ae05cc4b53435e2f817e614b7b85d61c455c5778d58d",
+    "7c40aa2ae738c6c16fb1beb11fdf24317dd38bd65bad1463cfe99b0996b07a58"
+  ],
+  ".cursor/rules/tdd.mdc": [
+    "be364bd8ace72fb5bb91998dd9a1321f1c397077feb6d367649149cac28f5017",
+    "de9c1962f5ff7d7a2f0c15ca7e0f42b09fa1e528db40cf647b9f9ee0b724bd38"
+  ],
+  ".cursor/rules/test.mdc": [
+    "30c6dd267adc617daf96b891d7e794e2f60fbb9eb7f95e672313308711c42550"
+  ],
+  ".cursor/rules/typescript-patterns.mdc": [
+    "a3d3e93ecea588d4497435095be40bc1d83e0fb6e28ccbdb19291beaabd212ef",
+    "dd725b592e6ab55c1d58c469295471572bf3bf61bc86b53fbe0a909e67260ad8"
+  ]
+}

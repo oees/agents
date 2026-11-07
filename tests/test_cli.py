@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 from dataclasses import replace
 from pathlib import Path
@@ -9,6 +10,7 @@ from typer.testing import CliRunner, Result
 
 from oees_agents import __version__, sources
 from oees_agents.cli import app
+from oees_agents.content import load_content
 from oees_agents.manifest import MANIFEST_NAME, read_manifest, write_manifest
 from oees_agents.writer import LOCK_NAME
 
@@ -383,3 +385,68 @@ def test_verbose_logs_each_file_operation_as_json_with_a_run_id(
     assert {"message": "wrote file", "path": "AGENTS.md"}.items() <= records[0].items()
     assert len({record["run_id"] for record in records}) == 1
     assert records[0]["run_id"]
+
+
+LEGACY_FIXTURE = Path(__file__).resolve().parent / "fixtures/legacy/main"
+REPO = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture
+def legacy_project(project: Path) -> Path:
+    shutil.copytree(LEGACY_FIXTURE, project, dirs_exist_ok=True, symlinks=True)
+    return project
+
+
+def init_legacy(project: Path, *extra: str) -> Result:
+    return invoke(
+        "init",
+        project,
+        "--content-dir",
+        REPO,
+        "--yes",
+        "--description",
+        "d",
+        "--users",
+        "u",
+        *extra,
+    )
+
+
+def test_init_migrates_a_pre_manifest_install(legacy_project: Path) -> None:
+    claude_md = legacy_project / ".claude/CLAUDE.md"
+    claude_md.write_text("Project rule.\n" + claude_md.read_text())
+
+    result = init_legacy(legacy_project)
+
+    assert result.exit_code == 0, result.output
+    assert "pre-manifest install" in result.output
+    manifest = read_manifest(legacy_project / MANIFEST_NAME)
+    assert set(manifest.defaults) == set(load_content(REPO).defaults)
+    assert manifest.extras.subagents == "none"
+    assert not (legacy_project / ".claude/skills/commit/commit.md").exists()
+    assert (legacy_project / ".claude/skills/commit/SKILL.md").is_file()
+    text = claude_md.read_text()
+    assert "Project rule.\n" in text
+    assert text.count("@rules/tdd.md") == 1
+    check = invoke("check", legacy_project, "--content-dir", REPO)
+    assert check.exit_code == 0, check.output
+
+
+def test_init_keeps_and_lists_legacy_files_the_project_edited(legacy_project: Path) -> None:
+    edited = legacy_project / ".claude/loops/tier-0-daily-health-scan.md"
+    edited.write_text("Our own tuned loop.\n")
+
+    result = init_legacy(legacy_project)
+
+    assert result.exit_code == 0, result.output
+    assert ".claude/loops/tier-0-daily-health-scan.md" in result.output
+    assert edited.read_text() == "Our own tuned loop.\n"
+
+
+def test_flags_override_what_a_legacy_install_implies(legacy_project: Path) -> None:
+    result = init_legacy(legacy_project, "--subagents", "core", "--target", "claude")
+
+    assert result.exit_code == 0, result.output
+    manifest = read_manifest(legacy_project / MANIFEST_NAME)
+    assert manifest.extras.subagents == "core"
+    assert manifest.targets == ("claude",)
