@@ -3,7 +3,7 @@ name: plan
 description: Use when you have a spec or requirements for a multi-step task, before touching code
 ---
 
-> **Context that governs every judgement call:** this is an internal tool for a handful of staff. The simplest thing that works is always the right answer. Do not gold-plate.
+> Calibrate every judgement call to the project context block in the instruction files. Where it is missing, ask before assuming anything about who depends on this code.
 
 # Writing Plans
 
