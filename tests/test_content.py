@@ -113,6 +113,12 @@ def test_loops_and_commands_may_live_at_the_repository_root(content_root: Path) 
     assert set(load_content(content_root).loops) == set(LOOPS)
 
 
+def test_a_readme_in_a_document_directory_is_not_a_document(content_root: Path) -> None:
+    write(content_root / "content/loops/README.md", "# Loops\n\nHow to run one.\n")
+
+    assert set(load_content(content_root).loops) == set(LOOPS)
+
+
 def test_a_missing_tier_directory_raises(content_root: Path) -> None:
     shutil.rmtree(content_root / "content/conduct")
 
