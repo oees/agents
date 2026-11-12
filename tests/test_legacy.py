@@ -93,7 +93,12 @@ def test_the_main_install_migrates_to_every_default_and_no_project(
     assert manifest.kits == ()
     assert manifest.extras.subagents == "none"
     assert manifest.extras.commands is True
-    assert manifest.extras.loops == tuple(content.loops)
+    # The old installer shipped three loops; tier 3 arrived after it, so no legacy install has it.
+    assert manifest.extras.loops == (
+        "tier-0-daily-health-scan",
+        "tier-1-increase-test-coverage",
+        "tier-2-behavioural-improvements",
+    )
 
 
 def test_the_main_install_targets_claude_and_cursor(project: Path, content: Content) -> None:

@@ -251,7 +251,7 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 
 ### Loops (`extras.loops`, opt-in)
 
-Templates for unsupervised cloud agents that run on a schedule. Fill in the per-repo config block at the top and leave the rest untouched.
+Templates for unsupervised cloud agents that run on a schedule. Fill in the per-repo config block at the top and leave the rest untouched. [loops/README.md](loops/README.md) is the operating manual: what each tier may do, how to schedule a loop and how to stop one.
 
 <!-- BEGIN GENERATED: loops -->
 | Loop | What it does |
@@ -259,6 +259,7 @@ Templates for unsupervised cloud agents that run on a schedule. Fill in the per-
 | `tier-0-daily-health-scan` | Tier-0 Daily Health Scan — Automation Instructions |
 | `tier-1-increase-test-coverage` | Tier-1 Weekly Test-Coverage Filler — Automation Instructions |
 | `tier-2-behavioural-improvements` | Tier-2 Behavioral-Change Fixer — Automation Instructions |
+| `tier-3-queue-driven-delivery` | Four scheduled agents (coder, requirements checker, PR checker, merger) build, review and merge rows from an in-repo work queue unattended, coordinated by one stage label per PR. Tier 3 merges to the default branch without a human in the routine path. |
 <!-- END GENERATED: loops -->
 
 ### Generated Claude Code settings
