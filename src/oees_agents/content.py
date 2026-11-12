@@ -24,6 +24,8 @@ JUNK_NAMES = frozenset(
     {".DS_Store", ".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv"}
 )
 JUNK_SUFFIXES = (".pyc",)
+# A README in a content directory documents the directory; it is not content.
+README_NAME = "README.md"
 
 Meta = Mapping[str, str | tuple[str, ...]]
 
@@ -192,6 +194,8 @@ def _documents(
     documents: dict[str, Document] = {}
     for directory in _existing(root, candidates):
         for path in sorted(directory.glob("*.md")):
+            if path.name == README_NAME:
+                continue
             if path.stem in documents:
                 raise ContentError(f"{path.stem} is defined more than once")
             documents[path.stem] = _load_document(root, path, required)
