@@ -140,7 +140,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | Rule | What it covers |
 |---|---|
 | `api` | Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs |
-| `git` | Rebase onto the default branch, no merge commits, no squashing, commits that stand alone |
+| `git` | Every change reaches the default branch through a pull request, rebase-only merges, no merge commits, no squashing, commits that stand alone |
 | `migrations` | Safe, backwards-compatible database schema migrations |
 | `observability` | Structured logging, contextual errors, no silent exceptions |
 | `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |
@@ -302,8 +302,9 @@ Celery prefork workers do not hot-reload.
   git fetch origin
   git rebase "$(git rev-parse --abbrev-ref origin/HEAD)"
   ```
-- **No merge commits and no squashing.** Each commit should stand on its own.
-  Squash-merge is a per-project opt-in.
+- **Every change reaches the default branch through a pull request**, merged
+  with Rebase and merge. No merge commits and no squashing, in any project.
+  Each commit should stand on its own.
 - Force-pushing **feature** branches after a rebase is expected. **Never**
   force-push the default branch.
 - **Small, atomic commits.** Imperative subject of 50 characters or fewer, no
