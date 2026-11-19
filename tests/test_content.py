@@ -6,6 +6,7 @@ import pytest
 from oees_agents.content import ContentError, load_content, parse_frontmatter
 
 from conftest import (
+    COMMAND_SKILLS,
     CONDUCT,
     CORE_SUBAGENTS,
     DEFAULTS,
@@ -29,7 +30,7 @@ def test_every_expected_tier_skill_kit_subagent_and_loop_is_found(content_root: 
     assert set(content.subagents["core"]) == set(CORE_SUBAGENTS)
     assert set(content.subagents["extended"]) == set(EXTENDED_SUBAGENTS)
     assert set(content.loops) == set(LOOPS)
-    assert set(content.commands) == {"commit", "code-review", "plan", "pr-tidy", "test", "shipped"}
+    assert set(content.commands) == set(COMMAND_SKILLS)
 
 
 def test_frontmatter_is_parsed_into_meta_and_body(content_root: Path) -> None:
@@ -218,5 +219,5 @@ def test_this_repositorys_content_has_every_tier_skill_subagent_and_loop() -> No
     assert set(content.skills) == set(SKILLS)
     assert set(content.subagents["core"]) == set(CORE_SUBAGENTS)
     assert set(content.subagents["extended"]) == set(EXTENDED_SUBAGENTS)
-    assert set(content.commands) == {"commit", "code-review", "plan", "pr-tidy", "test", "shipped"}
+    assert set(content.commands) == set(COMMAND_SKILLS)
     assert content.loops
