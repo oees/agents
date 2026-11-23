@@ -14,7 +14,7 @@ from oees_agents.content import load_content
 from oees_agents.manifest import MANIFEST_NAME, read_manifest, write_manifest
 from oees_agents.writer import LOCK_NAME
 
-from conftest import build_content_tree
+from conftest import DEFAULTS, build_content_tree
 
 runner = CliRunner()
 
@@ -474,3 +474,21 @@ def test_flags_override_what_a_legacy_install_implies(legacy_project: Path) -> N
     manifest = read_manifest(legacy_project / MANIFEST_NAME)
     assert manifest.extras.subagents == "core"
     assert manifest.targets == ("claude",)
+
+
+def test_init_treats_own_files_at_legacy_paths_as_a_new_install(
+    project: Path, content_root: Path
+) -> None:
+    (project / ".claude").mkdir()
+    (project / ".claude/CLAUDE.md").write_text("# Our notes\n")
+    (project / ".cursor/rules").mkdir(parents=True)
+    (project / ".cursor/rules/test.mdc").write_text("Our own test rule.\n")
+
+    result = init(project, content_root)
+
+    assert result.exit_code == 0, result.output
+    assert "Migrated a pre-manifest install" not in result.output
+    manifest = read_manifest(project / MANIFEST_NAME)
+    assert manifest.targets == ("claude", "cursor")
+    assert set(manifest.defaults) == set(DEFAULTS)
+    assert manifest.extras.subagents == "core"
