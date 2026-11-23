@@ -1,0 +1,20 @@
+# Local settings for compose and the host. Copy .env.example to .env; never commit .env.
+.env
+.env.*
+!.env.example
+
+# Virtual environment, caches and test output.
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Build output. The image build runs collectstatic and compilemessages; commit .po files only.
+staticfiles/
+*.mo
