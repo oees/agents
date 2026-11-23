@@ -226,3 +226,8 @@ def test_the_line_prompter_rejects_choices_it_does_not_offer(
 
     with pytest.raises(QuestionError, match="rails"):
         LinePrompter().checkbox("Kits", ["fastapi"], [])
+
+
+def test_init_needs_at_least_one_target() -> None:
+    with pytest.raises(QuestionError, match="at least one target"):
+        run_ask(Flags(description="d", users="u"), Scripted([]))

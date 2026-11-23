@@ -91,6 +91,8 @@ def ask(
     """
     asker = _Asker(prompter)
     targets = asker.many("Targets", TARGETS, flags.targets, suggestions.targets, "target")
+    if not targets:
+        raise QuestionError("choose at least one target")
     name = asker.text("Project name", flags.name, suggestions.name, "--name")
     description = asker.text("One-paragraph description", flags.description, None, "--description")
     users = asker.text("Who uses it", flags.users, None, "--users")
