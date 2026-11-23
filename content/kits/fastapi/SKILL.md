@@ -50,7 +50,7 @@ tests/                   mirrors app/ (tests/core/test_health.py tests app/core/
   Never create a client per call. Wrap each external service in a small client class in its domain
   that takes the shared client and raises `ExternalServiceError` on unusable answers.
 
-Deviate when the project context says so, e.g. a CPU-bound or sync-only service (bill-e's PDF and
+Deviate when the project context says so, e.g. a CPU-bound or sync-only service (PDF rendering or
 local-LLM work) uses the sync engine with psycopg and plain `def` endpoints.
 
 ## Settings
