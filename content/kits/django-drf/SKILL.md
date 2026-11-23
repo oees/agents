@@ -161,7 +161,8 @@ fragments, included at the end of the Makefile.
 ## Deploy path
 
 1. A PR runs `ci`: `check` (`make check` against a Postgres service), `secrets` (gitleaks CLI over the full
-   history) and `image` (build plus a `/healthz` smoke test). Every action is pinned to a commit SHA.
+   history) and `image` (build plus a `/healthz` smoke test). Every action is pinned to a commit SHA, and every image
+   (CI and compose) to a digest beside its tag.
 2. A green `ci` run on a push to `main` triggers `deploy`, in the GitHub `production` environment. A run that is
    no longer the tip of `main` stops with a notice; the newer run deploys.
 3. `digitalocean/app_action` applies `.do/app.yaml`: web service on port 8000 with health check `/healthz`, a
