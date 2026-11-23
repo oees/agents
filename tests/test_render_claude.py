@@ -332,3 +332,18 @@ def test_a_blank_check_command_never_allows_every_command(content: Content) -> N
     assert "Bash(*)" not in allow
     assert not [entry for entry in allow if entry.startswith("Bash( ")]
     assert "Bash(make check *)" in allow
+
+
+def test_a_machine_install_writes_under_the_claude_config_dir(
+    content: Content, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "config/claude"))
+
+    output = render(manifest(scope="machine", project=None), content)
+
+    assert all(path.startswith("config/claude/") for path in output.paths)
+    assert "config/claude/settings.json" in output.optional
+    block = output.blocks["config/claude/CLAUDE.md"].body
+    assert "oees-agents update --machine" in block
+    assert CONTEXT_BEGIN not in block

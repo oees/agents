@@ -12,11 +12,15 @@ import tomli_w
 MANIFEST_NAME = ".oees-agents.toml"
 MANIFEST_VERSION = 1
 
+Scope = Literal["project", "machine"]
 Target = Literal["claude", "cursor", "codex"]
 BlastRadius = Literal["internal", "customer-facing", "regulated"]
 SubagentTier = Literal["none", "core", "extended"]
 
+SCOPES: tuple[Scope, ...] = get_args(Scope)
 TARGETS: tuple[Target, ...] = get_args(Target)
+MACHINE_TARGETS: tuple[Target, ...] = ("claude", "codex")
+"""Cursor reads rule files only from a project, so a machine install leaves it out."""
 BLAST_RADII: tuple[BlastRadius, ...] = get_args(BlastRadius)
 SUBAGENT_TIERS: tuple[SubagentTier, ...] = get_args(SubagentTier)
 
@@ -51,12 +55,13 @@ class Manifest:
     kits: tuple[str, ...] = ()
     extras: Extras = field(default_factory=Extras)
     version: int = MANIFEST_VERSION
+    scope: Scope = "project"
 
 
 T = TypeVar("T")
 C = TypeVar("C", bound=str)
 
-_TOP_KEYS = {"version", "source", "targets", "project", "rules", "kits", "extras"}
+_TOP_KEYS = {"version", "source", "scope", "targets", "project", "rules", "kits", "extras"}
 _PROJECT_KEYS = (
     "name",
     "description",
@@ -79,6 +84,10 @@ def parse_manifest(text: str) -> Manifest:
     if version != MANIFEST_VERSION:
         raise ManifestError(f"version: expected {MANIFEST_VERSION}, got {version}")
 
+    scope = _choice(_get(data, "scope", str, "", default="project"), SCOPES, "scope")
+    targets = _choices(_targets(data), TARGETS, "targets")
+    if scope == "machine":
+        _check_machine(data, targets)
     rules = _table(data, "rules", {"defaults"})
     kits = _table(data, "kits", {"enabled"})
     extras = _table(data, "extras", {"commands", "subagents"})
@@ -86,7 +95,8 @@ def parse_manifest(text: str) -> Manifest:
     return Manifest(
         version=version,
         source=_get(data, "source", str, ""),
-        targets=_choices(_targets(data), TARGETS, "targets"),
+        scope=scope,
+        targets=targets,
         project=_project(data["project"]) if "project" in data else None,
         defaults=_unique(_strings(rules, "defaults", "rules."), "rules.defaults"),
         kits=_unique(_strings(kits, "enabled", "kits.", default=()), "kits.enabled"),
@@ -105,8 +115,10 @@ def dump_manifest(manifest: Manifest) -> str:
     data: dict[str, Any] = {
         "version": manifest.version,
         "source": manifest.source,
-        "targets": list(manifest.targets),
     }
+    if manifest.scope != "project":
+        data["scope"] = manifest.scope
+    data["targets"] = list(manifest.targets)
     if manifest.project is not None:
         data["project"] = {key: getattr(manifest.project, key) for key in _PROJECT_KEYS}
     data["rules"] = {"defaults": list(manifest.defaults)}
@@ -187,6 +199,15 @@ def _strings(
     if not all(isinstance(item, str) for item in value):
         raise ManifestError(f"{prefix}{key}: expected a list of strings")
     return tuple(value)
+
+
+def _check_machine(data: Mapping[str, object], targets: tuple[Target, ...]) -> None:
+    if "project" in data:
+        raise ManifestError("project: a machine install has no project; remove [project]")
+    if "cursor" in targets:
+        raise ManifestError(
+            "targets: Cursor has no machine-wide rules; install it in each project instead"
+        )
 
 
 def _targets(data: Mapping[str, object]) -> tuple[str, ...]:
