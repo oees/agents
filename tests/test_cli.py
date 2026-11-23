@@ -169,15 +169,15 @@ def test_init_from_a_content_dir_records_local_as_source(project: Path, content_
 
 
 def test_init_lists_files_it_would_not_overwrite(project: Path, content_root: Path) -> None:
-    (project / ".claude").mkdir()
-    (project / ".claude/settings.json").write_text('{"mine": true}\n')
+    (project / ".claude/rules").mkdir(parents=True)
+    (project / ".claude/rules/git.md").write_text("Our own git rule.\n")
 
     result = init(project, content_root, "--target", "claude")
 
     assert result.exit_code == 0, result.output
-    assert ".claude/settings.json" in result.output
+    assert ".claude/rules/git.md" in result.output
     assert "not written by oees-agents" in result.output
-    assert (project / ".claude/settings.json").read_text() == '{"mine": true}\n'
+    assert (project / ".claude/rules/git.md").read_text() == "Our own git rule.\n"
 
 
 def test_update_rerenders_from_the_manifest_and_removes_a_disabled_kit(
@@ -492,3 +492,19 @@ def test_init_treats_own_files_at_legacy_paths_as_a_new_install(
     assert manifest.targets == ("claude", "cursor")
     assert set(manifest.defaults) == set(DEFAULTS)
     assert manifest.extras.subagents == "core"
+
+
+def test_a_projects_own_claude_settings_survive_init_and_pass_check(
+    project: Path, content_root: Path
+) -> None:
+    own = project / ".claude/settings.json"
+    own.parent.mkdir()
+    own.write_text('{"permissions": {"allow": ["Bash(just test)"]}}\n')
+
+    result = init(project, content_root, "--target", "claude")
+    check = invoke("check", project, "--content-dir", content_root)
+
+    assert result.exit_code == 0, result.output
+    assert ".claude/settings.json" in result.output
+    assert own.read_text() == '{"permissions": {"allow": ["Bash(just test)"]}}\n'
+    assert check.exit_code == 0, check.output

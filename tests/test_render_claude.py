@@ -42,7 +42,13 @@ DENIED = (
     "Bash(git rebase --interactive*)",
     "Bash(git filter-branch*)",
 )
-PYTHON_ALLOWS = ("Bash(uv*)", "Bash(pytest*)", "Bash(ruff*)", "Bash(mypy*)")
+PYTHON_ALLOWS = (
+    "Bash(uv sync)",
+    "Bash(uv run pytest *)",
+    "Bash(pytest *)",
+    "Bash(ruff *)",
+    "Bash(mypy *)",
+)
 IMPORT = re.compile(r"^@(\S+\.md)$", re.MULTILINE)
 
 
@@ -162,9 +168,30 @@ def test_settings_are_formatted_json_with_a_trailing_newline(content: Content) -
 def test_settings_allow_the_project_checks(content: Content) -> None:
     allow = settings(render(manifest(), content))["permissions"]["allow"]
 
-    assert "Bash(make check*)" in allow
-    assert "Bash(make check-fast*)" in allow
-    assert "Bash(git status*)" in allow
+    assert {"Bash(make check)", "Bash(make check *)"} <= set(allow)
+    assert {"Bash(make check-fast)", "Bash(make check-fast *)"} <= set(allow)
+    assert {"Bash(git status)", "Bash(git status *)"} <= set(allow)
+
+
+def test_every_allow_rule_matches_one_whole_command(content: Content) -> None:
+    everything = manifest(kits=("django-drf", "fastapi", "htmx-alpine"))
+    allow = settings(render(everything, content))["permissions"]["allow"]
+
+    # "Bash(ls*)" also allows "lsof"; "Bash(ls *)" allows only ls and its arguments.
+    assert [rule for rule in allow if "*" in rule and not rule.endswith(" *)")] == []
+
+
+def test_no_allow_rule_runs_an_arbitrary_command(content: Content) -> None:
+    everything = manifest(kits=("django-drf", "fastapi", "htmx-alpine"))
+    allow = settings(render(everything, content))["permissions"]["allow"]
+
+    # `uv run`, `uvx` and `npx` run any program; `find` runs one with -exec or deletes.
+    runners = ("Bash(uv *)", "Bash(uv run *)", "Bash(uvx", "Bash(npx *)", "Bash(find")
+    assert [rule for rule in allow if rule.startswith(runners)] == []
+
+
+def test_settings_json_is_optional_so_a_projects_own_file_wins(content: Content) -> None:
+    assert ".claude/settings.json" in render(manifest(), content).optional
 
 
 def test_a_python_kit_allows_its_toolchain(content: Content) -> None:
@@ -180,7 +207,7 @@ def test_a_kitless_manifest_allows_no_toolchain(content: Content) -> None:
     allow = settings(render(manifest(kits=()), content))["permissions"]["allow"]
 
     assert not set(PYTHON_ALLOWS) & set(allow)
-    assert "Bash(tsc*)" not in allow
+    assert "Bash(tsc *)" not in allow
 
 
 def test_a_typescript_kit_allows_npm_tsc_and_eslint(
@@ -190,8 +217,8 @@ def test_a_typescript_kit_allows_npm_tsc_and_eslint(
 
     allow = settings(render(manifest(kits=("htmx-alpine",)), content))["permissions"]["allow"]
 
-    assert {"Bash(npm run lint*)", "Bash(tsc*)", "Bash(eslint*)"} <= set(allow)
-    assert "Bash(pytest*)" not in allow
+    assert {"Bash(npm run lint *)", "Bash(tsc *)", "Bash(eslint *)"} <= set(allow)
+    assert "Bash(pytest *)" not in allow
 
 
 def test_no_subagents_means_no_agents_and_no_reviewing_skill(content: Content) -> None:
@@ -304,4 +331,4 @@ def test_a_blank_check_command_never_allows_every_command(content: Content) -> N
 
     assert "Bash(*)" not in allow
     assert not [entry for entry in allow if entry.startswith("Bash( ")]
-    assert "Bash(make check*)" in allow
+    assert "Bash(make check *)" in allow

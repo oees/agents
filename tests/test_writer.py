@@ -315,3 +315,44 @@ def test_an_invalid_lock_is_an_error(tmp_path: Path) -> None:
 
     with pytest.raises(WriterError, match=LOCK_NAME):
         read_lock(tmp_path)
+
+
+def optional_settings(data: bytes = b"generated\n") -> Output:
+    return Output(
+        files={".claude/settings.json": data}, optional=frozenset({".claude/settings.json"})
+    )
+
+
+def test_an_optional_file_leaves_the_projects_own_file_alone(tmp_path: Path) -> None:
+    own = tmp_path / ".claude/settings.json"
+    own.parent.mkdir()
+    own.write_bytes(b"ours\n")
+
+    pending = plan(tmp_path, optional_settings(), None)
+    apply(tmp_path, pending)
+
+    assert own.read_bytes() == b"ours\n"
+    assert pending.own == (".claude/settings.json",)
+    assert pending.conflicts == ()
+    assert ".claude/settings.json" not in locked(tmp_path).files
+    assert plan(tmp_path, optional_settings(), read_lock(tmp_path)).is_clean
+
+
+def test_force_replaces_the_projects_own_optional_file(tmp_path: Path) -> None:
+    own = tmp_path / ".claude/settings.json"
+    own.parent.mkdir()
+    own.write_bytes(b"ours\n")
+
+    sync(tmp_path, optional_settings(), force=True)
+
+    assert own.read_bytes() == b"generated\n"
+    assert ".claude/settings.json" in locked(tmp_path).files
+
+
+def test_an_optional_file_that_oees_agents_wrote_is_owned_like_any_other(tmp_path: Path) -> None:
+    sync(tmp_path, optional_settings())
+    (tmp_path / ".claude/settings.json").write_bytes(b"edited\n")
+
+    pending = plan(tmp_path, optional_settings(), read_lock(tmp_path))
+
+    assert [conflict.path for conflict in pending.conflicts] == [".claude/settings.json"]

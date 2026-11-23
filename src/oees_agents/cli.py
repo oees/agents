@@ -260,6 +260,11 @@ def _report(pending: Plan) -> None:
         typer.echo("Left untouched:")
         for conflict in pending.conflicts:
             typer.echo(f"  {conflict.path}: {conflict.reason}")
+    for path in pending.own:
+        typer.echo(
+            f"Kept the project's own {path}; oees-agents does not manage it. "
+            "Delete it, or use --force, to take the generated one."
+        )
     for warning in pending.warnings:
         typer.echo(f"warning: {warning}", err=True)
 

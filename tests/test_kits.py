@@ -117,7 +117,7 @@ def test_the_cursor_rule_for_the_kit_carries_its_globs(content: Content, kit: Ki
 def test_claude_may_run_the_python_toolchain_the_kit_uses(content: Content, kit: Kit) -> None:
     allow = settings(rendered(content, kit))["permissions"]["allow"]
 
-    assert {"Bash(uv*)", "Bash(pytest*)", "Bash(ruff*)", "Bash(mypy*)"} <= set(allow)
+    assert {"Bash(uv run pytest *)", "Bash(pytest *)", "Bash(ruff *)", "Bash(mypy *)"} <= set(allow)
 
 
 @pytest.mark.parametrize("kit", KITS, ids=lambda kit: kit.name)

@@ -23,6 +23,8 @@ class ManagedBlock:
 class Output:
     files: Mapping[str, bytes] = field(default_factory=lambda: MappingProxyType({}))
     blocks: Mapping[str, ManagedBlock] = field(default_factory=lambda: MappingProxyType({}))
+    optional: frozenset[str] = frozenset()
+    """Files written only where the project has no file of its own."""
 
     @property
     def paths(self) -> set[str]:
@@ -32,13 +34,16 @@ class Output:
 def merge_outputs(outputs: Iterable[Output]) -> Output:
     files: dict[str, bytes] = {}
     blocks: dict[str, ManagedBlock] = {}
+    optional: set[str] = set()
     for output in outputs:
         for path in output.paths:
             if path in files or path in blocks:
                 raise RenderError(f"{path} is rendered by more than one target")
         files.update(output.files)
         blocks.update(output.blocks)
+        optional |= output.optional
     return Output(
         files=MappingProxyType(dict(sorted(files.items()))),
         blocks=MappingProxyType(dict(sorted(blocks.items()))),
+        optional=frozenset(optional),
     )
