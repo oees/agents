@@ -15,6 +15,7 @@ from oees_agents.output import Output, RenderError
 from oees_agents.profiles import KIT_GLOBS, PATTERN_GLOBS, SUBAGENT_ONLY_SKILLS
 
 RULES_DIR = ".cursor/rules"
+REPOSITORY = "https://github.com/oees/agents"
 CONTEXT_RULE = "00-project-context"
 
 _UNSAFE_STARTS = (*"\"'[]{}>|*&!%@,`", "- ", "? ")
@@ -47,8 +48,18 @@ def render(manifest: Manifest, content: Content) -> Output:
             add(name, skill.description, _body(skill.document), globs, always=False)
     for name in manifest.kits:
         kit = content.kits[name]
-        add(name, kit.description, _body(kit.document), KIT_GLOBS.get(name, ()), always=False)
+        body = f"{_body(kit.document)}\n{_templates_note(manifest, name)}\n"
+        add(name, kit.description, body, KIT_GLOBS.get(name, ()), always=False)
     return Output(files=MappingProxyType(dict(sorted(files.items()))))
+
+
+def _templates_note(manifest: Manifest, kit: str) -> str:
+    """Cursor installs no templates, so say where this kit's templates are."""
+    if "claude" in manifest.targets:
+        where = f"`.claude/skills/{kit}/templates/`"
+    else:
+        where = f"{REPOSITORY}/tree/main/content/kits/{kit}/templates"
+    return f"The files that this kit names are in its templates: {where}."
 
 
 def _body(document: Document) -> str:
