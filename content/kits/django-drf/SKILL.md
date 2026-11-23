@@ -13,6 +13,7 @@ deployed as one container image to DigitalOcean App Platform. Copy the templates
 ```
 config/                 project package: settings/, urls.py, wsgi.py, asgi.py, celery.py, gunicorn.py
 apps/core/              shared plumbing: request ids, logging, error envelope, pagination, health
+apps/accounts/          the custom user model (AUTH_USER_MODEL = "accounts.User") and its admin
 apps/<domain>/          one app per domain (billing, contracts, ...), each with its own tests/
 conftest.py             fixtures shared by every app's tests
 manage.py, pyproject.toml, uv.lock, Makefile, Dockerfile, compose.yml, .do/app.yaml
@@ -20,8 +21,9 @@ manage.py, pyproject.toml, uv.lock, Makefile, Dockerfile, compose.yml, .do/app.y
 
 - Organise by domain, not by layer: an app holds its models, serializers, views, tasks, admin and `tests/`.
   Business rules live in models and service functions inside the app, never in serializers or views.
-- Start every project with a custom user model in `apps/accounts` (`AUTH_USER_MODEL = "accounts.User"`)
-  before the first migration, because swapping it later means rewriting history.
+- Every project starts with the custom user model in `apps/accounts` (`AUTH_USER_MODEL = "accounts.User"`),
+  which the kit ships with its initial migration. Swapping the user model after the first migration means
+  rewriting history. Add user fields to `apps/accounts/models.py` with a new migration.
 - The API lives under `/api/v1/`. Each app's ViewSets are registered on the one `DefaultRouter` in
   `config/urls.py`. `/healthz`, `/readyz` and `/admin/` sit outside the versioned prefix.
 - Authentication is JWT (simplejwt): `/api/v1/auth/token/`, `.../refresh/` (rotating, old refresh tokens
@@ -174,6 +176,7 @@ fragments, included at the end of the Makefile.
 | Django entry point | `templates/manage.py` | nothing |
 | Project package | `templates/config/` | register each app's ViewSets in `config/urls.py` as you add them |
 | Shared plumbing and its tests | `templates/apps/core/`, `templates/apps/__init__.py` | nothing |
+| Custom user model, admin, initial migration and tests | `templates/apps/accounts/` | nothing; add user fields with a migration |
 | Shared test fixtures | `templates/conftest.py` | nothing |
 | Static files directory | `templates/static/.gitkeep` | nothing |
 | Container image | `templates/Dockerfile`, `templates/.dockerignore` | nothing |
