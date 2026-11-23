@@ -19,12 +19,22 @@ from oees_agents.manifest import (
     Manifest,
     ManifestError,
     parse_manifest,
+    read_manifest,
     set_source,
     write_manifest,
 )
 from oees_agents.output import RenderError
-from oees_agents.questions import Flags, QuestionError, ask, default_prompter, detect
+from oees_agents.questions import (
+    Flags,
+    QuestionError,
+    ask,
+    ask_scope,
+    default_prompter,
+    detect,
+    detect_machine,
+)
 from oees_agents.render import render
+from oees_agents.scope import install_root, update_command
 from oees_agents.sources import LOCAL, SourceError, resolve
 from oees_agents.writer import Plan, WriterError, apply, plan, read_lock
 
@@ -56,6 +66,12 @@ ContentDir = Annotated[
 Force = Annotated[
     bool, typer.Option(help="Replace generated files and blocks that were edited by hand.")
 ]
+Machine = Annotated[
+    bool,
+    typer.Option(
+        "--machine", help="Work on the machine install in your home directory, not a project."
+    ),
+]
 Many = Annotated[list[str] | None, typer.Option()]
 
 
@@ -72,6 +88,14 @@ def main(
 def init(
     path: ProjectPath = Path(),
     *,
+    machine: Annotated[
+        bool | None,
+        typer.Option(
+            "--machine/--project",
+            help="Install for the whole machine (~/.claude, ~/.codex) or for this project. "
+            "Asked when not given.",
+        ),
+    ] = None,
     target: Annotated[
         list[str] | None, typer.Option(help="claude, cursor or codex; repeat for several.")
     ] = None,
@@ -102,12 +126,8 @@ def init(
 ) -> None:
     """Ask a few questions, write .oees-agents.toml and generate the files."""
     with _handled():
-        manifest_path = path / MANIFEST_NAME
-        if manifest_path.exists():
-            _fail(f"{manifest_path} exists already; run `oees-agents update` instead")
-        source = resolve(ref, content_dir)
-        content = source.content
         flags = Flags(
+            scope=None if machine is None else ("machine" if machine else "project"),
             targets=_tuple(target),
             name=name,
             description=description,
@@ -121,29 +141,34 @@ def init(
             subagents=subagents,
             commands=not no_commands,
         )
-        install = legacy.detect(path, content)
+        prompter = None if yes else default_prompter()
+        with _answering():
+            scope = ask_scope(flags, prompter)
+        root = install_root(scope, path)
+        manifest_path = root / MANIFEST_NAME
+        if manifest_path.exists():
+            _fail(f"{manifest_path} exists already; run `{update_command(scope)}` instead")
+        if scope == "machine":
+            _refuse_project_flags(flags)
+        source = resolve(ref, content_dir)
+        content = source.content
+        install = legacy.detect(root, content) if scope == "project" else None
         if install is not None:
             flags = _with_legacy_answers(flags, install, tuple(content.defaults))
-        try:
+        kits = tuple(content.kits)
+        suggestions = detect(root, kits) if scope == "project" else detect_machine(root)
+        with _answering():
             answers = ask(
                 flags,
-                detect(path, tuple(content.kits)),
+                suggestions,
                 defaults=tuple(content.defaults),
-                kits=tuple(content.kits),
-                prompter=None if yes else default_prompter(),
-            )
-        except QuestionError as error:
-            typer.echo(f"error: {error}", err=True)
-            raise typer.Exit(2) from error
-        except typer.Abort:
-            if sys.stdin.isatty():
-                raise
-            _fail(
-                "init needs answers, but its input ended. Run it in a terminal, "
-                "or pass --yes with --description and --users."
+                kits=kits,
+                prompter=prompter,
+                scope=scope,
             )
         manifest = Manifest(
             source=source.label,
+            scope=scope,
             targets=answers.targets,
             project=answers.project,
             defaults=answers.defaults,
@@ -152,35 +177,45 @@ def init(
         )
         output = render(manifest, content)
         if install is not None:
-            legacy.migrate(path, install)
+            legacy.migrate(root, install)
             _report_legacy(install)
-        pending = plan(path, output, read_lock(path), force)
-        apply(path, pending)
+        pending = plan(root, output, read_lock(root), force)
+        apply(root, pending)
         write_manifest(manifest_path, manifest)
-        typer.echo(f"Wrote {MANIFEST_NAME}. Commit it with the generated files and the lock.")
+        if scope == "machine":
+            typer.echo(f"Wrote {manifest_path}. It and the lock next to it track this machine.")
+        else:
+            typer.echo(f"Wrote {MANIFEST_NAME}. Commit it with the generated files and the lock.")
         _report(pending)
+        if scope == "project" and _has_machine_install(root):
+            typer.echo(
+                "This machine also has a machine install. Claude Code and Codex load both, "
+                "so the shared rules load twice here."
+            )
 
 
 @app.command()
 def update(
     path: ProjectPath = Path(),
+    machine: Machine = False,
     ref: Ref = None,
     force: Force = False,
     content_dir: ContentDir = None,
 ) -> None:
     """Re-render everything from .oees-agents.toml."""
     with _handled():
-        text, manifest = _read_manifest(path)
+        root = install_root("machine", path) if machine else path
+        text, manifest = _read_manifest(root, machine)
         source = resolve(ref, content_dir)
         manifest = replace(manifest, source=source.label)
-        pending = plan(path, render(manifest, source.content), read_lock(path), force)
+        pending = plan(root, render(manifest, source.content), read_lock(root), force)
         # Pin first: if the source line cannot be rewritten, no file has changed yet.
         pinned = None
         if parse_manifest(text).source != source.label:
             pinned = set_source(text, source.label)
-        apply(path, pending)
+        apply(root, pending)
         if pinned is not None:
-            (path / MANIFEST_NAME).write_text(pinned, encoding="utf-8")
+            (root / MANIFEST_NAME).write_text(pinned, encoding="utf-8")
             typer.echo(f"Pinned {MANIFEST_NAME} to {source.label}.")
         _report(pending)
 
@@ -188,16 +223,18 @@ def update(
 @app.command("check")
 def check_command(
     path: ProjectPath = Path(),
+    machine: Machine = False,
     ref: Ref = None,
     content_dir: ContentDir = None,
 ) -> None:
     """Exit non-zero when generated files are missing, stale or edited by hand."""
     with _handled():
-        _, manifest = _read_manifest(path)
+        root = install_root("machine", path) if machine else path
+        _, manifest = _read_manifest(root, machine)
         source = resolve(ref, content_dir)
         if source.label not in (manifest.source, LOCAL):
             typer.echo(f"note: {MANIFEST_NAME} pins {manifest.source}; checking {source.label}")
-        pending = plan(path, render(manifest, source.content), read_lock(path))
+        pending = plan(root, render(manifest, source.content), read_lock(root))
         if pending.is_clean:
             typer.echo("oees-agents files are up to date.")
             return
@@ -207,10 +244,11 @@ def check_command(
             typer.echo(f"no longer rendered: {item}")
         for conflict in pending.conflicts:
             typer.echo(f"edited by hand: {conflict.path} ({conflict.reason})")
+        update = update_command(manifest.scope)
         if pending.writes or pending.deletes or pending.unblocks:
-            typer.echo("Run `oees-agents update` to bring the generated files in line.")
+            typer.echo(f"Run `{update}` to bring the generated files in line.")
         if pending.conflicts:
-            typer.echo("Run `oees-agents update --force` to replace the files edited by hand.")
+            typer.echo(f"Run `{update} --force` to replace the files edited by hand.")
         raise typer.Exit(1)
 
 
@@ -288,12 +326,64 @@ def _files(count: int) -> str:
     return f"{count} file" if count == 1 else f"{count} files"
 
 
-def _read_manifest(path: Path) -> tuple[str, Manifest]:
-    manifest_path = path / MANIFEST_NAME
+def _read_manifest(root: Path, machine: bool = False) -> tuple[str, Manifest]:
+    manifest_path = root / MANIFEST_NAME
     if not manifest_path.is_file():
-        _fail(f"no {MANIFEST_NAME} in {path}; run `oees-agents init` first")
+        hint = ""
+        if not machine and _has_machine_install(root):
+            hint = "; for the machine install, add --machine"
+        _fail(f"no {MANIFEST_NAME} in {root}; run `oees-agents init` first{hint}")
     text = manifest_path.read_text(encoding="utf-8")
-    return text, parse_manifest(text)
+    manifest = parse_manifest(text)
+    if machine and manifest.scope != "machine":
+        _fail(f"{manifest_path} is a project install; run the command without --machine")
+    return text, manifest
+
+
+def _has_machine_install(root: Path) -> bool:
+    """A machine install other than `root` itself."""
+    home = install_root("machine", root)
+    if root.resolve() == home.resolve() or not (home / MANIFEST_NAME).is_file():
+        return False
+    try:
+        return read_manifest(home / MANIFEST_NAME).scope == "machine"
+    except ManifestError:
+        return False
+
+
+def _refuse_project_flags(flags: Flags) -> None:
+    given = [
+        option
+        for option, value in (
+            ("--name", flags.name),
+            ("--description", flags.description),
+            ("--users", flags.users),
+            ("--blast-radius", flags.blast_radius),
+            ("--default-branch", flags.default_branch),
+            ("--check", flags.check),
+            ("--check-fast", flags.check_fast),
+        )
+        if value is not None
+    ]
+    if given:
+        _fail(f"{', '.join(given)} describe a project; a machine install has no project")
+
+
+@contextmanager
+def _answering() -> Iterator[None]:
+    """Turn a bad answer or closed input into a plain error."""
+    try:
+        yield
+    except QuestionError as error:
+        typer.echo(f"error: {error}", err=True)
+        raise typer.Exit(2) from error
+    except typer.Abort:
+        if sys.stdin.isatty():
+            raise
+        _fail(
+            "init needs answers, but its input ended. Run it in a terminal, "
+            "or pass --yes with --description and --users."
+        )
 
 
 def _tuple(values: list[str] | None) -> tuple[str, ...] | None:

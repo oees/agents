@@ -14,11 +14,14 @@ import typer
 
 from oees_agents.manifest import (
     BLAST_RADII,
+    MACHINE_TARGETS,
+    SCOPES,
     SUBAGENT_TIERS,
     TARGETS,
     BlastRadius,
     Extras,
     Project,
+    Scope,
     SubagentTier,
     Target,
 )
@@ -45,6 +48,7 @@ class Prompter(Protocol):
 
 @dataclass(frozen=True)
 class Flags:
+    scope: str | None = None
     targets: tuple[str, ...] | None = None
     name: str | None = None
     description: str | None = None
@@ -70,10 +74,16 @@ class Suggestions:
 @dataclass(frozen=True)
 class Answers:
     targets: tuple[Target, ...]
-    project: Project
+    project: Project | None
     defaults: tuple[str, ...]
     kits: tuple[str, ...]
     extras: Extras
+
+
+def ask_scope(flags: Flags, prompter: Prompter | None) -> Scope:
+    """The first question: install into this project, or for the whole machine."""
+    scope = _Asker(prompter).one("Install for", SCOPES, flags.scope, "project", "scope")
+    return cast(Scope, scope)
 
 
 def ask(
@@ -83,16 +93,42 @@ def ask(
     defaults: Sequence[str],
     kits: Sequence[str],
     prompter: Prompter | None,
+    scope: Scope = "project",
 ) -> Answers:
     """Answer every question from its flag, else the prompter, else its default.
 
     Without a prompter (`--yes`), the description and users have no sensible
-    default and must come from their flags.
+    default and must come from their flags. A machine install has no project,
+    so it asks no project question and offers no Cursor target.
     """
     asker = _Asker(prompter)
-    targets = asker.many("Targets", TARGETS, flags.targets, suggestions.targets, "target")
+    choices = MACHINE_TARGETS if scope == "machine" else TARGETS
+    if scope == "machine" and flags.targets is not None and "cursor" in flags.targets:
+        raise QuestionError("Cursor has no machine-wide rules; install it in each project instead")
+    targets = asker.many("Targets", choices, flags.targets, suggestions.targets, "target")
     if not targets:
         raise QuestionError("choose at least one target")
+    project = None if scope == "machine" else _ask_project(asker, flags, suggestions)
+    chosen_kits = asker.many("Kits", kits, flags.kits, suggestions.kits, "kit")
+    if flags.no_defaults is not None:
+        _check_known(flags.no_defaults, defaults, "default")
+        kept = tuple(name for name in defaults if name not in flags.no_defaults)
+    else:
+        kept = asker.many("Defaults to keep", defaults, None, defaults, "default")
+    subagents = asker.one("Subagents", SUBAGENT_TIERS, flags.subagents, "core", "subagents")
+    return Answers(
+        targets=cast(tuple[Target, ...], targets),
+        project=project,
+        defaults=kept,
+        kits=chosen_kits,
+        extras=Extras(
+            commands=flags.commands,
+            subagents=cast(SubagentTier, subagents),
+        ),
+    )
+
+
+def _ask_project(asker: "_Asker", flags: Flags, suggestions: Suggestions) -> Project:
     name = asker.text("Project name", flags.name, suggestions.name, "--name")
     description = asker.text("One-paragraph description", flags.description, None, "--description")
     users = asker.text("Who uses it", flags.users, None, "--users")
@@ -106,30 +142,14 @@ def ask(
     check_fast = asker.text(
         "Fast check command", flags.check_fast, DEFAULT_CHECK_FAST, "--check-fast"
     )
-    chosen_kits = asker.many("Kits", kits, flags.kits, suggestions.kits, "kit")
-    if flags.no_defaults is not None:
-        _check_known(flags.no_defaults, defaults, "default")
-        kept = tuple(name for name in defaults if name not in flags.no_defaults)
-    else:
-        kept = asker.many("Defaults to keep", defaults, None, defaults, "default")
-    subagents = asker.one("Subagents", SUBAGENT_TIERS, flags.subagents, "core", "subagents")
-    return Answers(
-        targets=cast(tuple[Target, ...], targets),
-        project=Project(
-            name=name,
-            description=description,
-            users=users,
-            blast_radius=cast(BlastRadius, blast_radius),
-            default_branch=branch,
-            check=check,
-            check_fast=check_fast,
-        ),
-        defaults=kept,
-        kits=chosen_kits,
-        extras=Extras(
-            commands=flags.commands,
-            subagents=cast(SubagentTier, subagents),
-        ),
+    return Project(
+        name=name,
+        description=description,
+        users=users,
+        blast_radius=cast(BlastRadius, blast_radius),
+        default_branch=branch,
+        check=check,
+        check_fast=check_fast,
     )
 
 
@@ -196,6 +216,21 @@ def detect(root: Path, kits: Sequence[str]) -> Suggestions:
         name=root.resolve().name,
         default_branch=_default_branch(root),
         kits=tuple(kit for kit in _kit_hints(root) if kit in kits),
+    )
+
+
+def detect_machine(home: Path) -> Suggestions:
+    """Suggest the tools this machine already has a user directory for."""
+    found = tuple(
+        target
+        for target, directory in (("claude", ".claude"), ("codex", ".codex"))
+        if (home / directory).is_dir()
+    )
+    return Suggestions(
+        targets=cast(tuple[Target, ...], found) or MACHINE_TARGETS,
+        name="",
+        default_branch="",
+        kits=(),
     )
 
 

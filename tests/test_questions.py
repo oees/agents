@@ -11,7 +11,9 @@ from oees_agents.questions import (
     QuestionError,
     Suggestions,
     ask,
+    ask_scope,
     detect,
+    detect_machine,
 )
 
 from conftest import KITS, write
@@ -84,6 +86,7 @@ def test_suggestions_are_the_defaults() -> None:
     assert answers.targets == ("claude",)
     assert answers.kits == ("django-drf",)
     assert answers.defaults == ALL_DEFAULTS
+    assert answers.project is not None
     assert answers.project.name == "portal"
     assert answers.project.check == "make check"
 
@@ -231,3 +234,49 @@ def test_the_line_prompter_rejects_choices_it_does_not_offer(
 def test_init_needs_at_least_one_target() -> None:
     with pytest.raises(QuestionError, match="at least one target"):
         run_ask(Flags(description="d", users="u"), Scripted([]))
+
+
+def run_machine_ask(flags: Flags, prompter: Scripted | None) -> Answers:
+    return ask(
+        flags,
+        detect_machine(Path("/nonexistent-home")),
+        defaults=ALL_DEFAULTS,
+        kits=KITS,
+        prompter=prompter,
+        scope="machine",
+    )
+
+
+def test_scope_is_the_first_question_and_defaults_to_the_project() -> None:
+    prompter = Scripted(...)
+
+    assert ask_scope(Flags(), prompter) == "project"
+    assert prompter.asked[0].startswith("Install for")
+    assert ask_scope(Flags(), None) == "project"
+    assert ask_scope(Flags(scope="machine"), None) == "machine"
+
+
+def test_a_machine_install_asks_no_project_questions() -> None:
+    prompter = Scripted(..., ..., ..., ...)
+
+    answers = run_machine_ask(Flags(), prompter)
+
+    assert [message.split(" (")[0] for message in prompter.asked] == [
+        "Targets",
+        "Kits",
+        "Defaults to keep",
+        "Subagents",
+    ]
+    assert answers.project is None
+    assert answers.targets == ("claude", "codex")
+    assert answers.kits == ()
+
+
+def test_a_machine_install_refuses_cursor() -> None:
+    with pytest.raises(QuestionError, match="Cursor has no machine-wide rules"):
+        run_machine_ask(Flags(targets=("claude", "cursor")), None)
+
+
+def test_a_bad_scope_flag_is_rejected() -> None:
+    with pytest.raises(QuestionError, match="scope must be one of project, machine"):
+        ask_scope(Flags(scope="team"), None)
