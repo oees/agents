@@ -190,3 +190,58 @@ def test_a_manifest_needs_at_least_one_target() -> None:
 def test_an_empty_project_name_is_rejected() -> None:
     with pytest.raises(ManifestError, match=r"project\.name: must not be empty"):
         parse_manifest(FULL.replace('name = "portal"', 'name = "  "'))
+
+
+MACHINE = """\
+version = 1
+source = "v1.0.0"
+scope = "machine"
+targets = ["claude", "codex"]
+
+[rules]
+defaults = ["tdd", "git"]
+"""
+
+
+def test_a_manifest_without_scope_is_a_project_install() -> None:
+    assert parse_manifest(FULL).scope == "project"
+
+
+def test_a_machine_manifest_has_no_project() -> None:
+    manifest = parse_manifest(MACHINE)
+
+    assert manifest.scope == "machine"
+    assert manifest.project is None
+    assert manifest.targets == ("claude", "codex")
+
+
+def test_a_machine_manifest_round_trips_with_its_scope() -> None:
+    manifest = parse_manifest(MACHINE)
+
+    dumped = dump_manifest(manifest)
+
+    assert 'scope = "machine"' in dumped
+    assert parse_manifest(dumped) == manifest
+
+
+def test_a_project_manifest_is_dumped_without_a_scope_line() -> None:
+    assert "scope" not in dump_manifest(parse_manifest(FULL))
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        (MACHINE.replace('"machine"', '"team"'), "scope: expected one of project, machine"),
+        (
+            MACHINE.replace('["claude", "codex"]', '["claude", "cursor"]'),
+            "targets: Cursor has no machine-wide rules",
+        ),
+        (
+            MACHINE + '\n[project]\nname = "x"\n',
+            "project: a machine install has no project",
+        ),
+    ],
+)
+def test_invalid_machine_manifests_are_rejected(text: str, message: str) -> None:
+    with pytest.raises(ManifestError, match=message):
+        parse_manifest(text)
