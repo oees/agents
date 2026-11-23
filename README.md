@@ -1,6 +1,6 @@
 # agents
 
-Shared AI-agent configuration for Octopus Energy España (OEES) projects, for Claude Code, Cursor and Codex. It gives a project rules, skills, slash commands, subagents, scheduled-agent loops and stack kits, and the project chooses which of them it takes. The Octopus way is the default: a small conduct core is always on, the default rules are on unless a project opts out of them, and kits and extras are opt-in. A project's choices live in one committed manifest, and the `oees-agents` CLI generates every tool's files from it.
+Shared AI-agent configuration for Octopus Energy España (OEES) projects, for Claude Code, Cursor and Codex. It gives a project rules, skills, slash commands, subagents and stack kits, and the project chooses which of them it takes. The Octopus way is the default: a small conduct core is always on, the default rules are on unless a project opts out of them, and kits and extras are opt-in. A project's choices live in one committed manifest, and the `oees-agents` CLI generates every tool's files from it.
 
 ## Install
 
@@ -65,7 +65,6 @@ When you commit these files, everyone on the project gets the same configuration
 | 8 | Kits (multi-select) | Suggested from the repo: `manage.py` suggests `django-drf`, `fastapi` in `pyproject.toml` or `requirements*.txt` suggests `fastapi`, `hx-` in a `templates/**/*.html` file suggests `htmx-alpine` | `--kit` (repeat), `--no-kits` |
 | 9 | Defaults to keep (multi-select) | All of them | `--no-default <name>` (repeat) |
 | 10 | Subagents: `none`, `core` or `extended` | `core` | `--subagents` |
-| 11 | Loops (multi-select) | None | `--loop` (repeat) |
 
 The slash commands are not a question: they install unless you pass `--no-commands`. `--yes` (`-y`) asks nothing and takes each flag, else the default; the description and users have no default, so `--yes` needs `--description` and `--users`. `init` also takes `--force`, `--ref` and `--content-dir`, described under [Updating](#updating), and the project root as an optional argument (default `.`).
 
@@ -106,7 +105,6 @@ enabled = ["django-drf", "htmx-alpine"]
 [extras]
 commands = true
 subagents = "core"                  # none | core | extended
-loops = []
 ```
 
 | Field | Meaning |
@@ -125,7 +123,6 @@ loops = []
 | `kits.enabled` | The stack kits this project uses. |
 | `extras.commands` | Install the slash commands (`.claude/commands/`). The skills behind them install either way. |
 | `extras.subagents` | `none`, `core` or `extended` (core plus the extended set). |
-| `extras.loops` | The loop templates to install. Empty by default. |
 
 `blast_radius` takes one of three values, and agents calibrate their caution to it:
 
@@ -246,19 +243,6 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 | `ui-reviewer` | extended | Use, in a fresh read-only context, on every change to templates, components, client code, static assets or the views that render them. Give it the requirement, the diff with its base and head, and the output of the checks run on that head, including template and frontend linters, type checks, translation checks and any browser test runs. |
 <!-- END GENERATED: subagents -->
 
-### Loops (`extras.loops`, opt-in)
-
-Templates for unsupervised cloud agents that run on a schedule. Fill in the per-repo config block at the top and leave the rest untouched. [loops/README.md](loops/README.md) is the operating manual: what each tier may do, how to schedule a loop and how to stop one.
-
-<!-- BEGIN GENERATED: loops -->
-| Loop | What it does |
-|---|---|
-| `tier-0-daily-health-scan` | Tier-0 Daily Health Scan — Automation Instructions |
-| `tier-1-increase-test-coverage` | Tier-1 Weekly Test-Coverage Filler — Automation Instructions |
-| `tier-2-behavioural-improvements` | Tier-2 Behavioral-Change Fixer — Automation Instructions |
-| `tier-3-queue-driven-delivery` | Four scheduled agents (coder, requirements checker, PR checker, merger) build, review and merge rows from an in-repo work queue unattended, coordinated by one stage label per PR. Tier 3 merges to the default branch without a human in the routine path. |
-<!-- END GENERATED: loops -->
-
 ### Generated Claude Code settings
 
 `.claude/settings.json` is generated from the manifest:
@@ -282,7 +266,6 @@ claude:
   skills/                     every skill, enabled kits with templates/; reviewing only with subagents
   commands/                   slash commands, unless extras.commands = false
   agents/                     core, or core and extended, subagents
-  loops/                      selected loop templates
   settings.json               as above
 
 cursor:
@@ -333,15 +316,15 @@ defaults = ["tdd", "git", "observability", "api", "standards", "quality-gates"]
 
 At install, `--no-default migrations` does the same. Conduct (`conduct`, `secrets`, `data-protection`, `language`) cannot be opted out.
 
-Kits and extras work the same way: remove the kit from `kits.enabled`, set `commands = false`, set `subagents = "none"` or drop a loop from `loops`, add the reason above it, and run `update`. The files that are no longer produced are removed. `update` never rewrites the manifest beyond its `source` line, so the reason comments stay.
+Kits and extras work the same way: remove the kit from `kits.enabled`, set `commands = false` or set `subagents = "none"`, add the reason above it, and run `update`. The files that are no longer produced are removed. `update` never rewrites the manifest beyond its `source` line, so the reason comments stay.
 
 ## Existing installs
 
-If the project was set up with the old bootstrap script, run `oees-agents init` as for a new install. It detects the old install and takes the targets, kept defaults, loops and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
+If the project was set up with the old bootstrap script, run `oees-agents init` as for a new install. It detects the old install and takes the targets, kept defaults and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
 
 ## Codex notes
 
-Codex [reads `AGENTS.md` at startup](https://learn.chatgpt.com/docs/agent-configuration/agents-md). The CLI writes the project context, conduct and the kept defaults in full into a managed block, so loading them does not depend on following links or on Claude's `@imports`. Codex gets the rules only; skills, commands, subagents and loops are for Claude Code (and skills for Cursor).
+Codex [reads `AGENTS.md` at startup](https://learn.chatgpt.com/docs/agent-configuration/agents-md). The CLI writes the project context, conduct and the kept defaults in full into a managed block, so loading them does not depend on following links or on Claude's `@imports`. Codex gets the rules only; skills, commands and subagents are for Claude Code (and skills for Cursor).
 
 - Keep project commands and conventions outside the managed block. The CLI replaces only the block, preserves text around it and CRLF line endings, and refuses without changing anything if the markers are malformed or duplicated or if `AGENTS.md` is a symlink.
 - An `AGENTS.override.md` in the same directory takes precedence over `AGENTS.md`. The CLI never touches it; check whether one exists.
@@ -369,11 +352,10 @@ content/
   blocks/          the project-context block template
 skills/            <name>/SKILL.md per skill
 commands/          slash commands, each importing its skill
-loops/             loop templates
 npm/               the @oees/agents shim and its test
 scripts/           bootstrap.sh, and generate_legacy_hashes.py for the legacy migration
 tests/             pytest, one file per module plus content lint tests
-hatch_build.py     bundles content/, skills/, commands/ and loops/ into the wheel
+hatch_build.py     bundles content/, skills/ and commands/ into the wheel
 ```
 
 ```bash
@@ -384,6 +366,6 @@ make check        # the contributor gate: ruff, format, mypy, every test, the np
 make docs         # regenerate the tables in README.md and CONTRIBUTING.md
 ```
 
-This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/`, `commands/` or `loops/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. CI (`tooling-ci.yml`) runs `make check`. Releases are tag-driven: pushing a `v*` tag that matches the version in `pyproject.toml` runs `make check` and publishes the npm shim pinned to that tag.
+This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/` or `commands/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. CI (`tooling-ci.yml`) runs `make check`. Releases are tag-driven: pushing a `v*` tag that matches the version in `pyproject.toml` runs `make check` and publishes the npm shim pinned to that tag.
 
 [CONTRIBUTING.md](CONTRIBUTING.md) explains why the rules are what they are, and how to add a rule, kit or subagent.

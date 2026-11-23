@@ -6,12 +6,12 @@ import pytest
 from oees_agents.content import ContentError, load_content, parse_frontmatter
 
 from conftest import (
+    COMMAND_SKILLS,
     CONDUCT,
     CORE_SUBAGENTS,
     DEFAULTS,
     EXTENDED_SUBAGENTS,
     KITS,
-    LOOPS,
     SKILLS,
     write,
 )
@@ -19,7 +19,7 @@ from conftest import (
 REPO = Path(__file__).resolve().parents[1]
 
 
-def test_every_expected_tier_skill_kit_subagent_and_loop_is_found(content_root: Path) -> None:
+def test_every_expected_tier_skill_kit_and_subagent_is_found(content_root: Path) -> None:
     content = load_content(content_root)
 
     assert set(content.conduct) == set(CONDUCT)
@@ -28,7 +28,6 @@ def test_every_expected_tier_skill_kit_subagent_and_loop_is_found(content_root: 
     assert set(content.kits) == set(KITS)
     assert set(content.subagents["core"]) == set(CORE_SUBAGENTS)
     assert set(content.subagents["extended"]) == set(EXTENDED_SUBAGENTS)
-    assert set(content.loops) == set(LOOPS)
     assert set(content.commands) == {"commit", "code-review", "plan", "pr-tidy", "test", "shipped"}
 
 
@@ -45,10 +44,12 @@ def test_frontmatter_is_parsed_into_meta_and_body(content_root: Path) -> None:
 
 
 def test_a_document_without_frontmatter_has_empty_meta(content_root: Path) -> None:
-    loop = load_content(content_root).loops["tier-0-daily-health-scan"]
+    write(content_root / "commands/bare.md", "# bare\n\nNo frontmatter.\n")
 
-    assert loop.meta == {}
-    assert loop.body.startswith("# tier-0-daily-health-scan")
+    command = load_content(content_root).commands["bare"]
+
+    assert command.meta == {}
+    assert command.body.startswith("# bare")
 
 
 def test_a_skill_carries_every_file_in_its_directory(content_root: Path) -> None:
@@ -107,16 +108,16 @@ def test_a_skill_defined_twice_raises(content_root: Path) -> None:
         load_content(content_root)
 
 
-def test_loops_and_commands_may_live_at_the_repository_root(content_root: Path) -> None:
-    shutil.move(content_root / "content/loops", content_root / "loops")
+def test_commands_may_live_under_content(content_root: Path) -> None:
+    shutil.move(content_root / "commands", content_root / "content/commands")
 
-    assert set(load_content(content_root).loops) == set(LOOPS)
+    assert set(load_content(content_root).commands) == set(COMMAND_SKILLS)
 
 
 def test_a_readme_in_a_document_directory_is_not_a_document(content_root: Path) -> None:
-    write(content_root / "content/loops/README.md", "# Loops\n\nHow to run one.\n")
+    write(content_root / "commands/README.md", "# Commands\n\nHow to add one.\n")
 
-    assert set(load_content(content_root).loops) == set(LOOPS)
+    assert set(load_content(content_root).commands) == set(COMMAND_SKILLS)
 
 
 def test_a_missing_tier_directory_raises(content_root: Path) -> None:
@@ -210,7 +211,7 @@ def test_a_tree_without_kits_has_no_kits(content_root: Path) -> None:
     assert load_content(content_root).kits == {}
 
 
-def test_this_repositorys_content_has_every_tier_skill_subagent_and_loop() -> None:
+def test_this_repositorys_content_has_every_tier_skill_and_subagent() -> None:
     content = load_content(REPO)
 
     assert set(content.conduct) == set(CONDUCT)
@@ -219,7 +220,6 @@ def test_this_repositorys_content_has_every_tier_skill_subagent_and_loop() -> No
     assert set(content.subagents["core"]) == set(CORE_SUBAGENTS)
     assert set(content.subagents["extended"]) == set(EXTENDED_SUBAGENTS)
     assert set(content.commands) == {"commit", "code-review", "plan", "pr-tidy", "test", "shipped"}
-    assert content.loops
 
 
 def test_the_language_rule_names_the_english_and_spanish_standards() -> None:

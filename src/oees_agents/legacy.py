@@ -74,7 +74,6 @@ class LegacyError(ValueError):
 class LegacyInstall:
     targets: tuple[Target, ...]
     defaults: tuple[str, ...]
-    loops: tuple[str, ...]
     commands: bool
     removable: tuple[str, ...]
     kept: tuple[str, ...]
@@ -108,7 +107,6 @@ def detect(root: Path, content: Content) -> LegacyInstall | None:
     return LegacyInstall(
         targets=targets,
         defaults=tuple(name for name in content.defaults if name in implied),
-        loops=tuple(name for name in content.loops if f".claude/loops/{name}.md" in present),
         commands=any(path.startswith(".claude/commands/") for path in present),
         removable=removable,
         kept=tuple(path for path in present if path not in removable),
@@ -147,7 +145,7 @@ def legacy_manifest(install: LegacyInstall, source: str) -> Manifest:
         targets=install.targets,
         project=None,
         defaults=install.defaults,
-        extras=Extras(commands=install.commands, subagents="none", loops=install.loops),
+        extras=Extras(commands=install.commands, subagents="none"),
     )
 
 

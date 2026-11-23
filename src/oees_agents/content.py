@@ -1,4 +1,4 @@
-"""Load the canonical content: tiers, skills, kits, subagents, loops and commands.
+"""Load the canonical content: tiers, skills, kits, subagents and commands.
 
 The layout is the one the restructure plan targets:
 
@@ -7,7 +7,7 @@ The layout is the one the restructure plan targets:
     content/kits/<name>/SKILL.md      opt-in stack kits, with templates/
     content/subagents/{core,extended}/*.md
     skills/<name>/SKILL.md            (or content/skills/<name>/SKILL.md)
-    loops/*.md, commands/*.md         (or under content/)
+    commands/*.md                     (or content/commands/*.md)
 """
 
 import json
@@ -81,7 +81,6 @@ class Content:
     skills: Mapping[str, Skill]
     kits: Mapping[str, Skill]
     subagents: Mapping[str, Mapping[str, Document]]
-    loops: Mapping[str, Document]
     commands: Mapping[str, Document]
     context_template: str
 
@@ -102,7 +101,6 @@ def load_content(root: Path) -> Content:
                 for tier in SUBAGENT_TIERS
             }
         ),
-        loops=_documents(root, ("content/loops", "loops")),
         commands=_documents(root, ("content/commands", "commands")),
         context_template=_text(root, CONTEXT_TEMPLATE),
     )

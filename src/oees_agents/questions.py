@@ -56,7 +56,6 @@ class Flags:
     kits: tuple[str, ...] | None = None
     no_defaults: tuple[str, ...] | None = None
     subagents: str | None = None
-    loops: tuple[str, ...] | None = None
     commands: bool = True
 
 
@@ -83,7 +82,6 @@ def ask(
     *,
     defaults: Sequence[str],
     kits: Sequence[str],
-    loops: Sequence[str],
     prompter: Prompter | None,
 ) -> Answers:
     """Answer every question from its flag, else the prompter, else its default.
@@ -113,7 +111,6 @@ def ask(
     else:
         kept = asker.many("Defaults to keep", defaults, None, defaults, "default")
     subagents = asker.one("Subagents", SUBAGENT_TIERS, flags.subagents, "core", "subagents")
-    chosen_loops = asker.many("Loops", loops, flags.loops, (), "loop")
     return Answers(
         targets=cast(tuple[Target, ...], targets),
         project=Project(
@@ -130,7 +127,6 @@ def ask(
         extras=Extras(
             commands=flags.commands,
             subagents=cast(SubagentTier, subagents),
-            loops=chosen_loops,
         ),
     )
 

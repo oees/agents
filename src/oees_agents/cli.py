@@ -91,7 +91,6 @@ def init(
         list[str] | None, typer.Option(help="Default rule to opt out of; repeat for several.")
     ] = None,
     subagents: Annotated[str | None, typer.Option(help="none, core or extended.")] = None,
-    loop: Annotated[list[str] | None, typer.Option(help="Loop to install; repeat.")] = None,
     no_commands: Annotated[bool, typer.Option(help="Skip the slash commands.")] = False,
     yes: Annotated[
         bool, typer.Option("--yes", "-y", help="Ask nothing; use flags and defaults.")
@@ -119,7 +118,6 @@ def init(
             kits=() if no_kits else _tuple(kit),
             no_defaults=_tuple(no_default),
             subagents=subagents,
-            loops=_tuple(loop),
             commands=not no_commands,
         )
         install = legacy.detect(path, content)
@@ -131,7 +129,6 @@ def init(
                 detect(path, tuple(content.kits)),
                 defaults=tuple(content.defaults),
                 kits=tuple(content.kits),
-                loops=tuple(content.loops),
                 prompter=None if yes else default_prompter(),
             )
         except QuestionError as error:
@@ -204,7 +201,7 @@ def check_command(
 
 @app.command("list")
 def list_command(ref: Ref = None, content_dir: ContentDir = None) -> None:
-    """Show the conduct, defaults, kits, subagents and loops on offer."""
+    """Show the conduct, defaults, kits and subagents on offer."""
     with _handled():
         content = resolve(ref, content_dir).content
         _section("Conduct (always on)", content.conduct.items())
@@ -218,7 +215,6 @@ def list_command(ref: Ref = None, content_dir: ContentDir = None) -> None:
         typer.echo("  none  no subagents")
         typer.echo(f"  core  {core}")
         typer.echo(f"  extended  core plus {', '.join(content.subagents['extended'])}")
-        _section("Loops (opt in with --loop <name>)", content.loops.items())
 
 
 def _section(title: str, documents: Iterable[tuple[str, Document]]) -> None:
@@ -239,7 +235,6 @@ def _with_legacy_answers(
         if flags.no_defaults is not None
         else tuple(name for name in defaults if name not in install.defaults),
         subagents=flags.subagents or "none",
-        loops=flags.loops if flags.loops is not None else install.loops,
         commands=flags.commands and install.commands,
     )
 

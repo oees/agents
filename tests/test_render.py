@@ -83,7 +83,6 @@ def test_context_values_cannot_contain_comment_markers(content_root: Path, value
     [
         ({"defaults": ("tdd", "yolo")}, "unknown default 'yolo'"),
         ({"kits": ("rails",)}, "unknown kit 'rails'"),
-        ({"extras": Extras(loops=("tier-9",))}, "unknown loop 'tier-9'"),
     ],
 )
 def test_render_refuses_names_the_content_does_not_have(
@@ -121,7 +120,7 @@ def test_this_repositorys_content_renders_every_target_with_resolvable_imports()
         targets=("claude", "cursor", "codex"),
         defaults=tuple(content.defaults),
         kits=tuple(content.kits),
-        extras=Extras(subagents="extended", loops=tuple(content.loops)),
+        extras=Extras(subagents="extended"),
     )
 
     rendered = render(everything, content)

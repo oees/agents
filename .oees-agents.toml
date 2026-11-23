@@ -30,4 +30,3 @@ enabled = []
 [extras]
 commands = true
 subagents = "core"
-loops = []

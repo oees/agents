@@ -20,7 +20,6 @@ from conftest import (
     DEFAULTS,
     EXTENDED_SUBAGENTS,
     KITS,
-    LOOPS,
     PATTERN_SKILLS,
     write,
 )
@@ -261,12 +260,6 @@ def test_kit_template_dotfiles_land_under_the_kit_skill(content_root: Path) -> N
 
     for relative in dotfiles:
         assert output.files[f".claude/skills/fastapi/{relative}"] == f"{relative}\n".encode()
-
-
-def test_only_selected_loops_install(content: Content) -> None:
-    output = render(manifest(extras=Extras(loops=(LOOPS[1],))), content)
-
-    assert under(output, ".claude/loops/") == {f".claude/loops/{LOOPS[1]}.md"}
 
 
 def test_every_import_resolves_to_a_rendered_path(content: Content) -> None:
