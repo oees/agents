@@ -74,6 +74,11 @@ def test_the_block_body_is_the_policy_then_each_source_without_frontmatter(
         "\n"
         "Always data-protection.\n"
         "\n"
+        "<!-- Source: content/conduct/language.md -->\n"
+        "# Language\n"
+        "\n"
+        "Always language.\n"
+        "\n"
         "<!-- Source: content/conduct/secrets.md -->\n"
         "# Secrets\n"
         "\n"
@@ -96,6 +101,7 @@ def test_conduct_comes_first_then_defaults_in_manifest_order(content_root: Path)
     assert re.findall(r"<!-- Source: (\S+) -->", body) == [
         "content/conduct/conduct.md",
         "content/conduct/data-protection.md",
+        "content/conduct/language.md",
         "content/conduct/secrets.md",
         "content/defaults/git.md",
         "content/defaults/tdd.md",

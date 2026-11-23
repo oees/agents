@@ -88,6 +88,7 @@ def test_claude_md_block_starts_with_context_then_imports_conduct_and_defaults(
     assert IMPORT.findall(body) == [
         "rules/conduct.md",
         "rules/data-protection.md",
+        "rules/language.md",
         "rules/secrets.md",
         "rules/tdd.md",
         "rules/git.md",

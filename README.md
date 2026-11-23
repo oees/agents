@@ -165,6 +165,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 |---|---|
 | `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
 | `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
+| `language` | Write English in ASD-STE100 Simplified Technical English and Spanish in plain language to UNE-ISO 24495-1 |
 | `secrets` | Never commit secrets; use env vars and secret managers |
 <!-- END GENERATED: conduct -->
 
@@ -330,7 +331,7 @@ Remove the rule from `rules.defaults`, put a one-line `# <name>: <reason>` comme
 defaults = ["tdd", "git", "observability", "api", "standards", "quality-gates"]
 ```
 
-At install, `--no-default migrations` does the same. Conduct (`conduct`, `secrets`, `data-protection`) cannot be opted out.
+At install, `--no-default migrations` does the same. Conduct (`conduct`, `secrets`, `data-protection`, `language`) cannot be opted out.
 
 Kits and extras work the same way: remove the kit from `kits.enabled`, set `commands = false`, set `subagents = "none"` or drop a loop from `loops`, add the reason above it, and run `update`. The files that are no longer produced are removed. `update` never rewrites the manifest beyond its `source` line, so the reason comments stay.
 

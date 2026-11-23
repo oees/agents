@@ -1,6 +1,7 @@
 @../content/conduct/conduct.md
 @../content/conduct/secrets.md
 @../content/conduct/data-protection.md
+@../content/conduct/language.md
 @../content/defaults/tdd.md
 @../content/defaults/git.md
 @../content/defaults/observability.md
