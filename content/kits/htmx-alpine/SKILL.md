@@ -110,7 +110,7 @@ Deviate on Django 6.0+: use the built-in `SECURE_CSP` setting and `django.middle
 - Every user-facing string is translated: `{% translate %}` and `{% blocktranslate %}` in templates, `gettext` and `gettext_lazy` in Python. This covers labels, messages, `aria-label`s and the live-region text. Source strings are English and use the project's glossary terms.
 - The settings are `USE_I18N = True`, `LOCALE_PATHS = [BASE_DIR / "locale"]` and `LANGUAGES` listing the product's languages, with `LocaleMiddleware` enabled.
 - `make messages` refreshes the catalogues (`makemessages --all --no-location --no-obsolete`). To add a language, run `uv run --locked python manage.py makemessages -l <lang> --no-location`, translate, and remove the header's `#, fuzzy` flag.
-- `make messages-check` runs in `make check`. It fails when the catalogues are stale against the code or have fuzzy or untranslated entries, and it compiles them. `.po` files are committed. `.mo` files are gitignored and compiled in the image build.
+- `make messages-check` runs in `make check`. It fails when a language in `LANGUAGES` other than English has no catalogue. It also fails when a catalogue, committed or not, is stale against the code or has fuzzy or untranslated entries. Then it compiles the catalogues. `.po` files are committed. `.mo` files are gitignored and compiled in the image build.
 
 ## Accessibility checklist
 
@@ -153,4 +153,4 @@ Browser tests use Playwright through `pytest-playwright` against `live_server`, 
 | Content Security Policy | `config/settings/csp.py` | nothing; import it in `config/settings/base.py` as the layout section shows |
 | Dependencies and djLint config | `pyproject.htmx-alpine.toml` | merge into `pyproject.toml`, then delete |
 | Make targets | `make/htmx-alpine.mk` | nothing; the django-drf Makefile already ends with `-include make/*.mk` |
-| Catalogue directory | `locale/.gitkeep` | nothing |
+| Catalogue directory | `locale/.gitkeep` | nothing; then add a catalogue for each language in `LANGUAGES` except English |

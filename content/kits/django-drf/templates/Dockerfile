@@ -37,7 +37,7 @@ RUN export PATH="/app/.venv/bin:$PATH" \
 
 FROM python AS dev
 COPY --from=uv /uv /uvx /bin/
-# git: make fragments compare generated files with the bind-mounted checkout.
+# git: uv installs git dependencies; safe.directory lets git read the bind-mounted checkout.
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends gettext git make \
     && rm -rf /var/lib/apt/lists/* \
