@@ -127,7 +127,7 @@ def test_an_enabled_kit_with_known_globs_is_glob_attached(content_root: Path) ->
     assert fields["globs"] == json.dumps(list(KIT_GLOBS["django-drf"]))
     assert fields["alwaysApply"] == "false"
     assert fields["description"] == "The django-drf stack kit."
-    assert body == "# django-drf\n"
+    assert body.startswith("# django-drf\n")
 
 
 def test_a_disabled_kit_has_no_rule(content_root: Path) -> None:
@@ -227,3 +227,15 @@ def test_output_is_sorted_by_path(content_root: Path) -> None:
     assert paths == sorted(paths)
     assert all(path.startswith(f"{RULES}/") and path.endswith(".mdc") for path in paths)
     assert render(manifest(), content).blocks == {}
+
+
+def test_a_kit_rule_says_where_its_templates_are_without_claude(content_root: Path) -> None:
+    _, body = rule(rendered(content_root, targets=("cursor",)), "django-drf")
+
+    assert "https://github.com/oees/agents/tree/main/content/kits/django-drf/templates" in body
+
+
+def test_a_kit_rule_points_at_the_installed_templates_with_claude(content_root: Path) -> None:
+    _, body = rule(rendered(content_root, targets=("claude", "cursor")), "django-drf")
+
+    assert "`.claude/skills/django-drf/templates/`" in body

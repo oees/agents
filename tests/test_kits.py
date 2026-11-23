@@ -110,7 +110,8 @@ def test_the_cursor_rule_for_the_kit_carries_its_globs(content: Content, kit: Ki
 
     assert meta["globs"] == kit.globs
     assert meta["alwaysApply"] == "false"
-    assert body.lstrip("\n") == content.kits[kit.name].document.body.lstrip("\n")
+    assert body.lstrip("\n").startswith(content.kits[kit.name].document.body.lstrip("\n"))
+    assert body.rstrip().endswith(f"`.claude/skills/{kit.name}/templates/`.")
 
 
 @pytest.mark.parametrize("kit", KITS, ids=lambda kit: kit.name)
