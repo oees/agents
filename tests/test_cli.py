@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner, Result
 
-from oees_agents import __version__, sources
+from oees_agents import __version__, legacy, sources
 from oees_agents.cli import app
 from oees_agents.content import load_content
 from oees_agents.manifest import MANIFEST_NAME, read_manifest, write_manifest
@@ -508,3 +508,65 @@ def test_a_projects_own_claude_settings_survive_init_and_pass_check(
     assert ".claude/settings.json" in result.output
     assert own.read_text() == '{"permissions": {"allow": ["Bash(just test)"]}}\n'
     assert check.exit_code == 0, check.output
+
+
+def test_init_without_a_terminal_or_yes_explains_how_to_run_unattended(
+    project: Path, content_root: Path
+) -> None:
+    result = invoke("init", project, "--content-dir", content_root, input="")
+
+    assert result.exit_code == 1
+    assert "--yes" in result.stderr
+    assert not (project / MANIFEST_NAME).exists()
+
+
+def test_an_error_is_printed_once_without_json_logs(tmp_path: Path) -> None:
+    (tmp_path / MANIFEST_NAME).write_text("version = = 1\n")
+
+    result = invoke("update", tmp_path)
+
+    assert result.exit_code == 1
+    assert result.stderr.count("error:") == 1
+    assert '"level"' not in result.stderr
+
+
+def test_check_says_to_force_when_a_file_was_edited_by_hand(
+    project: Path, content_root: Path
+) -> None:
+    init(project, content_root, "--target", "codex", "--target", "claude")
+    (project / ".claude/rules/git.md").write_text("Edited.\n")
+
+    result = invoke("check", project, "--content-dir", content_root)
+
+    assert result.exit_code == 1
+    assert "update --force" in result.output
+
+
+def test_update_changes_nothing_when_the_source_line_cannot_be_pinned(
+    project: Path, content_root: Path
+) -> None:
+    init(project, content_root, "--target", "claude")
+    manifest_path = project / MANIFEST_NAME
+    manifest_path.write_text(
+        manifest_path.read_text().replace('source = "local"', "source = 'v0.0.1'")
+    )
+    (project / ".claude/rules/git.md").unlink()
+
+    result = invoke("update", project, "--content-dir", content_root)
+
+    assert result.exit_code == 1
+    assert not (project / ".claude/rules/git.md").exists()
+
+
+def test_a_legacy_error_is_reported_without_a_traceback(
+    legacy_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def refuse(*_: object) -> None:
+        raise legacy.LegacyError("a legacy file changed; nothing removed")
+
+    monkeypatch.setattr(legacy, "migrate", refuse)
+
+    result = init_legacy(legacy_project)
+
+    assert result.exit_code == 1
+    assert "error: a legacy file changed; nothing removed" in result.stderr
