@@ -138,6 +138,30 @@ The kit's `apps/core/tests/` cover `htmx_screen()`, the CSP header, and the temp
 
 Browser tests use Playwright through `pytest-playwright` against `live_server`, marked `slow` so `check-fast` skips them. Each screen gets one smoke test covering the swap, focus after the swap, and a console free of CSP violations.
 
+- `pyproject.htmx-alpine.toml` adds `pytest-playwright[base-url]`. Without the `base-url` extra, pytest-playwright defines a fixture that pytest 9.2 deprecates, and `filterwarnings = ["error"]` fails the test.
+- Playwright's sync API runs an event loop, so Django refuses database calls during browser tests. Put this fixture in the `conftest.py` beside the browser tests:
+
+```python
+@pytest.fixture(scope="session", autouse=True)
+def _django_db_beside_playwright() -> Iterator[None]:
+    """Playwright's sync API runs an event loop; Django refuses DB calls beside one."""
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
+        yield
+```
+
+- The `dev` image needs Chromium. Add these lines to the `dev` stage of the `Dockerfile`, after `uv sync`. The browsers go outside `HOME`, so the compose user can read them:
+
+```dockerfile
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends libatomic1 \
+    && playwright install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+- In CI, add `- run: uv run --locked playwright install --with-deps chromium` to the `check` job, after `make install`.
+
 ## Templates
 
 | Concern | Template to copy | Edit after copying |

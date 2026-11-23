@@ -11,6 +11,7 @@ dependencies = [
 dev = [
   "djlint>=1.49,<2",
   "pytest-django>=4.13",  # the kit tests type the settings fixture as pytest_django.Settings
+  "pytest-playwright[base-url]>=0.10,<1",  # browser smoke tests per screen, marked slow
 ]
 
 [tool.djlint]
