@@ -190,4 +190,4 @@ fragments, included at the end of the Makefile.
 | Files git never tracks (`.env`, caches, coverage, build output) | `templates/.gitignore` | nothing |
 | CI | `templates/.github/workflows/ci.yml` | nothing |
 | Deploy | `templates/.github/workflows/deploy.yml` | nothing; add `DIGITALOCEAN_ACCESS_TOKEN`, `DJANGO_SECRET_KEY`, `REDIS_URL` to the `production` environment |
-| App Platform spec | `templates/.do/app.yaml` | the `# EDIT:` lines: app name, region, GitHub repository, database cluster name |
+| App Platform spec | `templates/.do/app.yaml` | the `# EDIT:` lines: app name, region, GitHub repository, database cluster, database name and user |
