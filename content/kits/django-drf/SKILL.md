@@ -150,6 +150,9 @@ fragments, included at the end of the Makefile.
 - The `dev` stage adds dev dependencies, make and gettext; compose builds it and mounts the source.
   compose runs it as your host user (`HOST_UID` and `HOST_GID` in `.env`, default 1000), so caches,
   coverage data and new migrations in the checkout stay yours.
+- The `Dockerfile` uses `RUN --mount`, so it needs BuildKit. Build with `docker compose build` or
+  `docker buildx build`. Plain `docker build` works only when the buildx plugin is installed; without it,
+  the build stops at the first `RUN --mount`.
 - `HEALTHCHECK` calls `/healthz` with the Python standard library. `HealthCheckMiddleware` answers `/healthz` and
   `/readyz` before host validation and the HTTPS redirect, because probes arrive over plain HTTP with an
   internal Host header.

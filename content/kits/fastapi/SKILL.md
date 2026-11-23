@@ -151,6 +151,9 @@ adds dev tools and make for `docker compose run --rm dev ...`; `runtime`, the la
 stage, is `python:3.13.x-slim-bookworm` pinned by tag and digest, runs as uid 10001, and copies only
 the venv, `app/`, `migrations/` and `alembic.ini`.
 
+- The `Dockerfile` uses `RUN --mount`, so it needs BuildKit. Build with `docker compose build` or
+  `docker buildx build`. Plain `docker build` works only when the buildx plugin is installed;
+  without it, the build stops at the first `RUN --mount`.
 - `CMD` is exec form: `uvicorn app.main:create_app --factory`, workers from `WEB_CONCURRENCY`,
   `--log-config app/core/uvicorn_logging.json` so the worker supervisor also logs JSON,
   proxy headers trusted so `next`/`previous` links are `https` behind the platform router.
