@@ -6,6 +6,10 @@ or block whose bytes no longer match the lock was changed by someone else:
 it is listed as a conflict and left alone unless `force` is set. Files the
 lock owns that the new render no longer produces are removed, so disabling
 a kit cleans up after it. Symlinks and malformed markers are never forced.
+
+An optional file (Claude Code's settings.json) is written only where the
+project has no file of its own. A project's own file there is listed in
+`own`, never a conflict, so `check` passes; `force` replaces it.
 """
 
 import hashlib
@@ -53,6 +57,8 @@ class Plan:
     unchanged: tuple[str, ...]
     warnings: tuple[str, ...]
     lock: Lock
+    own: tuple[str, ...] = ()
+    """Optional paths where the project keeps a file of its own."""
 
     @property
     def is_clean(self) -> bool:
@@ -96,7 +102,7 @@ def plan(root: Path, output: Output, lock: Lock | None, force: bool = False) -> 
         _check_inside(path)
     builder = _Builder(root, lock, force)
     for path, data in output.files.items():
-        builder.file(path, data)
+        builder.file(path, data, optional=path in output.optional)
     for path, block in output.blocks.items():
         builder.block(path, block)
     for path in sorted(set(lock.files) - output.paths):
@@ -124,6 +130,8 @@ def apply(root: Path, pending: Plan) -> None:
         logger.warning(
             "left file untouched", extra={"path": conflict.path, "reason": conflict.reason}
         )
+    for path in pending.own:
+        logger.info("kept the project's own file", extra={"path": path})
     write_lock(root, pending.lock)
 
 
@@ -141,16 +149,20 @@ class _Builder:
         self.deletes: list[str] = []
         self.conflicts: list[Conflict] = []
         self.unchanged: list[str] = []
+        self.own: list[str] = []
         self.warnings: list[str] = []
         self.files: dict[str, str] = {}
         self.blocks: dict[str, str] = {}
 
-    def file(self, path: str, data: bytes) -> None:
+    def file(self, path: str, data: bytes, optional: bool = False) -> None:
         current = self._read(path)
         if isinstance(current, _Unsafe):
             self._keep(path, self.lock.files, self.files)
             return
         locked = self.lock.files.get(path)
+        if optional and current not in (None, data) and locked is None and not self.force:
+            self.own.append(path)
+            return
         if current == data:
             self.unchanged.append(path)
         elif current is None or digest(current) == locked or self.force:
@@ -226,6 +238,7 @@ class _Builder:
             conflicts=tuple(sorted(self.conflicts, key=lambda conflict: conflict.path)),
             unchanged=tuple(sorted(self.unchanged)),
             warnings=tuple(self.warnings),
+            own=tuple(sorted(self.own)),
             lock=Lock(
                 files=dict(sorted(self.files.items())), blocks=dict(sorted(self.blocks.items()))
             ),

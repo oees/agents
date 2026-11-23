@@ -247,11 +247,12 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 
 `.claude/settings.json` is generated from the manifest:
 
-- **Allow**: read-only and local Git commands (`git status`, `diff`, `log`, `show`, `branch`, `add`, `commit`, `stash`, `rebase`, `fetch`), basic file commands (`ls`, `find`, `grep`, `cat`, `head`, `tail`, `wc`, `mkdir`, `mv`, `cp`, `touch`), the project's `check` and `check_fast` commands, and the Python toolchain (`uv`, `pytest`, `ruff`, `mypy`) when a kit needs it. All three current kits do.
+- **Allow**: read-only and local Git commands (`git status`, `diff`, `log`, `show`, `branch`, `add`, `commit`, `stash`, `rebase`, `fetch`), basic file commands (`ls`, `grep`, `cat`, `head`, `tail`, `wc`, `mkdir`, `mv`, `cp`, `touch`), the project's `check` and `check_fast` commands, and the Python toolchain when a kit needs it: `uv sync`, `uv lock`, `uv run pytest`, `uv run ruff`, `uv run mypy`, `pytest`, `ruff` and `mypy`. All three current kits need it. Each command is allowed alone and with arguments, as `Bash(ls)` and `Bash(ls *)`, so `Bash(ls *)` does not also allow `lsof`.
+- **Not allowed**: commands that run another program, such as `uv run <anything>`, `uvx`, `npx` and `find` (which can `-exec` or `-delete`). Claude Code asks first.
 - **Deny**: `git push`, `git push --force`, `git reset --hard`, `git rebase -i`, `git rebase --interactive` and `git filter-branch`. `rm` is not denied.
 - **Hooks**: none.
 
-A `settings.json` the project already had and the CLI did not write is left alone and reported; `--force` replaces it.
+If the project already has a `.claude/settings.json` that the CLI did not write, the CLI keeps it, does not manage it, and says so. `check` does not fail because of it. To take the generated file, delete yours or run `update --force`.
 
 ### Generated files per target
 
