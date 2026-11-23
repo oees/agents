@@ -26,7 +26,7 @@ make/htmx-alpine.mk                                    vendor, lint-templates, m
 
 The project Makefile ends with `-include make/*.mk`, as the django-drf Makefile does. The fragment adds its targets as prerequisites of `check`, `check-fast` and `format`, because GNU make merges prerequisites declared for the same target. `pyproject.htmx-alpine.toml` is merged into `pyproject.toml` once and then deleted.
 
-`config/settings/base.py` sets `TEMPLATES[0]["DIRS"] = [BASE_DIR / "templates"]` with `APP_DIRS = True`, sets `STATICFILES_DIRS = [BASE_DIR / "static"]`, and adds `"csp"` and `"django_htmx"` to `INSTALLED_APPS`. In `MIDDLEWARE`, `csp.middleware.CSPMiddleware` goes right after `SecurityMiddleware`, `django.middleware.locale.LocaleMiddleware` after `SessionMiddleware`, and `django_htmx.middleware.HtmxMiddleware` last. Sessions and messages middleware and the `messages` and `request` context processors stay enabled.
+`config/settings/base.py` sets `TEMPLATES[0]["DIRS"] = [BASE_DIR / "templates"]` with `APP_DIRS = True`, sets `STATICFILES_DIRS = [BASE_DIR / "static"]`, and adds `"csp"` and `"django_htmx"` to `INSTALLED_APPS`. It imports the policy with `from config.settings.csp import CONTENT_SECURITY_POLICY as CONTENT_SECURITY_POLICY`. The redundant alias marks a re-export, so ruff does not report an unused import (F401). In `MIDDLEWARE`, `csp.middleware.CSPMiddleware` goes right after `SecurityMiddleware`, `django.middleware.locale.LocaleMiddleware` after `SessionMiddleware`, and `django_htmx.middleware.HtmxMiddleware` last. Sessions and messages middleware and the `messages` and `request` context processors stay enabled.
 
 ## Screens and URLs
 
@@ -150,7 +150,7 @@ Browser tests use Playwright through `pytest-playwright` against `live_server`, 
 | Base styles and shared components | `static/css/app.css` | nothing |
 | htmx config, CSRF, focus, Alpine components | `static/js/app.js` | add components |
 | Pinned library checksums | `static/vendor/SHA256SUMS` | nothing; then run `make vendor` and commit the two files |
-| Content Security Policy | `config/settings/csp.py` | nothing; import from `config/settings/base.py` |
+| Content Security Policy | `config/settings/csp.py` | nothing; import it in `config/settings/base.py` as the layout section shows |
 | Dependencies and djLint config | `pyproject.htmx-alpine.toml` | merge into `pyproject.toml`, then delete |
 | Make targets | `make/htmx-alpine.mk` | nothing; the django-drf Makefile already ends with `-include make/*.mk` |
 | Catalogue directory | `locale/.gitkeep` | nothing |

@@ -1,8 +1,9 @@
 """Strict Content Security Policy for server-rendered screens (django-csp 4.x).
 
-Imported by config/settings/base.py:
+Imported by config/settings/base.py. The redundant alias marks the name as a
+re-export, so ruff does not report it as unused (F401):
 
-    from config.settings.csp import CONTENT_SECURITY_POLICY
+    from config.settings.csp import CONTENT_SECURITY_POLICY as CONTENT_SECURITY_POLICY
 
 and enforced by "csp.middleware.CSPMiddleware" in MIDDLEWARE. Everything the
 browser runs or styles with comes from our own static files: no inline code,
