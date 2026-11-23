@@ -92,8 +92,8 @@ real people still depend on them.
    option that gives the customer the best, safest, most transparent outcome.
 
 The machine-loaded source agents actually read is `content/conduct/conduct.md`,
-together with `content/conduct/secrets.md`. Both are always on and cannot be
-opted out of. If this prose and `conduct.md` disagree, `conduct.md` wins and
+together with `secrets.md`, `data-protection.md` and `language.md` in the same
+directory. All four are always on and cannot be opted out of. If this prose and `conduct.md` disagree, `conduct.md` wins and
 this section should be fixed.
 
 ---
@@ -131,6 +131,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 |---|---|
 | `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
 | `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
+| `language` | Write English in ASD-STE100 Simplified Technical English and Spanish in plain language to UNE-ISO 24495-1 |
 | `secrets` | Never commit secrets; use env vars and secret managers |
 <!-- END GENERATED: conduct -->
 
@@ -378,7 +379,11 @@ one-line reason. Silent debt is not acceptable; visible, tracked debt is.
   right people are looped in.
 - **Communicate simply and transparently.** Report outcomes faithfully: if
   tests fail, say so with the output; if you skipped a step, say that. Don't
-  over-explain unless asked.
+  over-explain unless asked. The `language` rule sets the style: ASD-STE100
+  Simplified Technical English in English, and plain language to
+  UNE-ISO 24495-1 in Spanish. Short sentences and one word for one meaning
+  help readers who use English or Spanish as a second language, and they
+  help machine translation.
 - **Don't do anything illegal**, and don't help anyone else to. Legal and
   compliance questions are fine to assist with.
 

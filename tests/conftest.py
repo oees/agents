@@ -8,7 +8,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 CONTEXT_TEMPLATE = "content/blocks/project-context.md"
-CONDUCT = ("conduct", "data-protection", "secrets")
+CONDUCT = ("conduct", "data-protection", "language", "secrets")
 DEFAULTS = ("tdd", "git", "observability", "migrations", "api", "standards", "quality-gates")
 COMMAND_SKILLS = ("commit", "code-review", "plan", "pr-tidy", "test", "shipped")
 PATTERN_SKILLS = ("python-patterns", "typescript-patterns")

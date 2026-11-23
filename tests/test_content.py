@@ -220,3 +220,10 @@ def test_this_repositorys_content_has_every_tier_skill_subagent_and_loop() -> No
     assert set(content.subagents["extended"]) == set(EXTENDED_SUBAGENTS)
     assert set(content.commands) == {"commit", "code-review", "plan", "pr-tidy", "test", "shipped"}
     assert content.loops
+
+
+def test_the_language_rule_names_the_english_and_spanish_standards() -> None:
+    rule = load_content(REPO).conduct["language"].body
+
+    assert "ASD-STE100" in rule
+    assert "UNE-ISO 24495-1" in rule

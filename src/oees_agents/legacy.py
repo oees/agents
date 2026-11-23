@@ -37,6 +37,7 @@ OLD_RULE_DEFAULTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         "no-inline-imports": (),
         "conduct": (),
         "data-protection": (),
+        "language": (),
         "api": ("api",),
         "quality-gates": ("quality-gates",),
     }
