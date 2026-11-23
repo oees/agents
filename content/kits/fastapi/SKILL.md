@@ -129,6 +129,10 @@ not marked slow with `-x`; narrow it with `TESTS=tests/<domain>`. Also: `install
 `run` (reload, against `docker compose up -d db`), `migrate`, and
 `migration MESSAGE="..."` (autogenerate; the post-write hooks format the file).
 
+On the host, start the database with `docker compose up -d db`. The Makefile points
+`TEST_DATABASE_URL` at `localhost:5432` when it is not set. When port 5432 is in use, set
+`POSTGRES_PORT` in `.env`, change the port in its URLs, and run `make check-fast POSTGRES_PORT=5433`.
+
 In a container: `docker compose run --rm dev make check`. The `dev` service runs as your host user
 (`HOST_UID` and `HOST_GID` in `.env`, default 1000), so caches, coverage data and new revisions in
 the checkout stay yours.

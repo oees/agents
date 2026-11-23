@@ -1,6 +1,7 @@
 # Local development only; production runs on App Platform from .do/app.yaml.
 # First run: cp .env.example .env && docker compose up --build
 # Tooling runs in the container: docker compose run --rm app make check
+# Or on the host against the compose db: docker compose up -d db && make check-fast
 
 x-app: &app
   build:
@@ -42,6 +43,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: app
+    # For host runs of the gate. Set POSTGRES_PORT in .env when 5432 is in use.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
