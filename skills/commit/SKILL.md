@@ -62,8 +62,9 @@ Add authentication endpoint
 
 Implement token-based authentication to secure API access.
 
-Uses short-lived access credentials with secure refresh handling.
-Improves session security while keeping client retry behavior predictable.
+The endpoint uses short-lived access credentials with secure refresh
+handling. This improves session security and keeps the retry behaviour
+of clients predictable.
 
 Related: #123
 ```
@@ -85,7 +86,7 @@ If any check fails, revise before proceeding.
 
 ### 5. Execute the commit
 
-Run the repository's required checks and let Git hooks run normally. Follow the Git and code-quality rules: never autonomously use `--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories, or edits that weaken checks to make the commit succeed. Fix a hook failure, rerun the hook and affected checks, then retry. If the environment blocks a check, report the exact check and blocker. Bypass only a specific check explicitly waived by the human under the repository's waiver policy, and report that waiver; blocked or waived checks are not passes. Do not request fresh permission for a commit already authorised by the task.
+Run the repository's required checks and let Git hooks run normally. Follow the git and quality-gates rules: never autonomously use `--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories, or edits that weaken checks to make the commit succeed. Fix a hook failure, rerun the hook and affected checks, then retry. If the environment blocks a check, report the exact check and blocker. Bypass only a specific check explicitly waived by the human under the repository's waiver policy, and report that waiver; blocked or waived checks are not passes. Do not request fresh permission for a commit already authorised by the task.
 
 Run the commit using a heredoc to preserve formatting:
 

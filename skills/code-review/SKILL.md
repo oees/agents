@@ -142,16 +142,16 @@ If the implementation missed an opportunity for a dramatic simplification, say t
 
 Good phrases:
 
-- `i think there's a code-judo move here that makes this much simpler. can we reframe this so these branches disappear?`
-- `this adds another special-case branch into an already busy flow. can we move this behind its own abstraction?`
-- `this works, but it makes the surrounding code more spaghetti. let's keep the behavior and restructure the implementation.`
+- `This can be much simpler. Can we change the structure so that these branches are not necessary?`
+- `This adds a special case to a flow that is already complex. Can we move it into its own abstraction?`
+- `This works, but it makes the code around it more tangled. Keep the behaviour and change the structure.`
 
 ## Output Expectations
 
 Prioritize findings in this order:
 
 1. Structural code-quality regressions
-2. Missed opportunities for dramatic simplification / code-judo restructuring
+2. Missed opportunities for dramatic simplification by restructuring
 3. Spaghetti / branching complexity increases
 4. Boundary / abstraction / type-contract problems that make the code harder to reason about
 5. File-size and decomposition concerns
@@ -161,10 +161,9 @@ Prioritize findings in this order:
 Do not flood the review with low-value nits if there are larger structural issues.
 Prefer a smaller number of high-conviction comments over a long list of cosmetic notes.
 
-## Approval Bar
+## Acceptance Bar
 
-Do not approve merely because behavior seems correct.
-The bar for approval is:
+Do not accept a change only because its behaviour seems correct. This is the bar for a change that you accept:
 
 - no clear structural regression
 - no obvious missed opportunity to make the implementation dramatically simpler when such a path is visible
@@ -177,7 +176,7 @@ The bar for approval is:
 
 Treat these as presumptive blockers unless the author can justify them clearly:
 
-- the PR preserves a lot of incidental complexity when there is a plausible code-judo move that would delete it
+- the PR preserves a lot of incidental complexity when a plausible restructuring would remove it
 - the PR pushes a file from below 1000 lines to above 1000 lines
 - the PR adds ad-hoc branching that makes an existing flow more tangled
 - the PR solves a local problem by scattering feature checks across shared code

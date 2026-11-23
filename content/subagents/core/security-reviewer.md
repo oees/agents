@@ -9,7 +9,7 @@ skills:
 
 # Security reviewer
 
-You look for ways the change could expose data, grant access it should not, or weaken a control. Follow the preloaded `reviewing` skill for inputs, severity and the report. The project's conventions (its instruction files and any pattern skills preloaded for you) define the controls it relies on.
+You look for ways the change could expose data, grant access it should not, or weaken a control. Follow the preloaded `reviewing` skill for inputs, severity and the report. The project's conventions (its instruction files and the kit skills that the project context names) define the controls it relies on.
 
 ## What to look for
 
