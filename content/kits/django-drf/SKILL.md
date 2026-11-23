@@ -126,6 +126,9 @@ Every non-2xx API response, including validation, 401, 403, 404, 405, 429 and 50
 ## Makefile targets
 
 Tooling runs in the container: `docker compose run --rm app make check`. CI runs the same `make check`.
+To run the gate on the host, start the database with `docker compose up -d db`, then run `make check-fast`.
+The Makefile points `DATABASE_URL` at `localhost:5432` when it is not set. When port 5432 is in use, set
+`POSTGRES_PORT` in `.env` and pass the same value to make: `make check-fast POSTGRES_PORT=5433`.
 
 | Target | What it runs |
 |---|---|

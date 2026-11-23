@@ -7,6 +7,11 @@ RUN := uv run --locked
 # Narrow check-fast to the area you are changing: make check-fast TESTS=apps/billing
 TESTS ?=
 
+# On the host, the gate reaches the compose db on its published port (docker compose up -d db).
+# compose, CI and App Platform set DATABASE_URL, so this default does not apply there.
+POSTGRES_PORT ?= 5432
+export DATABASE_URL ?= postgres://postgres:postgres@localhost:$(POSTGRES_PORT)/app
+
 .PHONY: install format lint types test test-cov migrations-check audit check check-fast run worker migrate
 
 # The gate always runs against the test settings, whatever .env selects for the dev server.

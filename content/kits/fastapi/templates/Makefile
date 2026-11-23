@@ -9,6 +9,11 @@ TESTS ?= tests
 
 export APP_ENV ?= local
 
+# On the host, tests reach the compose db on its published port (docker compose up -d db).
+# compose and CI set TEST_DATABASE_URL, so this default does not apply there.
+POSTGRES_PORT ?= 5432
+export TEST_DATABASE_URL ?= postgresql+asyncpg://postgres:postgres@localhost:$(POSTGRES_PORT)/app_test
+
 .PHONY: help install format lint format-check typecheck test test-fast migration-check audit \
 	check check-fast run migrate migration
 

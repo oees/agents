@@ -13,8 +13,9 @@ services:
     configs:
       - source: create-test-database
         target: /docker-entrypoint-initdb.d/10-create-test-database.sql
+    # For `make run` and host runs of the gate. Set POSTGRES_PORT in .env when 5432 is in use.
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
