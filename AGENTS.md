@@ -14,7 +14,7 @@ uv run oees-agents update . --content-dir .
 ```
 
 Run `make check` before handing over changes. It runs ruff, mypy, pytest
-(including the content lint tests), the npm shim test, and `oees-agents check`
+(including the content lint tests) and `oees-agents check`
 against this repository's own manifest.
 Codex must run these commands explicitly; do not assume Claude's tool hooks ran.
 

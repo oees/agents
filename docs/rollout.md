@@ -7,20 +7,11 @@ real use, feedback folded back into the kits, then the rest.
 
 - `make check` passes on `main`.
 - `pyproject.toml` says `version = "1.0.0"`, `v1.0.0` is tagged on `main`, and
-  the release workflow has run green: the `check` job passed and
-  `@oees/agents` is published pinned to `v1.0.0`.
-- From a scratch directory, all three entry points reach the same CLI:
+  the release workflow has run green.
+- From a scratch directory, `uvx` reaches the CLI at that tag:
 
   ```bash
   uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents list
-  ```
-
-  ```bash
-  npx @oees/agents list
-  ```
-
-  ```bash
-  bash <(curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh) --help
   ```
 
 ## Pilot: one repository per kit
