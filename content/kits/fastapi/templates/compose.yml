@@ -41,12 +41,15 @@ services:
       context: .
       target: dev
     profiles: ["tools"]
+    # Your host user, so files written into the checkout (caches, coverage, new
+    # revisions) stay yours. Set HOST_UID and HOST_GID in .env when they are not 1000.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
+      HOME: /tmp
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app
       TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_test
     volumes:
       - .:/app
-      - uv-cache:/root/.cache/uv
     depends_on:
       db:
         condition: service_healthy
@@ -59,4 +62,3 @@ configs:
 
 volumes:
   db-data:
-  uv-cache:

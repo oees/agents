@@ -6,7 +6,12 @@ x-app: &app
   build:
     context: .
     target: dev
+  # Your host user, so files written into the checkout (caches, coverage, new
+  # migrations) stay yours. Set HOST_UID and HOST_GID in .env when they are not 1000.
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
   env_file: .env
+  environment:
+    HOME: /tmp
   volumes:
     - .:/app
   depends_on:
