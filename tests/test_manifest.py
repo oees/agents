@@ -167,3 +167,26 @@ def test_set_source_changes_only_the_source_line_and_keeps_comments() -> None:
 
     assert updated == text.replace('source = "v1.0.0"', 'source = "v1.2.0"')
     assert parse_manifest(updated).source == "v1.2.0"
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "message"),
+    [
+        ('targets = ["claude", "cursor", "codex"]', 'targets = ["claude", "claude"]', "targets"),
+        ('defaults = ["tdd", "git"]', 'defaults = ["tdd", "tdd"]', r"rules\.defaults"),
+        ('enabled = ["django-drf", "htmx-alpine"]', 'enabled = ["fastapi", "fastapi"]', "kits"),
+    ],
+)
+def test_a_name_listed_twice_is_rejected(old: str, new: str, message: str) -> None:
+    with pytest.raises(ManifestError, match=f"{message}.*listed more than once"):
+        parse_manifest(FULL.replace(old, new))
+
+
+def test_a_manifest_needs_at_least_one_target() -> None:
+    with pytest.raises(ManifestError, match="targets: list at least one target"):
+        parse_manifest(FULL.replace('targets = ["claude", "cursor", "codex"]', "targets = []"))
+
+
+def test_an_empty_project_name_is_rejected() -> None:
+    with pytest.raises(ManifestError, match=r"project\.name: must not be empty"):
+        parse_manifest(FULL.replace('name = "portal"', 'name = "  "'))

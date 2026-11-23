@@ -86,10 +86,10 @@ def parse_manifest(text: str) -> Manifest:
     return Manifest(
         version=version,
         source=_get(data, "source", str, ""),
-        targets=_choices(_strings(data, "targets", ""), TARGETS, "targets"),
+        targets=_choices(_targets(data), TARGETS, "targets"),
         project=_project(data["project"]) if "project" in data else None,
-        defaults=_strings(rules, "defaults", "rules."),
-        kits=_strings(kits, "enabled", "kits.", default=()),
+        defaults=_unique(_strings(rules, "defaults", "rules."), "rules.defaults"),
+        kits=_unique(_strings(kits, "enabled", "kits.", default=()), "kits.enabled"),
         extras=Extras(
             commands=_get(extras, "commands", bool, "extras.", default=True),
             subagents=_choice(
@@ -144,6 +144,8 @@ def _project(value: object) -> Project:
         raise ManifestError("project: expected a table")
     _reject_unknown(value, set(_PROJECT_KEYS), "project.")
     fields = {key: _get(value, key, str, "project.") for key in _PROJECT_KEYS}
+    if not fields["name"].strip():
+        raise ManifestError("project.name: must not be empty")
     fields["blast_radius"] = _choice(fields["blast_radius"], BLAST_RADII, "project.blast_radius")
     return Project(**cast(dict[str, Any], fields))
 
@@ -185,6 +187,20 @@ def _strings(
     if not all(isinstance(item, str) for item in value):
         raise ManifestError(f"{prefix}{key}: expected a list of strings")
     return tuple(value)
+
+
+def _targets(data: Mapping[str, object]) -> tuple[str, ...]:
+    targets = _unique(_strings(data, "targets", ""), "targets")
+    if not targets:
+        raise ManifestError("targets: list at least one target")
+    return targets
+
+
+def _unique(values: tuple[str, ...], key: str) -> tuple[str, ...]:
+    repeated = sorted({value for value in values if values.count(value) > 1})
+    if repeated:
+        raise ManifestError(f"{key}: {', '.join(repeated)} listed more than once")
+    return values
 
 
 def _choice(value: str, allowed: tuple[C, ...], key: str) -> C:
