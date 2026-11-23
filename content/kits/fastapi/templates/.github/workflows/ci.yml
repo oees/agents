@@ -79,5 +79,19 @@ jobs:
           context: .
           target: runtime
           push: false
+          load: true
+          tags: app:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # /healthz touches no database, so a placeholder URL is enough to start the image.
+      - name: Smoke test /healthz
+        run: |
+          docker run --detach --name app --publish 8000:8000 \
+            --env DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app \
+            app:ci
+          for _ in $(seq 30); do
+            if curl --fail --silent http://localhost:8000/healthz; then exit 0; fi
+            sleep 1
+          done
+          docker logs app
+          exit 1

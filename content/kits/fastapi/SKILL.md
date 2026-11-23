@@ -163,8 +163,8 @@ the venv, `app/`, `migrations/` and `alembic.ini`.
 ## Deploy path
 
 Pull request: `ci` runs `check` (Postgres service, `make check`), `secrets` (the pinned gitleaks
-CLI image over the PR's commits; full history on push) and `image` (docker build, no push). Merge
-to main: `ci` runs again; when it succeeds, `deploy` (a `workflow_run` of `ci` on main,
+CLI image over the PR's commits; full history on push) and `image` (docker build, no push, then
+a `/healthz` smoke test of the image). Merge to main: `ci` runs again; when it succeeds, `deploy` (a `workflow_run` of `ci` on main,
 `environment: production`, one deploy at a time) applies `.do/app.yaml` with
 `digitalocean/app_action`. App Platform builds the Dockerfile, runs the `migrate` `PRE_DEPLOY` job
 (`alembic upgrade head`), then rolls out the `web` service, gated on `/healthz`. `deploy_on_push`
