@@ -356,3 +356,16 @@ def test_an_optional_file_that_oees_agents_wrote_is_owned_like_any_other(tmp_pat
     pending = plan(tmp_path, optional_settings(), read_lock(tmp_path))
 
     assert [conflict.path for conflict in pending.conflicts] == [".claude/settings.json"]
+
+
+def test_crlf_line_endings_from_git_on_windows_are_not_an_edit(tmp_path: Path) -> None:
+    sync(tmp_path, output({".claude/rules/tdd.md": b"line one\nline two\n"}))
+    (tmp_path / ".claude/rules/tdd.md").write_bytes(b"line one\r\nline two\r\n")
+
+    pending = plan(tmp_path, output({".claude/rules/tdd.md": b"line one\nline two\n"}), None)
+    relocked = plan(
+        tmp_path, output({".claude/rules/tdd.md": b"line one\nline two\n"}), read_lock(tmp_path)
+    )
+
+    assert pending.conflicts == ()
+    assert relocked.is_clean

@@ -160,12 +160,13 @@ class _Builder:
             self._keep(path, self.lock.files, self.files)
             return
         locked = self.lock.files.get(path)
-        if optional and current not in (None, data) and locked is None and not self.force:
+        same = current is not None and _same(current, data)
+        if optional and current is not None and not same and locked is None and not self.force:
             self.own.append(path)
             return
-        if current == data:
+        if same:
             self.unchanged.append(path)
-        elif current is None or digest(current) == locked or self.force:
+        elif current is None or _matches(current, locked) or self.force:
             self.writes[path] = data
         else:
             self._conflict(path, locked, self.lock.files, self.files)
@@ -205,7 +206,7 @@ class _Builder:
             self._keep(path, self.lock.files, self.files)
         elif current is None:
             return
-        elif digest(current) == self.lock.files[path] or self.force:
+        elif _matches(current, self.lock.files[path]) or self.force:
             self.deletes.append(path)
         else:
             self._conflict(path, self.lock.files[path], self.lock.files, self.files)
@@ -285,6 +286,15 @@ class _Unsafe:
 
 
 _UNSAFE = _Unsafe()
+
+
+def _same(current: bytes, data: bytes) -> bool:
+    """Equal, or equal once Git on Windows (core.autocrlf) has turned LF into CRLF."""
+    return current == data or current.replace(b"\r\n", b"\n") == data
+
+
+def _matches(current: bytes, locked: str | None) -> bool:
+    return locked in (digest(current), digest(current.replace(b"\r\n", b"\n")))
 
 
 def _check_inside(path: str) -> None:
