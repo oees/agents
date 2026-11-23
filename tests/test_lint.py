@@ -29,7 +29,7 @@ def test_the_fixture_tree_is_clean(content_root: Path) -> None:
     ("path", "phrase"),
     [
         ("skills/plan/SKILL.md", "an internal tool for a handful of staff"),
-        ("content/loops/tier-0-daily-health-scan.md", "AN INTERNAL TOOL FOR A SMALL TEAM"),
+        ("content/conduct/secrets.md", "AN INTERNAL TOOL FOR A SMALL TEAM"),
         ("content/subagents/core/implementer.md", "Assume an internal tool for a small team."),
     ],
 )
@@ -57,15 +57,6 @@ def test_no_dangling_skills_entry_in_a_subagent(content_root: Path) -> None:
     assert problems(content_root) == [
         "content/subagents/extended/ui-reviewer.md: "
         "preloads skill 'designing', which does not exist"
-    ]
-
-
-def test_loops_have_no_duplicated_sections(content_root: Path) -> None:
-    with (content_root / "content/loops/tier-1-increase-test-coverage.md").open("a") as handle:
-        handle.write("\n## Steps\n\nAgain.\n")
-
-    assert problems(content_root) == [
-        "content/loops/tier-1-increase-test-coverage.md: repeats the heading '## Steps'"
     ]
 
 

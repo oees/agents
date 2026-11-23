@@ -57,12 +57,14 @@ def test_commands_are_shown_as_slash_commands(content_root: Path) -> None:
     assert "| `/commit` | Run commit. |" in rows
 
 
-def test_a_loop_without_a_description_is_summarised_by_its_first_heading(
+def test_a_document_without_a_description_is_summarised_by_its_first_heading(
     content_root: Path,
 ) -> None:
-    rows = render_region("loops", load_content(content_root)).splitlines()[2:]
+    write(content_root / "commands/bare.md", "# Bare command\n\nNo frontmatter.\n")
 
-    assert "| `tier-0-daily-health-scan` | tier-0-daily-health-scan |" in rows
+    rows = render_region("commands", load_content(content_root)).splitlines()[2:]
+
+    assert "| `/bare` | Bare command |" in rows
 
 
 def test_a_pipe_in_a_description_cannot_split_the_table_row(content_root: Path) -> None:
@@ -115,13 +117,15 @@ def test_text_without_regions_is_returned_unchanged(content_root: Path) -> None:
         ("<!-- BEGIN GENERATED: kits -->\nno end\n", "kits is not closed"),
         ("no begin\n<!-- END GENERATED: kits -->\n", "END GENERATED: kits without a BEGIN"),
         (
-            "<!-- BEGIN GENERATED: kits -->\n<!-- END GENERATED: loops -->\n",
-            "END GENERATED: loops without a BEGIN",
+            "<!-- BEGIN GENERATED: kits -->\n<!-- END GENERATED: commands -->\n",
+            "END GENERATED: commands without a BEGIN",
         ),
         (region("kits") + region("kits"), "kits appears more than once"),
         (
-            "<!-- BEGIN GENERATED: kits -->\n" + region("loops") + "<!-- END GENERATED: kits -->\n",
-            "loops starts inside kits",
+            "<!-- BEGIN GENERATED: kits -->\n"
+            + region("commands")
+            + "<!-- END GENERATED: kits -->\n",
+            "commands starts inside kits",
         ),
         (region("nope"), "unknown generated region 'nope'"),
     ],
@@ -156,7 +160,7 @@ def test_a_missing_doc_file_is_an_error(content_root: Path, tmp_path: Path) -> N
 
 
 def test_main_fills_the_docs_of_a_content_checkout(content_root: Path) -> None:
-    write(content_root / "README.md", region("loops"))
+    write(content_root / "README.md", region("commands"))
     write(content_root / "CONTRIBUTING.md", region("kits"))
 
     assert main([str(content_root)]) == 0
@@ -166,7 +170,7 @@ def test_main_fills_the_docs_of_a_content_checkout(content_root: Path) -> None:
 
 
 def test_main_check_fails_without_writing_when_a_region_is_stale(content_root: Path) -> None:
-    write(content_root / "README.md", region("loops"))
+    write(content_root / "README.md", region("commands"))
     write(content_root / "CONTRIBUTING.md", "# Contributing\n")
 
     assert main(["--check", str(content_root)]) == 1

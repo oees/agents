@@ -70,10 +70,6 @@ def _commands(content: Content) -> tuple[Row, Iterable[Row]]:
     return ("Command", "What it does"), rows
 
 
-def _loops(content: Content) -> tuple[Row, Iterable[Row]]:
-    return ("Loop", "What it does"), _named(content.loops.items())
-
-
 def _named(documents: Iterable[tuple[str, Document]]) -> Iterable[Row]:
     return ((f"`{name}`", document.summary) for name, document in documents)
 
@@ -86,7 +82,6 @@ REGIONS: Mapping[str, Callable[[Content], tuple[Row, Iterable[Row]]]] = MappingP
         "kits": _kits,
         "subagents": _subagents,
         "commands": _commands,
-        "loops": _loops,
     }
 )
 

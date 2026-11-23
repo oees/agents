@@ -52,13 +52,12 @@ def run_ask(flags: Flags, prompter: Scripted | None) -> Answers:
         SUGGESTIONS,
         defaults=ALL_DEFAULTS,
         kits=KITS,
-        loops=("tier-0",),
         prompter=prompter,
     )
 
 
 def test_questions_are_asked_in_the_planned_order() -> None:
-    prompter = Scripted(..., ..., "A platform.", "partners", ..., ..., ..., ..., ..., ..., ..., ...)
+    prompter = Scripted(..., ..., "A platform.", "partners", ..., ..., ..., ..., ..., ..., ...)
 
     run_ask(Flags(), prompter)
 
@@ -74,12 +73,11 @@ def test_questions_are_asked_in_the_planned_order() -> None:
         "Kits",
         "Defaults to keep",
         "Subagents",
-        "Loops",
     ]
 
 
 def test_suggestions_are_the_defaults() -> None:
-    prompter = Scripted(..., ..., "A platform.", "partners", ..., ..., ..., ..., ..., ..., ..., ...)
+    prompter = Scripted(..., ..., "A platform.", "partners", ..., ..., ..., ..., ..., ..., ...)
 
     answers = run_ask(Flags(), prompter)
 
@@ -91,7 +89,7 @@ def test_suggestions_are_the_defaults() -> None:
 
 
 def test_a_flag_answers_its_question_so_it_is_not_asked() -> None:
-    prompter = Scripted(..., ..., ..., ..., ..., ..., ..., ..., ...)
+    prompter = Scripted(..., ..., ..., ..., ..., ..., ..., ...)
 
     run_ask(
         Flags(description="A platform.", users="partners", kits=("fastapi",)),
@@ -116,7 +114,6 @@ def test_with_yes_every_unanswered_question_takes_its_default() -> None:
 
     assert answers.targets == ("claude",)
     assert answers.extras.subagents == "core"
-    assert answers.extras.loops == ()
 
 
 @pytest.mark.parametrize(
@@ -138,7 +135,6 @@ def test_with_yes_the_questions_without_a_default_need_their_flag(
         (Flags(description="d", users="u", targets=("windsurf",)), "unknown target 'windsurf'"),
         (Flags(description="d", users="u", blast_radius="huge"), "blast radius"),
         (Flags(description="d", users="u", subagents="all"), "subagents"),
-        (Flags(description="d", users="u", loops=("tier-9",)), "unknown loop 'tier-9'"),
     ],
 )
 def test_invalid_flag_values_are_rejected(flags: Flags, message: str) -> None:
@@ -219,7 +215,7 @@ def test_the_line_prompter_reads_piped_answers(monkeypatch: pytest.MonkeyPatch) 
 
     assert prompter.text("Name", "octohub") == "octohub"
     assert prompter.checkbox("Kits", ["fastapi", "htmx-alpine"], []) == ["fastapi", "htmx-alpine"]
-    assert prompter.checkbox("Loops", ["tier-0"], ["tier-0"]) == []
+    assert prompter.checkbox("Defaults to keep", ["tdd"], ["tdd"]) == []
     assert prompter.select("Subagents", ["none", "core", "extended"], "core") == "extended"
 
 

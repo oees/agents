@@ -148,7 +148,6 @@ The same applies to a kit or extra a team turns off after trying it:
 commands = true
 # subagents: none until the team has reviewed the core set (issue #123)
 subagents = "none"
-loops = []
 ```
 
 Rules for the comment:

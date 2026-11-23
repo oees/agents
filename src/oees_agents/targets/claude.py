@@ -78,7 +78,6 @@ def render(manifest: Manifest, content: Content) -> Output:
         **_documents("rules", rules),
         **_skill_files(_skills(manifest, content)),
         **_documents("agents", _subagents(manifest, content)),
-        **_documents("loops", (content.loops[name] for name in manifest.extras.loops)),
         f"{ROOT}/settings.json": _settings(manifest),
     }
     if manifest.extras.commands:

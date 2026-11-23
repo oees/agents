@@ -19,7 +19,6 @@ RENDERERS: Mapping[Target, TargetRenderer] = {
 def render(manifest: Manifest, content: Content) -> Output:
     _check_names("default", manifest.defaults, content.defaults)
     _check_names("kit", manifest.kits, content.kits)
-    _check_names("loop", manifest.extras.loops, content.loops)
     outputs = []
     for target in manifest.targets:
         outputs.append(RENDERERS[target](manifest, content))

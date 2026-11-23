@@ -5,7 +5,7 @@ from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
-BUNDLED = ("content", "skills", "commands", "loops")
+BUNDLED = ("content", "skills", "commands")
 
 
 class BundleContentHook(BuildHookInterface):

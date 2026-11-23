@@ -40,7 +40,6 @@ class Project:
 class Extras:
     commands: bool = True
     subagents: SubagentTier = "core"
-    loops: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -82,7 +81,7 @@ def parse_manifest(text: str) -> Manifest:
 
     rules = _table(data, "rules", {"defaults"})
     kits = _table(data, "kits", {"enabled"})
-    extras = _table(data, "extras", {"commands", "subagents", "loops"})
+    extras = _table(data, "extras", {"commands", "subagents"})
 
     return Manifest(
         version=version,
@@ -98,7 +97,6 @@ def parse_manifest(text: str) -> Manifest:
                 SUBAGENT_TIERS,
                 "extras.subagents",
             ),
-            loops=_strings(extras, "loops", "extras.", default=()),
         ),
     )
 
@@ -116,7 +114,6 @@ def dump_manifest(manifest: Manifest) -> str:
     data["extras"] = {
         "commands": manifest.extras.commands,
         "subagents": manifest.extras.subagents,
-        "loops": list(manifest.extras.loops),
     }
     return tomli_w.dumps(data)
 

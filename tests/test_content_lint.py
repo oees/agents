@@ -1,4 +1,4 @@
-"""Lint the canonical content: skills, loops and subagents.
+"""Lint the canonical content: skills and subagents.
 
 These tests guard the shape other tooling relies on (Claude Code only loads
 `SKILL.md`, subagents preload skills by name) and keep project-specific or
@@ -10,9 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-CONTENT_DIRS = ("content", "skills", "loops", "subagents", "commands")
+CONTENT_DIRS = ("content", "skills", "subagents", "commands")
 SKILL_DIRS = ("skills", "content/skills")
-LOOP_DIRS = ("loops", "content/loops")
 SUBAGENT_DIRS = ("subagents", "content/subagents")
 
 # Built from parts so this file does not itself contain the phrases.
@@ -128,16 +127,6 @@ def test_no_dangling_skill_references() -> None:
                 dangling.append(f"{relative(path)} preloads unknown skill {skill!r}")
 
     assert dangling == []
-
-
-def test_loops_have_no_duplicated_sections() -> None:
-    duplicated: list[str] = []
-    for path in markdown_files(*LOOP_DIRS):
-        headings = re.findall(r"^## .+$", path.read_text(encoding="utf-8"), re.MULTILINE)
-        repeated = sorted({h for h in headings if headings.count(h) > 1})
-        duplicated.extend(f"{relative(path)}: {heading}" for heading in repeated)
-
-    assert duplicated == []
 
 
 def test_subagents_contain_no_project_vocabulary() -> None:

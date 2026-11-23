@@ -30,7 +30,6 @@ EXTENDED_SUBAGENTS = (
     "documentation-writer",
     "docs-verifier",
 )
-LOOPS = ("tier-0-daily-health-scan", "tier-1-increase-test-coverage")
 
 
 def write(path: Path, text: str) -> Path:
@@ -76,8 +75,6 @@ def build_content_tree(root: Path) -> Path:
                 "tools: Read, Grep, Glob\nmodel: inherit\nskills:\n  - reviewing\n---\n\n"
                 f"# {name}\n",
             )
-    for name in LOOPS:
-        write(root / "content/loops" / f"{name}.md", f"# {name}\n\n## Steps\n\nDo it.\n")
     (root / CONTEXT_TEMPLATE).parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(REPO / CONTEXT_TEMPLATE, root / CONTEXT_TEMPLATE)
     return root

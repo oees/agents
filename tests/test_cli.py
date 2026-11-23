@@ -73,8 +73,6 @@ def test_init_with_flags_writes_the_manifest_files_and_lock(
         "regulated",
         "--subagents",
         "extended",
-        "--loop",
-        "tier-0-daily-health-scan",
     )
 
     assert result.exit_code == 0, result.output
@@ -86,7 +84,6 @@ def test_init_with_flags_writes_the_manifest_files_and_lock(
     assert manifest.project.name == "octohub"
     assert manifest.project.blast_radius == "regulated"
     assert manifest.extras.subagents == "extended"
-    assert manifest.extras.loops == ("tier-0-daily-health-scan",)
     assert (project / LOCK_NAME).is_file()
     assert (project / ".claude/skills/fastapi/SKILL.md").is_file()
     assert not (project / ".claude/rules/tdd.md").exists()
@@ -109,7 +106,6 @@ def test_init_answers_piped_questions_in_order(project: Path, content_root: Path
             "django-drf, htmx-alpine",  # kits
             "tdd, git",  # defaults to keep
             "none",  # subagents
-            "-",  # loops
         ]
     )
 
@@ -284,7 +280,7 @@ def test_list_prints_kits_defaults_and_extras(content_root: Path) -> None:
     assert "fastapi  The fastapi stack kit." in result.output
     assert "tdd  tdd default" in result.output
     assert "Conduct (always on)" in result.output
-    assert "tier-0-daily-health-scan" in result.output
+    assert "Loops" not in result.output
     assert "extended" in result.output
 
 

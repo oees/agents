@@ -37,7 +37,6 @@ enabled = ["django-drf", "htmx-alpine"]
 [extras]
 commands = true
 subagents = "core"
-loops = []
 """
 
 
@@ -56,7 +55,7 @@ def a_manifest(**overrides: object) -> Manifest:
         ),
         "defaults": ("tdd", "git"),
         "kits": ("fastapi",),
-        "extras": Extras(commands=False, subagents="extended", loops=("tier-0",)),
+        "extras": Extras(commands=False, subagents="extended"),
     }
     fields.update(overrides)
     return Manifest(**fields)  # type: ignore[arg-type]  # test helper builds from a loose dict
