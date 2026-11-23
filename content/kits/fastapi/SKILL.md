@@ -187,6 +187,7 @@ is off: CI is the only way in.
 | Tests for the core | `tests/conftest.py`, `tests/**/__init__.py`, `tests/test_main.py`, `tests/core/*.py`, `tests/settings/*.py` | nothing |
 | Container | `Dockerfile`, `.dockerignore` | nothing |
 | Local stack | `compose.yml`, `.env.example` | nothing |
+| Files git never tracks (`.env`, caches, coverage) | `.gitignore` | nothing |
 | CI | `.github/workflows/ci.yml` | nothing |
 | Deploy | `.github/workflows/deploy.yml` | nothing; create the `production` environment with `DIGITALOCEAN_ACCESS_TOKEN`; add an `env:` line per app secret |
 | App Platform spec | `.do/app.yaml` | the `# EDIT:` lines: app name, region, GitHub repo, database cluster |
