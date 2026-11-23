@@ -107,13 +107,14 @@ the Claude Code, Cursor and Codex files from that manifest. Re-runs are driven
 by the manifest and never re-add what a project removed.
 
 ```bash
-uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents init
+uvx --from git+https://github.com/oees/agents@main oees-agents init
 git add .oees-agents.toml .oees-agents.lock AGENTS.md .claude/ .cursor/
 git commit -m "Add shared AI engineering guidance"
 ```
 
-`npx @oees/agents init` runs the same CLI for teams that prefer npm. Updating,
-flags, the manifest format and everything else about installation are in
+There is no release yet, so this installs from `main`. After the first
+release, use the release tag, or `npx @oees/agents init`. Updating, flags, the
+manifest format and everything else about installation are in
 [README.md](README.md).
 
 Content comes in three tiers. **Conduct** is always on: the short list no
