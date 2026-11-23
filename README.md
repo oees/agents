@@ -71,8 +71,8 @@ The slash commands are not a question: they install unless you pass `--no-comman
 ```bash
 uvx --from git+https://github.com/oees/agents@main oees-agents init --yes \
   --target claude --target codex \
-  --description "Middleware that relays meter readings from partner APIs to Kraken." \
-  --users "OEES operations, partner integrations" \
+  --description "Service that collects meter readings from external APIs." \
+  --users "OEES operations" \
   --blast-radius customer-facing \
   --kit fastapi \
   --no-default migrations
@@ -88,9 +88,9 @@ source = "v1.0.0"
 targets = ["claude", "cursor", "codex"]
 
 [project]
-name = "octohub"
-description = "B2B multi-tenant platform where partners and vendors sell and install energy products."
-users = "external partners, vendors, OEES operations"
+name = "example-portal"
+description = "Web portal where customers manage their energy contracts."
+users = "OEES customers and the support team"
 blast_radius = "customer-facing"     # internal | customer-facing | regulated
 default_branch = "main"
 check = "make check"
@@ -141,8 +141,8 @@ The `[project]` answers become a managed block that tells every agent what it is
 ```markdown
 <!-- BEGIN OEES PROJECT CONTEXT -->
 ## Project context
-**octohub**: B2B multi-tenant platform where partners and vendors sell and install energy products.
-Used by: external partners, vendors, OEES operations. Blast radius: customer-facing.
+**example-portal**: Web portal where customers manage their energy contracts.
+Used by: OEES customers and the support team. Blast radius: customer-facing.
 Stack: django-drf, htmx-alpine. Default branch: main.
 Checks: `make check-fast` while working, `make check` before handing over.
 Calibrate every judgement call to this context. Never assume the code is a throwaway.

@@ -17,7 +17,7 @@ RULES = ".cursor/rules"
 CONTEXT_FILE = f"{RULES}/00-project-context.mdc"
 
 PROJECT = Project(
-    name="octohub",
+    name="portal",
     description="B2B multi-tenant platform where partners and vendors sell energy products.",
     users="external partners, vendors, OEES operations",
     blast_radius="customer-facing",
@@ -68,7 +68,7 @@ def test_the_project_context_rule_always_applies_and_holds_the_block_once(
     assert fields["alwaysApply"] == "true"
     assert "globs" not in fields
     assert json.loads(fields["description"]) == (
-        "Project context for octohub: who depends on it and how careful to be"
+        "Project context for portal: who depends on it and how careful to be"
     )
     assert body == block
     assert body.count("BEGIN OEES PROJECT CONTEXT") == 1

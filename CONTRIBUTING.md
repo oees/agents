@@ -195,23 +195,12 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | `/test` | Write well-structured tests following TDD. Test design, mocking discipline, naming, and coverage decisions. Use when writing tests or reviewing test quality. |
 <!-- END GENERATED: commands -->
 
-Some repos add their own (for example OctoHub has `/create-pr` and
-`/sync-github`). Prefer a repo's own PR and sync skills when present.
+Some repos add their own, for example a command that opens a pull request.
+Prefer a repo's own PR and sync skills when present.
 
 ---
 
-## 5. The repositories at a glance
-
-| Repo | What it is | Stack | Kits |
-|---|---|---|---|
-| `octosentinel` | Multi-vendor energy-device monitoring platform (3,000+ plants, scaling to 50k+) | Django 5 + DRF, Celery, RabbitMQ, Redis, TimescaleDB/PostgreSQL 15, MQTT (Mosquitto), React 18 + Vite | `django-drf` |
-| `octohub` | B2B multi-tenant platform for selling/installing energy products (Partners + Vendors) | Django 5 + DRF, Celery, Redis 7, PostgreSQL 16, React 19 + TS + Vite + Tailwind + TanStack Query | `django-drf` |
-| `franklin` | Web app for OEES ambassadors to create energy accounts in Kraken | Django 6, Bootstrap 5 + vanilla JS, PostgreSQL, Kraken GraphQL API | `django-drf`, `htmx-alpine` |
-| `hermes` | Middleware to external services (Zoho CRM, etc.): OAuth, retries, webhooks | FastAPI, SQLAlchemy 2.0, Celery, HTTPX, PostgreSQL | `fastapi` |
-| `bill-e` | Microservice: PDF electricity bill to plain-language explanation via local LLM | FastAPI, `uv`, pytest/hypothesis | `fastapi` |
-| `consumer-site-embeds` | Embeddable widgets (e.g. World Cup vote) | FastAPI, async SQLAlchemy + asyncpg, Alembic, Docker, DigitalOcean App Platform | `fastapi` |
-| `octopanel` | Internal panel (brand/design assets) | — | — |
-| `vercel-deployer` | Internal app to publish pre-built static sites to Vercel without git | Next.js, TypeScript | — |
+## 5. The stacks at a glance
 
 **Patterns you'll see repeatedly:** Django + DRF or FastAPI on the backend;
 Celery + Redis/RabbitMQ for async work; PostgreSQL (TimescaleDB for telemetry);
@@ -238,9 +227,8 @@ Platform** or **Vercel**.
   validation, token-based auth with secure refresh, auto-generated docs.
 - **Stack specifics live in kits.** Framework layout, logging config, container
   and deploy templates are in the kit, not in the org-wide rules.
-- **Multi-tenancy** (where it applies, e.g. octosentinel and octohub): every
-  governance row carries a `tenant_id`; enforce tenant scoping at the queryset
-  level in every ViewSet.
+- **Multi-tenancy** (where it applies): every governance row carries a
+  `tenant_id`; enforce tenant scoping at the queryset level in every ViewSet.
 
 ---
 
@@ -375,7 +363,7 @@ one-line reason. Silent debt is not acceptable; visible, tracked debt is.
 - **Know the stack.** The project context says which stack and kits apply.
   Ask only when it is missing.
 - **Encourage cross-team communication.** When work touches another team's
-  domain (CRM/Zoho, billing, Kraken, a partner integration), flag it so the
+  domain (CRM, billing, a partner integration), flag it so the
   right people are looped in.
 - **Communicate simply and transparently.** Report outcomes faithfully: if
   tests fail, say so with the output; if you skipped a step, say that. Don't

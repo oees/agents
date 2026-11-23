@@ -25,7 +25,7 @@ from conftest import (
 )
 
 PROJECT = Project(
-    name="octohub",
+    name="portal",
     description="B2B multi-tenant platform where partners and vendors sell energy products.",
     users="external partners, vendors, OEES operations",
     blast_radius="customer-facing",
@@ -123,7 +123,7 @@ def test_the_context_block_appears_once_after_two_renders(content: Content) -> N
 
 def test_project_text_around_the_managed_block_survives_byte_for_byte(content: Content) -> None:
     block = render(manifest(), content).blocks[".claude/CLAUDE.md"]
-    before = b"# Octohub\n\nLocal notes before.\n\n"
+    before = b"# Portal\n\nLocal notes before.\n\n"
     after = b"\n## Local\n\nKeep  this   spacing.\n"
     existing = before + f"{BEGIN}\n\nold rules\n\n{END}\n".encode() + after
 
@@ -136,7 +136,7 @@ def test_project_text_around_the_managed_block_survives_byte_for_byte(content: C
 
 def test_a_claude_md_without_markers_keeps_its_bytes_under_the_block(content: Content) -> None:
     block = render(manifest(), content).blocks[".claude/CLAUDE.md"]
-    existing = b"# Octohub\n\nOur own instructions.\n"
+    existing = b"# Portal\n\nOur own instructions.\n"
 
     result = splice(existing, block)
 

@@ -20,7 +20,7 @@ source = "v1.0.0"
 targets = ["claude", "cursor", "codex"]
 
 [project]
-name = "octohub"
+name = "portal"
 description = "B2B multi-tenant platform."
 users = "external partners, vendors, OEES operations"
 blast_radius = "customer-facing"
@@ -45,7 +45,7 @@ def a_manifest(**overrides: object) -> Manifest:
         "source": "v1.0.0",
         "targets": ("claude", "codex"),
         "project": Project(
-            name="octohub",
+            name="portal",
             description="B2B platform.",
             users="partners",
             blast_radius="regulated",

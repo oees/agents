@@ -18,7 +18,7 @@ from conftest import KITS, write
 
 ALL_DEFAULTS = ("tdd", "git", "observability")
 SUGGESTIONS = Suggestions(
-    targets=("claude",), name="octohub", default_branch="main", kits=("django-drf",)
+    targets=("claude",), name="portal", default_branch="main", kits=("django-drf",)
 )
 
 
@@ -84,7 +84,7 @@ def test_suggestions_are_the_defaults() -> None:
     assert answers.targets == ("claude",)
     assert answers.kits == ("django-drf",)
     assert answers.defaults == ALL_DEFAULTS
-    assert answers.project.name == "octohub"
+    assert answers.project.name == "portal"
     assert answers.project.check == "make check"
 
 
@@ -154,10 +154,10 @@ def test_detect_suggests_every_target_in_an_empty_repository(tmp_path: Path) -> 
 
 
 def test_detect_names_the_project_after_its_directory(tmp_path: Path) -> None:
-    project = tmp_path / "hermes"
+    project = tmp_path / "relay"
     project.mkdir()
 
-    assert detect(project, KITS).name == "hermes"
+    assert detect(project, KITS).name == "relay"
 
 
 def test_detect_reads_the_default_branch_from_origin_head(tmp_path: Path) -> None:
@@ -213,7 +213,7 @@ def test_the_line_prompter_reads_piped_answers(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr("typer.prompt", lambda *_, **kwargs: next(replies) or kwargs["default"])
     prompter = LinePrompter()
 
-    assert prompter.text("Name", "octohub") == "octohub"
+    assert prompter.text("Name", "portal") == "portal"
     assert prompter.checkbox("Kits", ["fastapi", "htmx-alpine"], []) == ["fastapi", "htmx-alpine"]
     assert prompter.checkbox("Defaults to keep", ["tdd"], ["tdd"]) == []
     assert prompter.select("Subagents", ["none", "core", "extended"], "core") == "extended"
