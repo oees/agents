@@ -129,7 +129,9 @@ not marked slow with `-x`; narrow it with `TESTS=tests/<domain>`. Also: `install
 `run` (reload, against `docker compose up -d db`), `migrate`, and
 `migration MESSAGE="..."` (autogenerate; the post-write hooks format the file).
 
-In a container: `docker compose run --rm dev make check`.
+In a container: `docker compose run --rm dev make check`. The `dev` service runs as your host user
+(`HOST_UID` and `HOST_GID` in `.env`, default 1000), so caches, coverage data and new revisions in
+the checkout stay yours.
 
 Migrations follow the `migrations` rule. Here that means: autogenerate, then read and fix the
 revision; write a real `downgrade()`; keep every revision backwards compatible with the code that

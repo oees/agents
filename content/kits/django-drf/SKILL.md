@@ -145,6 +145,8 @@ fragments, included at the end of the Makefile.
   collects static files. The runtime stage is `python:3.13-slim-bookworm` pinned by tag and digest, runs as uid
   10001, serves with gunicorn (`config/gunicorn.py`, JSON logs) and static files with WhiteNoise.
 - The `dev` stage adds dev dependencies, make and gettext; compose builds it and mounts the source.
+  compose runs it as your host user (`HOST_UID` and `HOST_GID` in `.env`, default 1000), so caches,
+  coverage data and new migrations in the checkout stay yours.
 - `HEALTHCHECK` calls `/healthz` with the Python standard library. `HealthCheckMiddleware` answers `/healthz` and
   `/readyz` before host validation and the HTTPS redirect, because probes arrive over plain HTTP with an
   internal Host header.
