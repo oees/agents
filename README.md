@@ -370,3 +370,7 @@ make docs         # regenerate the tables in README.md and CONTRIBUTING.md
 This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/` or `commands/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. CI (`tooling-ci.yml`) runs `make check`. Releases are tag-driven: pushing a `v*` tag that matches the version in `pyproject.toml` runs `make check` and publishes the npm shim pinned to that tag.
 
 [CONTRIBUTING.md](CONTRIBUTING.md) explains why the rules are what they are, and how to add a rule, kit or subagent.
+
+## Licence
+
+Proprietary. All rights reserved by Octopus Energy España. See [LICENSE](LICENSE): the repository is public, but that gives no right to use it outside Octopus Energy España.
