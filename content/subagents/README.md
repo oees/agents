@@ -9,7 +9,7 @@ A standard roster of Claude Code subagents for test-first, reviewed delivery. Th
 | Subagent | Tier | Step | Job | Tools | Use for |
 |---|---|---|---|---|---|
 | `test-writer` | core | Red | Derive acceptance cases from the requirement and write failing tests before any implementation | Edit + Bash | Every behavioural change or bug fix |
-| `implementer` | core | Green | Make the failing tests pass in the assigned paths, backend or UI, following the preloaded kit skills | Edit + Bash | Every code change |
+| `implementer` | core | Green | Make the failing tests pass in the assigned paths, backend or UI, following the project's kit skills | Edit + Bash | Every code change |
 | `simplifier` | core | Simplify | Simplify the green change without changing behaviour, applying the preloaded `code-review` skill | Edit + Bash | Every code change |
 | `functional-reviewer` | core | Review | Does the change do what the requirement says, no less, no more? | Read-only | Every behavioural change |
 | `engineering-reviewer` | core | Review | Maintainability, through the preloaded `code-review` skill, plus boundaries, layering, atomicity, errors, logs and tests | Read-only | Every code change |
@@ -56,10 +56,10 @@ The invariants that make this work:
 
 ## Adopting in a project
 
-1. Copy `core/*.md`, and the `extended/*.md` the project wants, into `.claude/agents/`. Copy `skills/reviewing/` and `skills/code-review/` into `.claude/skills/`.
+1. Set `extras.subagents` to `core` or `extended` in `.oees-agents.toml` and run `oees-agents update`. The CLI writes the agents to `.claude/agents/`, with the `reviewing` and `code-review` skills they preload. Do not edit the generated files: `oees-agents check` reports edits.
 2. Make sure the project context block in `AGENTS.md` or `CLAUDE.md` names the stack and the check commands (the targeted test command, the fast checks and the full checks). In the project's own instructions, also name:
    - **Protected changes:** which changes are routine, which are sensitive and need the scope confirmed first (auth, security settings, PII, migrations, data imports, dependencies, infrastructure), and which need explicit authorisation and human review (CI, check configuration, hooks, agent configuration, instruction files, CODEOWNERS).
    - **Requirements:** where accepted requirements live, such as specs, tickets or a requirements record.
    - **Docs conventions:** owning files, decision labels, the link check.
-3. Add the project's kit and pattern skills to each agent's `skills:` list, for example a Python kit on `implementer`, `simplifier` and the engineering, migration and security reviewers, and a UI kit on `implementer` and `ui-reviewer`. The agents follow whatever is preloaded.
+3. Enable the project's kits in the manifest. The agents read the kit skills that the project context names, from `.claude/skills/<kit>/SKILL.md`. You do not add them to the agents' `skills:` lists.
 4. Optionally, enforce the write scopes with a `PreToolUse` hook on the file-editing tools.

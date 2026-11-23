@@ -1,6 +1,6 @@
 ---
 name: reviewing
-description: The shared protocol for reviewer subagents and the docs verifier — inputs, read-only working, severity levels and the findings report. Use whenever reviewing a change.
+description: The shared protocol that the reviewer subagents and the docs verifier preload — inputs, read-only working, severity levels and the findings report. Only those subagents use it; the main session asks a reviewer subagent for a review.
 ---
 
 # Reviewing

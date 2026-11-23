@@ -74,13 +74,14 @@ real people still depend on them.
 
 ## 3. Golden rules
 
-1. **Never perform a write, delete or externally visible action without
-   explicit permission from the human in the current interaction.** This
-   covers pushing to a remote; deleting branches, files or database rows;
-   opening, closing, commenting on or merging PRs and issues; sending messages
-   (Slack, email); and editing `.env`, production configuration or any secret.
-   Permission is **per specific action**: "yes, open the PR" does **not**
-   authorise a later `git push --force`.
+1. **Never take an externally visible action without explicit permission
+   from the human for that specific action.** This covers pushing to a
+   remote; deleting branches, files or data; opening, closing, commenting on
+   or merging PRs and issues; sending messages; and editing `.env`, production
+   configuration or any secret. Permission is **per specific action**: "yes,
+   open the PR" does **not** authorise a later `git push --force`. Routine
+   work that the task already authorises, such as editing files, running
+   checks and committing locally, needs no repeated permission.
 2. **Never merge PRs yourself.** A human reviews and merges from the GitHub UI.
 3. **Never force-push the default branch.** Let Git hooks run normally. Never
    bypass or weaken hooks or required checks; fix failures and rerun them. Only
