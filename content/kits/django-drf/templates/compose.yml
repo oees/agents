@@ -38,7 +38,8 @@ services:
     command: ["celery", "-A", "config", "worker", "--loglevel", "INFO"]
 
   db:
-    image: postgres:16.15-alpine
+    # Pinned by tag and digest. Bump both together: docker pull <tag> && docker inspect <tag>.
+    image: postgres:16.15-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -55,7 +56,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7.4.12-alpine
+    image: redis:7.4.12-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
