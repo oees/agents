@@ -139,6 +139,9 @@ def test_old_rule_names_imply_the_new_defaults(
         path = tmp_path / ".claude/rules" / f"{name}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"# {name}, edited\n")
+    # One unedited shipped file is the proof that the old installer ran here.
+    (tmp_path / ".claude/commands").mkdir()
+    shutil.copy(FIXTURE / ".claude/commands/commit.md", tmp_path / ".claude/commands/commit.md")
 
     install = detected(tmp_path, content)
 
@@ -396,3 +399,26 @@ def test_the_known_hashes_match_the_git_history() -> None:
 
     assert json.loads(regenerated) == json.loads(HASHES.read_text(encoding="utf-8"))
     assert regenerated == HASHES.read_text(encoding="utf-8")
+
+
+def test_own_files_at_legacy_paths_are_not_a_legacy_install(
+    tmp_path: Path, content: Content
+) -> None:
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude/CLAUDE.md").write_text("# Our notes\n")
+    (tmp_path / ".claude/settings.json").write_text("{}\n")
+    (tmp_path / ".cursor/rules").mkdir(parents=True)
+    (tmp_path / ".cursor/rules/test.mdc").write_text("Our own test rule.\n")
+
+    assert detect(tmp_path, content) is None
+
+
+def test_targets_come_only_from_proven_legacy_files(project: Path, content: Content) -> None:
+    shutil.rmtree(project / ".cursor")
+    (project / ".cursor/rules").mkdir(parents=True)
+    (project / ".cursor/rules/test.mdc").write_text("Our own test rule.\n")
+
+    install = detected(project, content)
+
+    assert install.targets == ("claude",)
+    assert ".cursor/rules/test.mdc" in install.kept

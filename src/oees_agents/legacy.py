@@ -90,15 +90,20 @@ def detect(root: Path, content: Content) -> LegacyInstall | None:
     present = tuple(path for path in found if path in removable or path != SETTINGS_JSON)
     claude_md, imported = _strip_imports(_read(root, CLAUDE_MD))
     agents_md = _read(root, AGENTS_MD)
+    marked = agents_md is not None and _has_marker(agents_md)
+    # A file at an old path proves nothing on its own: projects keep their own
+    # files there. Only shipped bytes, old imports or the old marker do.
+    if not (removable or imported or marked):
+        return None
     rules = {
         *imported,
         *(Path(path).stem for path in present if path.startswith(".claude/rules/")),
         *(match.decode() for match in _SOURCE.findall(agents_md or b"")),
     }
     has = {
-        "claude": bool(imported) or any(path.startswith(".claude/") for path in present),
-        "cursor": any(path.startswith(".cursor/rules/") for path in present),
-        "codex": agents_md is not None and _has_marker(agents_md),
+        "claude": bool(imported) or any(path.startswith(".claude/") for path in removable),
+        "cursor": any(path.startswith(".cursor/rules/") for path in removable),
+        "codex": marked,
     }
     targets = tuple(target for target in TARGETS if has[target])
     if not targets:

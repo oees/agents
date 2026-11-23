@@ -320,7 +320,7 @@ Kits and extras work the same way: remove the kit from `kits.enabled`, set `comm
 
 ## Existing installs
 
-If the project was set up with the old bootstrap script, run `oees-agents init` as for a new install. It detects the old install and takes the targets, kept defaults and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
+If the project was set up with the old bootstrap script, run `oees-agents init` as for a new install. It finds the old install by its proof: a file that this repository shipped, with its bytes unchanged, old `@rules/` imports in `.claude/CLAUDE.md`, or the old shared-rules marker in `AGENTS.md`. Your own files at the same paths are not proof. When it finds an old install, it takes the targets, kept defaults and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
 
 ## Codex notes
 
