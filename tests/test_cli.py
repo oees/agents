@@ -95,6 +95,7 @@ def test_init_with_flags_writes_the_manifest_files_and_lock(
 def test_init_answers_piped_questions_in_order(project: Path, content_root: Path) -> None:
     answers = "\n".join(
         [
+            "",  # scope: this project
             "claude",  # targets
             "",  # name: keep the directory name
             "A platform.",  # description

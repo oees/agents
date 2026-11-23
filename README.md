@@ -14,6 +14,27 @@ uvx --from git+https://github.com/oees/agents@main oees-agents init
 
 **After the first release:** each release is a `v*` tag. Replace `@main` with the tag, for example `@v1.0.0`, so that every machine renders the same content.
 
+### This project or the whole machine
+
+`init` first asks where to install. `--project` or `--machine` answers the question.
+
+- **This project** (the default): the files go into the project and you commit them, so everyone on the project gets the same configuration. This is the only scope with a project context and Cursor rules.
+- **The whole machine**: the files go into your home directory, where each tool reads instructions for every project on the machine. Nothing is committed anywhere. Use it for your own repositories, or for repositories that have no install of their own.
+
+```bash
+uvx --from git+https://github.com/oees/agents@main oees-agents init --machine
+```
+
+| Tool | Machine install writes |
+|---|---|
+| Claude Code | `~/.claude/` (or `$CLAUDE_CONFIG_DIR`): the managed block at the top of `CLAUDE.md`, `rules/`, `skills/`, `commands/`, `agents/` and `settings.json` |
+| Codex | the managed block at the bottom of `~/.codex/AGENTS.md` (or `$CODEX_HOME/AGENTS.md`) |
+| Cursor | nothing: Cursor reads rule files only from a project. Install it per project. |
+
+The manifest and the lock go to `~/.oees-agents.toml` and `~/.oees-agents.lock`. A machine install asks no project question (name, description, users, blast radius, branch, checks), so it has no project context block. Your own text in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` outside the managed block stays, and so does a `~/.claude/settings.json` that you already had. `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME` must point inside your home directory.
+
+Claude Code and Codex load the machine instructions and the project instructions together. A project that has its own install therefore loads the shared rules twice, and `init` says so. Pick one scope per project where you can.
+
 Then commit the result. Add only the targets you picked:
 
 ```bash
@@ -29,18 +50,19 @@ When you commit these files, everyone on the project gets the same configuration
 
 | # | Question | Default | Flag |
 |---|---|---|---|
-| 1 | Targets: `claude`, `cursor`, `codex` (multi-select) | Detected: `.claude/` or `CLAUDE.md` selects Claude Code, `.cursor/` selects Cursor, `AGENTS.md` selects Codex; all three when none is found | `--target` (repeat) |
-| 2 | Project name | The directory name | `--name` |
-| 3 | One-paragraph description | none | `--description` |
-| 4 | Who uses it | none | `--users` |
-| 5 | Blast radius: `internal`, `customer-facing` or `regulated` | `internal` | `--blast-radius` |
-| 6 | Default branch | `origin/HEAD`, else `main` | `--default-branch` |
-| 7 | Full and fast check commands | `make check` / `make check-fast` | `--check`, `--check-fast` |
-| 8 | Kits (multi-select) | Suggested from the repo: `manage.py` suggests `django-drf`, `fastapi` in `pyproject.toml` or `requirements*.txt` suggests `fastapi`, `hx-` in a `templates/**/*.html` file suggests `htmx-alpine` | `--kit` (repeat), `--no-kits` |
-| 9 | Defaults to keep (multi-select) | All of them | `--no-default <name>` (repeat) |
-| 10 | Subagents: `none`, `core` or `extended` | `core` | `--subagents` |
+| 1 | Install for: `project` or `machine` | `project` | `--project`, `--machine` |
+| 2 | Targets: `claude`, `cursor`, `codex` (multi-select; no `cursor` for the machine) | Detected: `.claude/` or `CLAUDE.md` selects Claude Code, `.cursor/` selects Cursor, `AGENTS.md` selects Codex; all three when none is found. For the machine: `~/.claude/` and `~/.codex/`, else both | `--target` (repeat) |
+| 3 | Project name (not for the machine) | The directory name | `--name` |
+| 4 | One-paragraph description (not for the machine) | none | `--description` |
+| 5 | Who uses it (not for the machine) | none | `--users` |
+| 6 | Blast radius: `internal`, `customer-facing` or `regulated` (not for the machine) | `internal` | `--blast-radius` |
+| 7 | Default branch (not for the machine) | `origin/HEAD`, else `main` | `--default-branch` |
+| 8 | Full and fast check commands (not for the machine) | `make check` / `make check-fast` | `--check`, `--check-fast` |
+| 9 | Kits (multi-select) | Suggested from the repo: `manage.py` suggests `django-drf`, `fastapi` in `pyproject.toml` or `requirements*.txt` suggests `fastapi`, `hx-` in a `templates/**/*.html` file suggests `htmx-alpine` | `--kit` (repeat), `--no-kits` |
+| 10 | Defaults to keep (multi-select) | All of them | `--no-default <name>` (repeat) |
+| 11 | Subagents: `none`, `core` or `extended` | `core` | `--subagents` |
 
-The slash commands are not a question: they install unless you pass `--no-commands`. `--yes` (`-y`) asks nothing and takes each flag, else the default; the description and users have no default, so `--yes` needs `--description` and `--users`. `init` also takes `--force`, `--ref` and `--content-dir`, described under [Updating](#updating), and the project root as an optional argument (default `.`).
+The slash commands are not a question: they install unless you pass `--no-commands`. `--yes` (`-y`) asks nothing and takes each flag, else the default; the description and users have no default, so a project install with `--yes` needs `--description` and `--users`. A machine install with `--yes` needs neither, and refuses the project flags. `init` also takes `--force`, `--ref` and `--content-dir`, described under [Updating](#updating), and the project root as an optional argument (default `.`).
 
 ```bash
 uvx --from git+https://github.com/oees/agents@main oees-agents init --yes \
@@ -85,7 +107,8 @@ subagents = "core"                  # none | core | extended
 |---|---|
 | `version` | Manifest format version. Currently `1`. |
 | `source` | The content version the generated files came from: `v<version>` of the CLI that rendered them, the `--ref` it was given, or `local` for `--content-dir`. An install from `main` records the version in `pyproject.toml` (now `v0.1.0`), which is not a tag yet. `update` rewrites this line and nothing else. |
-| `targets` | Which tools to generate files for: any of `claude`, `cursor`, `codex`. |
+| `scope` | `machine` for a machine install. A project manifest leaves it out (it means `project`). |
+| `targets` | Which tools to generate files for: any of `claude`, `cursor`, `codex`. A machine install takes only `claude` and `codex`. |
 | `project.name` | The project's name, as agents should refer to it. |
 | `project.description` | One paragraph on what the project is and does. |
 | `project.users` | Who depends on it. |
@@ -254,12 +277,17 @@ codex:
 AGENTS.md                     managed block at the bottom: context, then conduct and kept defaults in full
 ```
 
+A machine install writes the same Claude Code tree under `~/.claude/`, the Codex block into `~/.codex/AGENTS.md`, and the manifest and lock into your home directory. See [This project or the whole machine](#this-project-or-the-whole-machine).
+
 ## Updating
 
 ```bash
 oees-agents update
 oees-agents update --ref main
+oees-agents update --machine
 ```
+
+`--machine` updates the machine install in your home directory, from any directory. Without it, `update` works on the project.
 
 `update` re-renders every generated file from the manifest. The content comes from the CLI you run: `uvx --from git+https://github.com/oees/agents@main oees-agents update` renders `main`, and after a release, `uvx --from git+https://github.com/oees/agents@v1.1.0 oees-agents update` renders `v1.1.0`. `--ref <tag or branch>` instead clones that version of this repository (it needs `git`), and `--content-dir <path>` renders from a local checkout. `update` then pins the manifest's `source` to what it rendered, rewriting that one line only, so comments in the manifest survive.
 
@@ -269,6 +297,7 @@ Files the CLI wrote before that the new render no longer produces are removed, s
 
 ```bash
 oees-agents check
+oees-agents check --machine
 ```
 
 `check` exits non-zero when a generated file or block is missing, stale, edited by hand or no longer rendered, and lists each one. It renders the same way `update` does, so run it at the version the manifest pins (it prints a note when they differ). Add it to the project's CI so the manifest and the files cannot drift apart:
