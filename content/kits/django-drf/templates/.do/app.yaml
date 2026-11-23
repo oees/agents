@@ -92,3 +92,5 @@ databases:
     version: "16"
     production: true
     cluster_name: app-db # EDIT: the managed Postgres cluster name
+    db_name: app # EDIT: the database name in the cluster
+    db_user: app # EDIT: the database user in the cluster
