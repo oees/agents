@@ -109,7 +109,7 @@ Deviate on Django 6.0+: use the built-in `SECURE_CSP` setting and `django.middle
 
 - Every user-facing string is translated: `{% translate %}` and `{% blocktranslate %}` in templates, `gettext` and `gettext_lazy` in Python. This covers labels, messages, `aria-label`s and the live-region text. Source strings are English and use the project's glossary terms.
 - The settings are `USE_I18N = True`, `LOCALE_PATHS = [BASE_DIR / "locale"]` and `LANGUAGES` listing the product's languages, with `LocaleMiddleware` enabled.
-- `make messages` refreshes the catalogues (`makemessages --all --no-location --no-obsolete`). To add a language, run `uv run python manage.py makemessages -l <lang> --no-location`, translate, and remove the header's `#, fuzzy` flag.
+- `make messages` refreshes the catalogues (`makemessages --all --no-location --no-obsolete`). To add a language, run `uv run --locked python manage.py makemessages -l <lang> --no-location`, translate, and remove the header's `#, fuzzy` flag.
 - `make messages-check` runs in `make check`. It fails when the catalogues are stale against the code or have fuzzy or untranslated entries, and it compiles them. `.po` files are committed. `.mo` files are gitignored and compiled in the image build.
 
 ## Accessibility checklist

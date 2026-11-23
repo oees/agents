@@ -1,7 +1,8 @@
 # htmx-alpine kit targets. The project Makefile includes this file with
 # `-include make/*.mk` as its last line (the django-drf Makefile does), which adds the prerequisites below to
 # the existing check, check-fast and format targets (GNU make merges them).
-# Needs: curl and sha256sum (vendor), gettext and git (messages-check).
+# Needs: curl and sha256sum (vendor), gettext and git (messages-check), and RUN
+# (uv run --locked) from the project Makefile.
 
 HTMX_VERSION := 2.0.11
 ALPINE_CSP_VERSION := 3.17.5
@@ -32,20 +33,20 @@ vendor-check:
 	cd "$(VENDOR_DIR)" && sha256sum --check --strict SHA256SUMS
 
 lint-templates:
-	uv run djlint $(TEMPLATE_DIRS) --lint
-	uv run djlint $(TEMPLATE_DIRS) --check
+	$(RUN) djlint $(TEMPLATE_DIRS) --lint
+	$(RUN) djlint $(TEMPLATE_DIRS) --check
 
 # djLint exits 1 when it rewrote a file; the check after it decides the result.
 format-templates:
-	uv run djlint $(TEMPLATE_DIRS) --reformat --quiet || uv run djlint $(TEMPLATE_DIRS) --check --quiet
+	$(RUN) djlint $(TEMPLATE_DIRS) --reformat --quiet || $(RUN) djlint $(TEMPLATE_DIRS) --check --quiet
 
 # Refresh the catalogues after adding or changing strings.
 messages:
-	uv run python manage.py makemessages --all --no-location --no-obsolete
+	$(RUN) python manage.py makemessages --all --no-location --no-obsolete
 
 # Catalogues match the code, have no fuzzy or untranslated entries, and compile.
 messages-check:
-	uv run python manage.py makemessages --all --no-location --no-obsolete
+	$(RUN) python manage.py makemessages --all --no-location --no-obsolete
 	git diff --exit-code -I '^"POT-Creation-Date: ' -- locale/ || \
 	  { echo "locale/ is stale: run 'make messages', translate, commit"; exit 1; }
 	for po in $$(find locale -name '*.po'); do \
@@ -54,4 +55,4 @@ messages-check:
 	  if [ "$$(msgattrib --untranslated --no-obsolete "$$po" | grep -c '^msgid ')" -gt 0 ]; then \
 	    echo "untranslated entries in $$po"; exit 1; fi; \
 	done
-	uv run python manage.py compilemessages --ignore=.venv
+	$(RUN) python manage.py compilemessages --ignore=.venv
