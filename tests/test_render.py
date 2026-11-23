@@ -13,7 +13,7 @@ from oees_agents.output import ManagedBlock, Output, RenderError, merge_outputs
 from oees_agents.render import render
 
 PROJECT = Project(
-    name="octohub",
+    name="portal",
     description="B2B multi-tenant platform where partners and vendors sell energy products.",
     users="external partners, vendors, OEES operations",
     blast_radius="customer-facing",
@@ -41,7 +41,7 @@ def test_the_context_block_states_the_project(content_root: Path) -> None:
     assert block == (
         "<!-- BEGIN OEES PROJECT CONTEXT -->\n"
         "## Project context\n"
-        "**octohub**: B2B multi-tenant platform where partners and vendors sell energy products.\n"
+        "**portal**: B2B multi-tenant platform where partners and vendors sell energy products.\n"
         "Used by: external partners, vendors, OEES operations. Blast radius: customer-facing.\n"
         "Stack: django-drf, htmx-alpine. Default branch: main.\n"
         "Checks: `make check-fast` while working, `make check` before handing over.\n"
@@ -67,7 +67,7 @@ def test_context_values_are_collapsed_to_one_line(content_root: Path) -> None:
     block = context_block(manifest(project=project), load_content(content_root))
 
     assert block is not None
-    assert "**octohub**: Line one. Line two.\n" in block
+    assert "**portal**: Line one. Line two.\n" in block
 
 
 @pytest.mark.parametrize("value", ["<!-- sneaky", "ends here -->"])

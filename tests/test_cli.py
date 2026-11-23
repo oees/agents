@@ -31,7 +31,7 @@ GIT_ENV = {
 
 @pytest.fixture
 def project(tmp_path: Path) -> Path:
-    path = tmp_path / "octohub"
+    path = tmp_path / "portal"
     path.mkdir()
     return path
 
@@ -81,14 +81,14 @@ def test_init_with_flags_writes_the_manifest_files_and_lock(
     assert manifest.kits == ("fastapi",)
     assert "tdd" not in manifest.defaults
     assert manifest.project is not None
-    assert manifest.project.name == "octohub"
+    assert manifest.project.name == "portal"
     assert manifest.project.blast_radius == "regulated"
     assert manifest.extras.subagents == "extended"
     assert (project / LOCK_NAME).is_file()
     assert (project / ".claude/skills/fastapi/SKILL.md").is_file()
     assert not (project / ".claude/rules/tdd.md").exists()
     assert "@rules/tdd.md" not in (project / ".claude/CLAUDE.md").read_text()
-    assert "**octohub**: B2B platform" in (project / "AGENTS.md").read_text()
+    assert "**portal**: B2B platform" in (project / "AGENTS.md").read_text()
     assert not (project / ".cursor").exists()
 
 
@@ -114,7 +114,7 @@ def test_init_answers_piped_questions_in_order(project: Path, content_root: Path
     assert result.exit_code == 0, result.output
     manifest = read_manifest(project / MANIFEST_NAME)
     assert manifest.project is not None
-    assert manifest.project.name == "octohub"
+    assert manifest.project.name == "portal"
     assert manifest.project.default_branch == "trunk"
     assert manifest.project.check == "make check"
     assert manifest.project.check_fast == "make lint"
@@ -457,14 +457,14 @@ def test_init_migrates_a_pre_manifest_install(legacy_project: Path) -> None:
 
 
 def test_init_keeps_and_lists_legacy_files_the_project_edited(legacy_project: Path) -> None:
-    edited = legacy_project / ".claude/loops/tier-0-daily-health-scan.md"
-    edited.write_text("Our own tuned loop.\n")
+    edited = legacy_project / ".claude/skills/plan/plan.md"
+    edited.write_text("Our own tuned plan skill.\n")
 
     result = init_legacy(legacy_project)
 
     assert result.exit_code == 0, result.output
-    assert ".claude/loops/tier-0-daily-health-scan.md" in result.output
-    assert edited.read_text() == "Our own tuned loop.\n"
+    assert ".claude/skills/plan/plan.md" in result.output
+    assert edited.read_text() == "Our own tuned plan skill.\n"
 
 
 def test_flags_override_what_a_legacy_install_implies(legacy_project: Path) -> None:

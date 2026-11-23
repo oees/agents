@@ -1,12 +1,11 @@
 # Rolling out `oees-agents`
 
 How the installer reaches every OEES repository: one pilot per kit, a week of
-real use, feedback folded back into the kits, then the rest. Source: Task 4.3 of
-[the restructure plan](plans/2026-11-07-restructure-agents-repo.md).
+real use, feedback folded back into the kits, then the rest.
 
 ## Before the pilot
 
-- Phases 1 to 4.1 are merged to `main` and `make check` passes there.
+- `make check` passes on `main`.
 - `pyproject.toml` says `version = "1.0.0"`, `v1.0.0` is tagged on `main`, and
   the release workflow has run green: the `check` job passed and
   `@oees/agents` is published pinned to `v1.0.0`.
@@ -26,10 +25,9 @@ real use, feedback folded back into the kits, then the rest. Source: Task 4.3 of
 
 ## Pilot: one repository per kit
 
-| Repository | Kits | Why it pilots |
-|---|---|---|
-| `hermes` | `fastapi` | API-only middleware; exercises the FastAPI kit and outbound HTTP |
-| `franklin` | `django-drf`, `htmx-alpine` | Server-rendered Django; exercises both Django-side kits together |
+Pick one repository for each kit: an API-only `fastapi` service, and a
+server-rendered Django service that uses `django-drf` and `htmx-alpine`
+together. Each pilot then exercises the kits it will depend on.
 
 For each pilot repository:
 
@@ -42,12 +40,12 @@ For each pilot repository:
 
    ```bash
    uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents init \
-     --kit fastapi --subagents core          # hermes
+     --kit fastapi --subagents core          # the fastapi pilot
    ```
 
    ```bash
    uvx --from git+https://github.com/oees/agents@v1.0.0 oees-agents init \
-     --kit django-drf --kit htmx-alpine --subagents core   # franklin
+     --kit django-drf --kit htmx-alpine --subagents core   # the django pilot
    ```
 
 3. Answer the context questions with the owning team, not alone. The
@@ -109,19 +107,9 @@ issue.
 
 Order by risk, lowest blast radius first, so problems surface where they cost
 least: internal tools, then customer-facing services, then anything regulated.
-The order below is a suggestion; confirm each blast radius with the owning
-team before starting.
+Confirm each blast radius with the owning team before you start.
 
-| Repository | Kits |
-|---|---|
-| `octopanel` | none |
-| `vercel-deployer` | none |
-| `bill-e` | `fastapi` |
-| `consumer-site-embeds` | `fastapi` |
-| `octohub` | `django-drf` |
-| `octosentinel` | `django-drf` |
-
-For each, repeat pilot steps 1 to 8 against the latest tag. A repository with no
+For each repository, repeat pilot steps 1 to 8 against the latest tag. A repository with no
 kit still gets conduct, the defaults it keeps, skills and the extras it picks.
 One PR per repository; the owning team reviews and merges it.
 
@@ -156,7 +144,8 @@ Rules for the comment:
 - The reason says why this project differs, not that the rule is unwanted.
 - A temporary opt-out links the issue that will remove it, matching the
   tracked-debt rule in [CONTRIBUTING.md](../CONTRIBUTING.md).
-- Conduct (`conduct`, `secrets`) cannot be opted out.
+- Conduct (`conduct`, `secrets`, `data-protection`, `language`) cannot be opted
+  out.
 
 Then run `oees-agents update` so the generated files drop the rule, and commit
 the manifest and the generated diff together. `update` rewrites only the

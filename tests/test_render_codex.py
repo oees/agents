@@ -12,7 +12,7 @@ from oees_agents.targets.codex import CODEX_INSTRUCTION_LIMIT, render
 from conftest import CONDUCT, DEFAULTS, write
 
 PROJECT = Project(
-    name="octohub",
+    name="portal",
     description="B2B multi-tenant platform where partners and vendors sell energy products.",
     users="external partners, vendors, OEES operations",
     blast_radius="customer-facing",
@@ -260,7 +260,7 @@ def test_the_context_block_appears_once_inside_the_block_before_the_rules(
     text = (tmp_path / "AGENTS.md").read_text()
     assert text.count(CONTEXT_BEGIN) == 1
     assert text.index(BEGIN) < text.index(CONTEXT_BEGIN) < text.index(HEADING)
-    assert "**octohub**: B2B multi-tenant platform" in text
+    assert "**portal**: B2B multi-tenant platform" in text
 
 
 def test_there_is_no_context_block_without_a_project(content_root: Path) -> None:

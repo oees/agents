@@ -41,7 +41,7 @@ MAIN_IMPORTS = tuple(
     )
 )
 PROJECT = Project(
-    name="octohub",
+    name="portal",
     description="A partner platform.",
     users="partners",
     blast_radius="customer-facing",
@@ -154,7 +154,7 @@ def test_every_old_and_new_rule_name_has_a_mapping(content: Content) -> None:
 
 def test_local_lines_in_claude_md_survive_byte_for_byte(project: Path, content: Content) -> None:
     (project / CLAUDE_MD).write_bytes(
-        lines(b"# Octohub", b"", b"Be kind.", *MAIN_IMPORTS[:4])
+        lines(b"# Portal", b"", b"Be kind.", *MAIN_IMPORTS[:4])
         + lines(b"Between the imports.", b"  ")
         + lines(*MAIN_IMPORTS[4:], b"@rules/team.md", b"After.")[:-1]
     )
@@ -162,19 +162,19 @@ def test_local_lines_in_claude_md_survive_byte_for_byte(project: Path, content: 
     install = detected(project, content)
     migrate(project, install)
 
-    expected = b"# Octohub\n\nBe kind.\nBetween the imports.\n  \n@rules/team.md\nAfter."
+    expected = b"# Portal\n\nBe kind.\nBetween the imports.\n  \n@rules/team.md\nAfter."
     assert install.claude_md == expected
     assert (project / CLAUDE_MD).read_bytes() == expected
 
 
 def test_a_crlf_claude_md_keeps_its_crlf(project: Path, content: Content) -> None:
     (project / CLAUDE_MD).write_bytes(
-        lines(b"# Octohub", *MAIN_IMPORTS, b"Keep me.", newline=b"\r\n")
+        lines(b"# Portal", *MAIN_IMPORTS, b"Keep me.", newline=b"\r\n")
     )
 
     install = detected(project, content)
 
-    assert install.claude_md == b"# Octohub\r\nKeep me.\r\n"
+    assert install.claude_md == b"# Portal\r\nKeep me.\r\n"
 
 
 def test_a_claude_md_left_with_only_whitespace_is_deleted(project: Path, content: Content) -> None:
@@ -354,7 +354,7 @@ def test_migrating_then_writing_conflicts_only_on_what_the_project_edited(
 ) -> None:
     edited = project / ".claude/rules/tdd.md"
     edited.write_text(edited.read_text() + "\nOur own addition.\n")
-    (project / CLAUDE_MD).write_bytes(lines(b"# Octohub notes", *MAIN_IMPORTS))
+    (project / CLAUDE_MD).write_bytes(lines(b"# Portal notes", *MAIN_IMPORTS))
     install = detected(project, content)
 
     migrate(project, install)
@@ -366,7 +366,7 @@ def test_migrating_then_writing_conflicts_only_on_what_the_project_edited(
     assert set(install.removable) & set(result.writes)
     claude_md = (project / CLAUDE_MD).read_bytes()
     assert claude_md.startswith(BEGIN.encode())
-    assert claude_md.endswith(b"# Octohub notes\n")
+    assert claude_md.endswith(b"# Portal notes\n")
 
 
 def _history_reason() -> str | None:
