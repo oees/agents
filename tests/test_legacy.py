@@ -422,3 +422,15 @@ def test_targets_come_only_from_proven_legacy_files(project: Path, content: Cont
 
     assert install.targets == ("claude",)
     assert ".cursor/rules/test.mdc" in install.kept
+
+
+def test_a_symlinked_claude_directory_is_not_reported_as_kept_files(
+    tmp_path: Path, content: Content
+) -> None:
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    root = tmp_path / "project"
+    root.mkdir()
+    (root / ".claude").symlink_to(elsewhere)
+
+    assert detect(root, content) is None

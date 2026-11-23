@@ -35,13 +35,13 @@ class _RunId(logging.Filter):
 
 
 def configure(verbose: bool) -> str:
-    """Log JSON to stderr: errors only by default, every file operation with --verbose."""
+    """Log JSON to stderr with --verbose; without it, the CLI prints only plain messages."""
     run_id = uuid.uuid4().hex[:12]
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(JsonFormatter())
     handler.addFilter(_RunId(run_id))
     logger = logging.getLogger("oees_agents")
     logger.handlers = [handler]
-    logger.setLevel(logging.INFO if verbose else logging.ERROR)
+    logger.setLevel(logging.INFO if verbose else logging.CRITICAL + 1)
     logger.propagate = False
     return run_id

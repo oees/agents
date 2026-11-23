@@ -1,6 +1,7 @@
 """oees-agents: install and update OEES agent tooling from a committed manifest."""
 
 import logging
+import sys
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import replace
@@ -134,6 +135,13 @@ def init(
         except QuestionError as error:
             typer.echo(f"error: {error}", err=True)
             raise typer.Exit(2) from error
+        except typer.Abort:
+            if sys.stdin.isatty():
+                raise
+            _fail(
+                "init needs answers, but its input ended. Run it in a terminal, "
+                "or pass --yes with --description and --users."
+            )
         manifest = Manifest(
             source=source.label,
             targets=answers.targets,
@@ -166,9 +174,13 @@ def update(
         source = resolve(ref, content_dir)
         manifest = replace(manifest, source=source.label)
         pending = plan(path, render(manifest, source.content), read_lock(path), force)
-        apply(path, pending)
+        # Pin first: if the source line cannot be rewritten, no file has changed yet.
+        pinned = None
         if parse_manifest(text).source != source.label:
-            (path / MANIFEST_NAME).write_text(set_source(text, source.label), encoding="utf-8")
+            pinned = set_source(text, source.label)
+        apply(path, pending)
+        if pinned is not None:
+            (path / MANIFEST_NAME).write_text(pinned, encoding="utf-8")
             typer.echo(f"Pinned {MANIFEST_NAME} to {source.label}.")
         _report(pending)
 
@@ -195,7 +207,10 @@ def check_command(
             typer.echo(f"no longer rendered: {item}")
         for conflict in pending.conflicts:
             typer.echo(f"edited by hand: {conflict.path} ({conflict.reason})")
-        typer.echo("Run `oees-agents update` to bring them in line.")
+        if pending.writes or pending.deletes or pending.unblocks:
+            typer.echo("Run `oees-agents update` to bring the generated files in line.")
+        if pending.conflicts:
+            typer.echo("Run `oees-agents update --force` to replace the files edited by hand.")
         raise typer.Exit(1)
 
 
@@ -297,6 +312,7 @@ def _handled() -> Iterator[None]:
     except (
         BlockError,
         ContentError,
+        legacy.LegacyError,
         ManifestError,
         RenderError,
         SourceError,
