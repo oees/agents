@@ -4,41 +4,15 @@ Shared AI-agent configuration for Octopus Energy España (OEES) projects, for Cl
 
 ## Install
 
-There is no release yet, so install from the `main` branch. Run one of these commands from the root of the project. Both run the same CLI.
-
-**With uv:**
+The only way to install is `uvx`. You need [uv](https://docs.astral.sh/uv/getting-started/installation/) and `git`. There is no release yet, so install from the `main` branch. Run this command from the root of the project:
 
 ```bash
 uvx --from git+https://github.com/oees/agents@main oees-agents init
 ```
 
-This needs [uv](https://docs.astral.sh/uv/) and `git`.
+`uvx` runs the CLI in a temporary environment. It installs nothing in the project and nothing globally.
 
-**With nothing installed:**
-
-```bash
-OEES_AGENTS_REF=main bash <(curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh)
-```
-
-The bootstrap script installs uv if it is missing. Then it runs `init` from the ref in `OEES_AGENTS_REF`. Without `OEES_AGENTS_REF`, it uses the latest release tag, and it stops if there is no tag. Arguments after the script go to `init`.
-
-Run the script as above to answer the questions. If you pipe the script into bash, `init` cannot read your answers, because the pipe is its input. Pipe it only for a run that asks no questions:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh | OEES_AGENTS_REF=main bash -s -- --yes \
-  --description "..." --users "..."
-```
-
-To read the script before you run it:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/oees/agents/main/scripts/bootstrap.sh -o bootstrap.sh
-less bootstrap.sh
-OEES_AGENTS_REF=main bash bootstrap.sh
-rm bootstrap.sh
-```
-
-**After the first release:** each release is a `v*` tag. Replace `@main` with the tag, for example `@v1.0.0`. The bootstrap script then needs no `OEES_AGENTS_REF`. The release also publishes an npm package, `@oees/agents`, that runs the same CLI through `uvx`, pinned to its tag: `npx @oees/agents init`. The npm package is not published yet.
+**After the first release:** each release is a `v*` tag. Replace `@main` with the tag, for example `@v1.0.0`, so that every machine renders the same content.
 
 Then commit the result. Add only the targets you picked:
 
@@ -321,7 +295,7 @@ Kits and extras work the same way: remove the kit from `kits.enabled`, set `comm
 
 ## Existing installs
 
-If the project was set up with the old bootstrap script, run `oees-agents init` as for a new install. It finds the old install by its proof: a file that this repository shipped, with its bytes unchanged, old `@rules/` imports in `.claude/CLAUDE.md`, or the old shared-rules marker in `AGENTS.md`. Your own files at the same paths are not proof. When it finds an old install, it takes the targets, kept defaults and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
+If the project was set up with the old install scripts, run `oees-agents init` as for a new install. It finds the old install by its proof: a file that this repository shipped, with its bytes unchanged, old `@rules/` imports in `.claude/CLAUDE.md`, or the old shared-rules marker in `AGENTS.md`. Your own files at the same paths are not proof. When it finds an old install, it takes the targets, kept defaults and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
 
 ## Codex notes
 
@@ -353,8 +327,7 @@ content/
   blocks/          the project-context block template
 skills/            <name>/SKILL.md per skill
 commands/          slash commands, each importing its skill
-npm/               the @oees/agents shim and its test
-scripts/           bootstrap.sh, and generate_legacy_hashes.py for the legacy migration
+scripts/           generate_legacy_hashes.py for the legacy migration
 tests/             pytest, one file per module plus content lint tests
 hatch_build.py     bundles content/, skills/ and commands/ into the wheel
 ```
@@ -362,12 +335,12 @@ hatch_build.py     bundles content/, skills/ and commands/ into the wheel
 ```bash
 uv sync
 make check-fast   # lint, format, types and the fast tests, while working
-make check        # the contributor gate: ruff, format, mypy, every test, the npm shim test,
+make check        # the contributor gate: ruff, format, mypy, every test,
                   # and oees-agents check against this repo's own manifest
 make docs         # regenerate the tables in README.md and CONTRIBUTING.md
 ```
 
-This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/` or `commands/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. CI (`tooling-ci.yml`) runs `make check`. Releases are tag-driven: pushing a `v*` tag that matches the version in `pyproject.toml` runs `make check` and publishes the npm shim pinned to that tag.
+This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/` or `commands/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. CI (`tooling-ci.yml`) runs `make check`. Releases are tag-driven: push a `v*` tag that matches the version in `pyproject.toml`. The release workflow checks the tag and runs `make check`; projects then install that tag with `uvx`.
 
 [CONTRIBUTING.md](CONTRIBUTING.md) explains why the rules are what they are, and how to add a rule, kit or subagent.
 

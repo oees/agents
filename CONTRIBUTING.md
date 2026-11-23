@@ -113,9 +113,9 @@ git add .oees-agents.toml .oees-agents.lock AGENTS.md .claude/ .cursor/
 git commit -m "Add shared AI engineering guidance"
 ```
 
-There is no release yet, so this installs from `main`. After the first
-release, use the release tag, or `npx @oees/agents init`. Updating, flags, the
-manifest format and everything else about installation are in
+`uvx` is the only way to install. There is no release yet, so this installs
+from `main`; after the first release, use the release tag. Updating, flags,
+the manifest format and everything else about installation are in
 [README.md](README.md).
 
 Content comes in three tiers. **Conduct** is always on: the short list no
@@ -409,8 +409,8 @@ until both are current. Commits stand alone, as everywhere else.
 
 Releases are cut by bumping `version` in `pyproject.toml` and pushing a
 matching `v*` tag on `main`, which runs `.github/workflows/release.yml`: it
-checks the tag, runs `make check` and publishes `@oees/agents` pinned to that
-tag. Never publish by hand.
+checks the tag and runs `make check`. The tag is the release; projects install
+it with `uvx`. Nothing is published to a package registry.
 
 ---
 
