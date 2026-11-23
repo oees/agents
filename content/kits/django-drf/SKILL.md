@@ -149,7 +149,7 @@ fragments, included at the end of the Makefile.
 - `/healthz` is liveness and touches nothing. `/readyz` checks the database and answers 503 with
   `{"status": "unavailable", "checks": {...}}` when it cannot reach it.
 - `compose.yml` runs app (dev server), worker, Postgres 16 and Redis 7 with health-gated start-up, for local work
-  only. Deviate when the project context says so, e.g. octosentinel uses RabbitMQ as the Celery broker.
+  only. Deviate when the project context says so, e.g. a project that uses RabbitMQ as the Celery broker.
 
 ## Deploy path
 
