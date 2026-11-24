@@ -18,8 +18,6 @@ RULES_DIR = ".cursor/rules"
 REPOSITORY = "https://github.com/oees/agents"
 CONTEXT_RULE = "00-project-context"
 
-_UNSAFE_STARTS = (*"\"'[]{}>|*&!%@,`", "- ", "? ")
-
 
 def render(manifest: Manifest, content: Content) -> Output:
     files: dict[str, bytes] = {}
@@ -75,7 +73,5 @@ def _mdc(description: str, body: str, globs: tuple[str, ...], *, always_apply: b
 
 
 def _yaml_line(value: str) -> str:
-    value = " ".join(value.split())
-    if ": " in value or " #" in value or value.endswith(":") or value.startswith(_UNSAFE_STARTS):
-        return json.dumps(value)
-    return value
+    """One line, double-quoted: a JSON string is a valid YAML scalar, whatever it holds."""
+    return json.dumps(" ".join(value.split()))
