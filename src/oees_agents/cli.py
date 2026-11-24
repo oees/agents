@@ -13,6 +13,7 @@ import typer
 from oees_agents import legacy
 from oees_agents.blocks import BlockError
 from oees_agents.content import ContentError, Document
+from oees_agents.fs import write_atomic
 from oees_agents.log import configure
 from oees_agents.manifest import (
     MANIFEST_NAME,
@@ -216,7 +217,7 @@ def update(
             pinned = set_source(text, source.label)
         apply(root, pending)
         if pinned is not None:
-            (root / MANIFEST_NAME).write_text(pinned, encoding="utf-8")
+            write_atomic(root / MANIFEST_NAME, pinned.encode("utf-8"))
             typer.echo(f"Pinned {MANIFEST_NAME} to {source.label}.")
         _report(pending)
 

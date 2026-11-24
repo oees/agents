@@ -9,6 +9,8 @@ from typing import Any, Literal, TypeVar, cast, get_args
 
 import tomli_w
 
+from oees_agents.fs import write_atomic
+
 MANIFEST_NAME = ".oees-agents.toml"
 MANIFEST_VERSION = 1
 
@@ -135,16 +137,19 @@ def read_manifest(path: Path) -> Manifest:
 
 
 def write_manifest(path: Path, manifest: Manifest) -> None:
-    path.write_text(dump_manifest(manifest), encoding="utf-8")
+    write_atomic(path, dump_manifest(manifest).encode("utf-8"))
 
 
-_SOURCE_LINE = re.compile(r'^source = ".*"$', re.MULTILINE)
+# A top-level `source` key and its string value; whatever follows (a comment) stays.
+_SOURCE_VALUE = re.compile(
+    r"""^(source[ \t]*=[ \t]*)(?:"(?:[^"\\\n]|\\.)*"(?!")|'[^'\n]*'(?!'))""", re.MULTILINE
+)
 
 
 def set_source(text: str, source: str) -> str:
     """Change the pinned source without rewriting the rest, so comments survive."""
-    line = tomli_w.dumps({"source": source}).strip()
-    updated, count = _SOURCE_LINE.subn(lambda _: line, text)
+    value = tomli_w.dumps({"source": source}).strip().removeprefix("source = ")
+    updated, count = _SOURCE_VALUE.subn(lambda match: match.group(1) + value, text)
     if count != 1:
         raise ManifestError('source: expected exactly one top-level `source = "..."` line')
     parse_manifest(updated)

@@ -538,7 +538,7 @@ def test_update_changes_nothing_when_the_source_line_cannot_be_pinned(
     init(project, content_root, "--target", "claude")
     manifest_path = project / MANIFEST_NAME
     manifest_path.write_text(
-        manifest_path.read_text().replace('source = "local"', "source = 'v0.0.1'")
+        manifest_path.read_text().replace('source = "local"', 'source = """v0.0.1"""')
     )
     (project / ".claude/rules/git.md").unlink()
 
