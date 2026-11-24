@@ -178,6 +178,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 | `api` | Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs |
 | `git` | Every change reaches the default branch through a pull request, rebase-only merges, no merge commits, no squashing, commits that stand alone with a 70-character imperative subject |
 | `migrations` | Safe, backwards-compatible database schema migrations |
+| `naming` | Inclusive technical terms and American English spelling in every identifier |
 | `observability` | Structured logging, contextual errors, no silent exceptions |
 | `pull-requests` | Draft until ready, a linked ticket and context, tasting notes, declared model assistance, small and chained, review only after the tests pass |
 | `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |

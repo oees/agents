@@ -18,6 +18,7 @@ defaults = [
     "api",
     "git",
     "migrations",
+    "naming",
     "observability",
     "pull-requests",
     "quality-gates",

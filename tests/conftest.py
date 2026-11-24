@@ -31,6 +31,7 @@ DEFAULTS = (
     "pull-requests",
     "observability",
     "migrations",
+    "naming",
     "api",
     "standards",
     "quality-gates",
