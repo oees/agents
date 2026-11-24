@@ -13,14 +13,13 @@ import json
 import shlex
 from collections.abc import Iterator
 from pathlib import Path
-from types import MappingProxyType
 
 from oees_agents.blocks import BEGIN
 from oees_agents.content import Content, Document
 from oees_agents.context import context_block
 from oees_agents.manifest import Manifest
 from oees_agents.output import ManagedBlock, Output
-from oees_agents.scope import codex_dir, update_command
+from oees_agents.scope import Layout
 
 CODEX_INSTRUCTION_LIMIT = 32 * 1024
 """Codex's default combined instruction size (`project_doc_max_bytes`)."""
@@ -63,31 +62,34 @@ cat "$(dirname "$0")/rules.md"
 """
 
 
-def render(manifest: Manifest, content: Content) -> Output:
-    if manifest.scope == "machine":
-        return _machine(manifest, content)
+def render(manifest: Manifest, content: Content, layout: Layout) -> Output:
+    if layout.scope == "machine":
+        return _machine(manifest, content, layout)
     block = ManagedBlock(
-        body=_body(manifest, content, own=OWN_INSTRUCTIONS),
+        body=_body(manifest, content, layout, own=OWN_INSTRUCTIONS),
         placement="bottom",
         max_bytes=CODEX_INSTRUCTION_LIMIT,
     )
     return Output(blocks={"AGENTS.md": block})
 
 
-def hooks_path(manifest: Manifest) -> str:
-    return f"{codex_dir(manifest.scope)}/hooks.json"
-
-
-def _machine(manifest: Manifest, content: Content) -> Output:
-    root = codex_dir(manifest.scope)
-    script = f"{root}/{MACHINE_DIR}/session-start.sh"
-    hooks = hooks_path(manifest)
+def _machine(manifest: Manifest, content: Content, layout: Layout) -> Output:
+    script = f"{layout.codex}/{MACHINE_DIR}/session-start.sh"
+    hooks = f"{layout.codex}/hooks.json"
+    hooks_json = _hooks(layout.root / script)
     files = {
-        f"{root}/{MACHINE_DIR}/rules.md": _body(manifest, content, own="").encode(),
+        f"{layout.codex}/{MACHINE_DIR}/rules.md": _body(manifest, content, layout, own="").encode(),
         script: SESSION_START.encode(),
-        hooks: _hooks(Path.home() / script),
+        hooks: hooks_json,
     }
-    return Output(files=MappingProxyType(dict(sorted(files.items()))), optional=frozenset({hooks}))
+    return Output(
+        files=files,
+        optional={
+            hooks: "Codex reads the machine rules through a session hook. Add it to yours:\n"
+            + hooks_json.decode()
+        },
+        notes={hooks: "Codex runs the hook only after you approve it: start Codex and run /hooks."},
+    )
 
 
 def _hooks(script: Path) -> bytes:
@@ -105,10 +107,10 @@ def _hooks(script: Path) -> bytes:
     return (json.dumps(data, indent=2) + "\n").encode()
 
 
-def _body(manifest: Manifest, content: Content, own: str) -> str:
+def _body(manifest: Manifest, content: Content, layout: Layout, own: str) -> str:
     context = context_block(manifest, content)
     sections = [] if context is None else [context.strip("\n")]
-    sections.append(HEADER.format(update=update_command(manifest.scope), own=own))
+    sections.append(HEADER.format(update=layout.update_command, own=own))
     sections.extend(_section(document) for document in _rules(manifest, content))
     return "\n\n".join(sections) + "\n"
 

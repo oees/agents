@@ -11,6 +11,7 @@ from oees_agents.blocks import BEGIN, END, splice
 from oees_agents.content import Content, load_content
 from oees_agents.manifest import Extras, Manifest, Project
 from oees_agents.output import Output
+from oees_agents.scope import machine_layout
 from oees_agents.targets.claude import render
 
 from conftest import (
@@ -19,6 +20,7 @@ from conftest import (
     CORE_SUBAGENTS,
     DEFAULTS,
     EXTENDED_SUBAGENTS,
+    IN_PROJECT,
     KITS,
     PATTERN_SKILLS,
     write,
@@ -87,7 +89,7 @@ def settings(output: Output) -> dict[str, dict[str, list[str]]]:
 def test_claude_md_block_starts_with_context_then_names_the_rules_directory(
     content: Content,
 ) -> None:
-    body = claude_block(render(manifest(defaults=("tdd", "git")), content))
+    body = claude_block(render(manifest(defaults=("tdd", "git")), content, IN_PROJECT))
 
     assert body.startswith(CONTEXT_BEGIN)
     assert "## Shared engineering rules\n" in body
@@ -98,13 +100,13 @@ def test_claude_md_block_starts_with_context_then_names_the_rules_directory(
 def test_claude_md_block_imports_no_rule_because_claude_code_loads_the_rules_directory(
     content: Content,
 ) -> None:
-    body = claude_block(render(manifest(), content))
+    body = claude_block(render(manifest(), content, IN_PROJECT))
 
     assert IMPORT.findall(body) == []
 
 
 def test_rules_hold_the_raw_documents_for_conduct_and_enabled_defaults(content: Content) -> None:
-    output = render(manifest(), content)
+    output = render(manifest(), content, IN_PROJECT)
 
     assert under(output, ".claude/rules/") == {
         f".claude/rules/{name}.md" for name in (*CONDUCT, *DEFAULTS)
@@ -113,13 +115,15 @@ def test_rules_hold_the_raw_documents_for_conduct_and_enabled_defaults(content: 
 
 
 def test_an_opted_out_default_has_no_rule_file(content: Content) -> None:
-    output = render(manifest(defaults=tuple(d for d in DEFAULTS if d != "migrations")), content)
+    output = render(
+        manifest(defaults=tuple(d for d in DEFAULTS if d != "migrations")), content, IN_PROJECT
+    )
 
     assert ".claude/rules/migrations.md" not in output.paths
 
 
 def test_the_context_block_appears_once_after_two_renders(content: Content) -> None:
-    block = render(manifest(), content).blocks[".claude/CLAUDE.md"]
+    block = render(manifest(), content, IN_PROJECT).blocks[".claude/CLAUDE.md"]
 
     twice = splice(splice(b"# Project\n", block), block).decode()
 
@@ -128,7 +132,7 @@ def test_the_context_block_appears_once_after_two_renders(content: Content) -> N
 
 
 def test_project_text_around_the_managed_block_survives_byte_for_byte(content: Content) -> None:
-    block = render(manifest(), content).blocks[".claude/CLAUDE.md"]
+    block = render(manifest(), content, IN_PROJECT).blocks[".claude/CLAUDE.md"]
     before = b"# Portal\n\nLocal notes before.\n\n"
     after = b"\n## Local\n\nKeep  this   spacing.\n"
     existing = before + f"{BEGIN}\n\nold rules\n\n{END}\n".encode() + after
@@ -141,7 +145,7 @@ def test_project_text_around_the_managed_block_survives_byte_for_byte(content: C
 
 
 def test_a_claude_md_without_markers_keeps_its_bytes_under_the_block(content: Content) -> None:
-    block = render(manifest(), content).blocks[".claude/CLAUDE.md"]
+    block = render(manifest(), content, IN_PROJECT).blocks[".claude/CLAUDE.md"]
     existing = b"# Portal\n\nOur own instructions.\n"
 
     result = splice(existing, block)
@@ -151,7 +155,7 @@ def test_a_claude_md_without_markers_keeps_its_bytes_under_the_block(content: Co
 
 
 def test_settings_deny_destructive_git_and_never_rm_or_hooks(content: Content) -> None:
-    data = settings(render(manifest(), content))
+    data = settings(render(manifest(), content, IN_PROJECT))
 
     assert set(data) == {"permissions", "claudeMdExcludes"}
     assert data["permissions"]["deny"] == list(DENIED)
@@ -160,13 +164,13 @@ def test_settings_deny_destructive_git_and_never_rm_or_hooks(content: Content) -
 
 
 def test_settings_are_formatted_json_with_a_trailing_newline(content: Content) -> None:
-    raw = render(manifest(), content).files[".claude/settings.json"]
+    raw = render(manifest(), content, IN_PROJECT).files[".claude/settings.json"]
 
     assert raw == (json.dumps(json.loads(raw), indent=2) + "\n").encode()
 
 
 def test_settings_allow_the_project_checks(content: Content) -> None:
-    allow = settings(render(manifest(), content))["permissions"]["allow"]
+    allow = settings(render(manifest(), content, IN_PROJECT))["permissions"]["allow"]
 
     assert {"Bash(make check)", "Bash(make check *)"} <= set(allow)
     assert {"Bash(make check-fast)", "Bash(make check-fast *)"} <= set(allow)
@@ -175,7 +179,7 @@ def test_settings_allow_the_project_checks(content: Content) -> None:
 
 def test_every_allow_rule_matches_one_whole_command(content: Content) -> None:
     everything = manifest(kits=("django-drf", "fastapi", "htmx-alpine"))
-    allow = settings(render(everything, content))["permissions"]["allow"]
+    allow = settings(render(everything, content, IN_PROJECT))["permissions"]["allow"]
 
     # "Bash(ls*)" also allows "lsof"; "Bash(ls *)" allows only ls and its arguments.
     assert [rule for rule in allow if "*" in rule and not rule.endswith(" *)")] == []
@@ -183,7 +187,7 @@ def test_every_allow_rule_matches_one_whole_command(content: Content) -> None:
 
 def test_no_allow_rule_runs_an_arbitrary_command(content: Content) -> None:
     everything = manifest(kits=("django-drf", "fastapi", "htmx-alpine"))
-    allow = settings(render(everything, content))["permissions"]["allow"]
+    allow = settings(render(everything, content, IN_PROJECT))["permissions"]["allow"]
 
     # `uv run`, `uvx` and `npx` run any program; `find` runs one with -exec or deletes.
     runners = ("Bash(uv *)", "Bash(uv run *)", "Bash(uvx", "Bash(npx *)", "Bash(find")
@@ -191,20 +195,20 @@ def test_no_allow_rule_runs_an_arbitrary_command(content: Content) -> None:
 
 
 def test_settings_json_is_optional_so_a_projects_own_file_wins(content: Content) -> None:
-    assert ".claude/settings.json" in render(manifest(), content).optional
+    assert ".claude/settings.json" in render(manifest(), content, IN_PROJECT).optional
 
 
 def test_a_python_kit_allows_its_toolchain(content: Content) -> None:
-    allow = settings(render(manifest(kits=("django-drf", "fastapi")), content))["permissions"][
-        "allow"
-    ]
+    allow = settings(render(manifest(kits=("django-drf", "fastapi")), content, IN_PROJECT))[
+        "permissions"
+    ]["allow"]
 
     assert set(PYTHON_ALLOWS) <= set(allow)
     assert len(allow) == len(set(allow))
 
 
 def test_a_kitless_manifest_allows_no_toolchain(content: Content) -> None:
-    allow = settings(render(manifest(kits=()), content))["permissions"]["allow"]
+    allow = settings(render(manifest(kits=()), content, IN_PROJECT))["permissions"]["allow"]
 
     assert not set(PYTHON_ALLOWS) & set(allow)
     assert "Bash(tsc *)" not in allow
@@ -215,21 +219,23 @@ def test_a_typescript_kit_allows_npm_tsc_and_eslint(
 ) -> None:
     monkeypatch.setitem(profiles.KIT_TOOLCHAINS, "htmx-alpine", ("typescript",))
 
-    allow = settings(render(manifest(kits=("htmx-alpine",)), content))["permissions"]["allow"]
+    allow = settings(render(manifest(kits=("htmx-alpine",)), content, IN_PROJECT))["permissions"][
+        "allow"
+    ]
 
     assert {"Bash(npm run lint *)", "Bash(tsc *)", "Bash(eslint *)"} <= set(allow)
     assert "Bash(pytest *)" not in allow
 
 
 def test_no_subagents_means_no_agents_and_no_reviewing_skill(content: Content) -> None:
-    output = render(manifest(extras=Extras(subagents="none")), content)
+    output = render(manifest(extras=Extras(subagents="none")), content, IN_PROJECT)
 
     assert not under(output, ".claude/agents/")
     assert not under(output, ".claude/skills/reviewing/")
 
 
 def test_core_subagents_install_the_core_six_and_reviewing(content: Content) -> None:
-    output = render(manifest(extras=Extras(subagents="core")), content)
+    output = render(manifest(extras=Extras(subagents="core")), content, IN_PROJECT)
 
     assert under(output, ".claude/agents/") == {
         f".claude/agents/{name}.md" for name in CORE_SUBAGENTS
@@ -238,7 +244,7 @@ def test_core_subagents_install_the_core_six_and_reviewing(content: Content) -> 
 
 
 def test_extended_subagents_install_all_twelve(content: Content) -> None:
-    output = render(manifest(extras=Extras(subagents="extended")), content)
+    output = render(manifest(extras=Extras(subagents="extended")), content, IN_PROJECT)
 
     assert under(output, ".claude/agents/") == {
         f".claude/agents/{name}.md" for name in (*CORE_SUBAGENTS, *EXTENDED_SUBAGENTS)
@@ -250,7 +256,7 @@ def test_extended_subagents_install_all_twelve(content: Content) -> None:
 
 
 def test_commands_install_with_their_skills(content: Content) -> None:
-    output = render(manifest(), content)
+    output = render(manifest(), content, IN_PROJECT)
 
     assert under(output, ".claude/commands/") == {
         f".claude/commands/{name}.md" for name in COMMAND_SKILLS
@@ -260,13 +266,13 @@ def test_commands_install_with_their_skills(content: Content) -> None:
 
 
 def test_commands_off_installs_no_commands(content: Content) -> None:
-    output = render(manifest(extras=Extras(commands=False)), content)
+    output = render(manifest(extras=Extras(commands=False)), content, IN_PROJECT)
 
     assert not under(output, ".claude/commands/")
 
 
 def test_kit_templates_land_under_the_kit_skill(content: Content) -> None:
-    output = render(manifest(kits=("fastapi",)), content)
+    output = render(manifest(kits=("fastapi",)), content, IN_PROJECT)
 
     assert (
         output.files[".claude/skills/fastapi/templates/Makefile"]
@@ -283,14 +289,14 @@ def test_kit_template_dotfiles_land_under_the_kit_skill(content_root: Path) -> N
     for relative in dotfiles:
         write(content_root / "content/kits/fastapi" / relative, f"{relative}\n")
 
-    output = render(manifest(kits=("fastapi",)), load_content(content_root))
+    output = render(manifest(kits=("fastapi",)), load_content(content_root), IN_PROJECT)
 
     for relative in dotfiles:
         assert output.files[f".claude/skills/fastapi/{relative}"] == f"{relative}\n".encode()
 
 
 def test_every_import_resolves_to_a_rendered_path(content: Content) -> None:
-    output = render(manifest(), content)
+    output = render(manifest(), content, IN_PROJECT)
     importers = {path: data.decode() for path, data in output.files.items()}
     importers[".claude/CLAUDE.md"] = claude_block(output)
     rendered = output.paths
@@ -310,7 +316,7 @@ def test_every_import_resolves_to_a_rendered_path(content: Content) -> None:
 def test_without_a_project_there_is_no_context_block_and_no_check_allows(
     content: Content,
 ) -> None:
-    output = render(manifest(project=None), content)
+    output = render(manifest(project=None), content, IN_PROJECT)
 
     body = claude_block(output)
     assert CONTEXT_BEGIN not in body
@@ -319,7 +325,7 @@ def test_without_a_project_there_is_no_context_block_and_no_check_allows(
 
 
 def test_files_are_sorted_by_path(content: Content) -> None:
-    output = render(manifest(), content)
+    output = render(manifest(), content, IN_PROJECT)
 
     assert list(output.files) == sorted(output.files)
 
@@ -327,7 +333,7 @@ def test_files_are_sorted_by_path(content: Content) -> None:
 def test_a_blank_check_command_never_allows_every_command(content: Content) -> None:
     project = replace(PROJECT, check="make check", check_fast="  ")
 
-    allow = settings(render(manifest(project=project), content))["permissions"]["allow"]
+    allow = settings(render(manifest(project=project), content, IN_PROJECT))["permissions"]["allow"]
 
     assert "Bash(*)" not in allow
     assert not [entry for entry in allow if entry.startswith("Bash( ")]
@@ -340,7 +346,7 @@ def test_a_machine_install_writes_under_the_claude_config_dir(
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "config/claude"))
 
-    output = render(manifest(scope="machine", project=None), content)
+    output = render(manifest(scope="machine", project=None), content, machine_layout())
 
     assert all(path.startswith("config/claude/") for path in output.paths)
     assert "config/claude/settings.json" in output.optional
@@ -353,7 +359,9 @@ MACHINE_RULES_EXCLUDE = ["**/rules/oees-agents/**"]
 
 
 def test_a_project_install_tells_claude_code_to_skip_the_machine_rules(content: Content) -> None:
-    data: dict[str, object] = json.loads(render(manifest(), content).files[".claude/settings.json"])
+    data: dict[str, object] = json.loads(
+        render(manifest(), content, IN_PROJECT).files[".claude/settings.json"]
+    )
 
     assert data["claudeMdExcludes"] == MACHINE_RULES_EXCLUDE
 
@@ -364,7 +372,7 @@ def test_a_machine_install_keeps_its_rules_in_a_folder_a_project_can_skip(
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
 
-    output = render(manifest(scope="machine", project=None), content)
+    output = render(manifest(scope="machine", project=None), content, machine_layout())
 
     assert under(output, ".claude/rules/") == {
         f".claude/rules/oees-agents/{name}.md" for name in (*CONDUCT, *DEFAULTS)

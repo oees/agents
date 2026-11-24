@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
+from oees_agents.scope import project_layout
+
 REPO = Path(__file__).resolve().parents[1]
+IN_PROJECT = project_layout(Path("project"))
+"""A project install; target renderers read only its tool directories, not its root."""
 CONTEXT_TEMPLATE = "content/blocks/project-context.md"
 CONDUCT = ("conduct", "data-protection", "language", "secrets")
 DEFAULTS = ("tdd", "git", "observability", "migrations", "api", "standards", "quality-gates")

@@ -21,7 +21,7 @@ from oees_agents.manifest import MANIFEST_NAME, Project
 from oees_agents.render import render
 from oees_agents.writer import sync
 
-from conftest import REPO
+from conftest import IN_PROJECT, REPO
 
 FIXTURE = REPO / "tests/fixtures/legacy/main"
 HASHES = REPO / "src/oees_agents/legacy_hashes.json"
@@ -362,7 +362,7 @@ def test_migrating_then_writing_conflicts_only_on_what_the_project_edited(
 
     migrate(project, install)
     manifest = replace(legacy_manifest(install, source="local"), project=PROJECT)
-    result = sync(project, render(manifest, content))
+    result = sync(project, render(manifest, content, IN_PROJECT))
 
     assert [conflict.path for conflict in result.conflicts] == [".claude/rules/tdd.md"]
     assert edited.read_text().endswith("Our own addition.\n")

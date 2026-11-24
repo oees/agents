@@ -201,3 +201,36 @@ def test_no_note_when_the_project_and_the_machine_share_no_tool(
 
     assert result.exit_code == 0, result.output
     assert "machine" not in result.output
+
+
+def test_machine_update_refuses_a_project_path(
+    home: Path, project: Path, content_root: Path
+) -> None:
+    init_machine(content_root)
+
+    result = invoke("update", project, "--machine", "--content-dir", content_root)
+
+    assert result.exit_code == 1
+    assert "leave out the path" in result.stderr
+
+
+def test_update_without_a_path_works_on_the_current_directory(
+    project: Path, content_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    init_project(project, content_root, "codex")
+    monkeypatch.chdir(project)
+
+    result = invoke("check", "--content-dir", content_root)
+
+    assert result.exit_code == 0, result.output
+
+
+def test_update_repeats_the_hook_for_your_own_codex_hooks(home: Path, content_root: Path) -> None:
+    (home / ".codex").mkdir()
+    (home / ".codex/hooks.json").write_text('{"hooks": {}}\n')
+    init_machine(content_root, "--target", "codex")
+
+    result = invoke("update", "--machine", "--content-dir", content_root)
+
+    assert result.exit_code == 0, result.output
+    assert f"sh {home}/.codex/oees-agents/session-start.sh" in result.output

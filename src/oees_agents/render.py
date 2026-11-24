@@ -5,9 +5,10 @@ from collections.abc import Callable, Mapping
 from oees_agents.content import Content
 from oees_agents.manifest import Manifest, Target
 from oees_agents.output import Output, RenderError, merge_outputs
+from oees_agents.scope import Layout
 from oees_agents.targets import claude, codex, cursor
 
-TargetRenderer = Callable[[Manifest, Content], Output]
+TargetRenderer = Callable[[Manifest, Content, Layout], Output]
 
 RENDERERS: Mapping[Target, TargetRenderer] = {
     "claude": claude.render,
@@ -16,13 +17,12 @@ RENDERERS: Mapping[Target, TargetRenderer] = {
 }
 
 
-def render(manifest: Manifest, content: Content) -> Output:
+def render(manifest: Manifest, content: Content, layout: Layout) -> Output:
     _check_names("default", manifest.defaults, content.defaults)
     _check_names("kit", manifest.kits, content.kits)
-    outputs = []
-    for target in manifest.targets:
-        outputs.append(RENDERERS[target](manifest, content))
-    return merge_outputs(outputs)
+    return merge_outputs(
+        RENDERERS[target](manifest, content, layout) for target in manifest.targets
+    )
 
 
 def _check_names(kind: str, wanted: tuple[str, ...], available: Mapping[str, object]) -> None:

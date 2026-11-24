@@ -341,9 +341,7 @@ def test_an_invalid_lock_is_an_error(tmp_path: Path) -> None:
 
 
 def optional_settings(data: bytes = b"generated\n") -> Output:
-    return Output(
-        files={".claude/settings.json": data}, optional=frozenset({".claude/settings.json"})
-    )
+    return Output(files={".claude/settings.json": data}, optional={".claude/settings.json": ""})
 
 
 def test_an_optional_file_leaves_the_projects_own_file_alone(tmp_path: Path) -> None:
