@@ -9,7 +9,7 @@ import pytest
 from oees_agents import profiles
 from oees_agents.blocks import BEGIN, END, splice
 from oees_agents.content import Content, load_content
-from oees_agents.manifest import Extras, Manifest, Project
+from oees_agents.manifest import Extras, Manifest
 from oees_agents.output import Output
 from oees_agents.scope import machine_layout
 from oees_agents.targets.claude import render
@@ -17,25 +17,18 @@ from oees_agents.targets.claude import render
 from conftest import (
     COMMAND_SKILLS,
     CONDUCT,
+    CONTEXT_BEGIN,
     CORE_SUBAGENTS,
     DEFAULTS,
     EXTENDED_SUBAGENTS,
     IN_PROJECT,
     KITS,
     PATTERN_SKILLS,
+    PROJECT,
+    under,
     write,
 )
 
-PROJECT = Project(
-    name="portal",
-    description="B2B multi-tenant platform where partners and vendors sell energy products.",
-    users="external partners, vendors, OEES operations",
-    blast_radius="customer-facing",
-    default_branch="main",
-    check="make check",
-    check_fast="make check-fast",
-)
-CONTEXT_BEGIN = "<!-- BEGIN OEES PROJECT CONTEXT -->"
 DENIED = (
     "Bash(git push*)",
     "Bash(git reset --hard*)",
@@ -74,10 +67,6 @@ def claude_block(output: Output) -> str:
     block = output.blocks[".claude/CLAUDE.md"]
     assert block.placement == "top"
     return block.body
-
-
-def under(output: Output, prefix: str) -> set[str]:
-    return {path for path in output.paths if path.startswith(prefix)}
 
 
 def settings(output: Output) -> dict[str, dict[str, list[str]]]:

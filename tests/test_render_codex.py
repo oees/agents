@@ -15,18 +15,8 @@ from oees_agents.scope import machine_layout
 from oees_agents.targets.codex import CODEX_INSTRUCTION_LIMIT, render
 from oees_agents.writer import Plan
 
-from conftest import CONDUCT, DEFAULTS, IN_PROJECT, write
+from conftest import CONDUCT, CONTEXT_BEGIN, DEFAULTS, IN_PROJECT, PROJECT, write
 
-PROJECT = Project(
-    name="portal",
-    description="B2B multi-tenant platform where partners and vendors sell energy products.",
-    users="external partners, vendors, OEES operations",
-    blast_radius="customer-facing",
-    default_branch="main",
-    check="make check",
-    check_fast="make check-fast",
-)
-CONTEXT_BEGIN = "<!-- BEGIN OEES PROJECT CONTEXT -->"
 HEADING = "## Shared engineering rules"
 
 

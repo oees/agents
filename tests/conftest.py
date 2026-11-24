@@ -6,12 +6,24 @@ from pathlib import Path
 
 import pytest
 
+from oees_agents.manifest import Project
+from oees_agents.output import Output
 from oees_agents.scope import project_layout
 
 REPO = Path(__file__).resolve().parents[1]
 IN_PROJECT = project_layout(Path("project"))
 """A project install; target renderers read only its tool directories, not its root."""
 CONTEXT_TEMPLATE = "content/blocks/project-context.md"
+CONTEXT_BEGIN = "<!-- BEGIN OEES PROJECT CONTEXT -->"
+PROJECT = Project(
+    name="portal",
+    description="B2B multi-tenant platform where partners and vendors sell energy products.",
+    users="external partners, vendors, OEES operations",
+    blast_radius="customer-facing",
+    default_branch="main",
+    check="make check",
+    check_fast="make check-fast",
+)
 CONDUCT = ("conduct", "data-protection", "language", "secrets")
 DEFAULTS = ("tdd", "git", "observability", "migrations", "api", "standards", "quality-gates")
 COMMAND_SKILLS = ("commit", "code-review", "plan", "pr-tidy", "test", "shipped")
@@ -106,3 +118,7 @@ def home(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPat
         monkeypatch.setenv(f"GIT_{role}_NAME", "Test")
         monkeypatch.setenv(f"GIT_{role}_EMAIL", "test@example.com")
     return path
+
+
+def under(output: Output, prefix: str) -> set[str]:
+    return {path for path in output.paths if path.startswith(prefix)}

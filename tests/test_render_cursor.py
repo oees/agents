@@ -6,25 +6,15 @@ import pytest
 
 from oees_agents.content import load_content
 from oees_agents.context import context_block
-from oees_agents.manifest import Extras, Manifest, Project
+from oees_agents.manifest import Extras, Manifest
 from oees_agents.output import RenderError
 from oees_agents.profiles import KIT_GLOBS
 from oees_agents.targets.cursor import render
 
-from conftest import COMMAND_SKILLS, CONDUCT, DEFAULTS, IN_PROJECT, write
+from conftest import COMMAND_SKILLS, CONDUCT, DEFAULTS, IN_PROJECT, PROJECT, write
 
 RULES = ".cursor/rules"
 CONTEXT_FILE = f"{RULES}/00-project-context.mdc"
-
-PROJECT = Project(
-    name="portal",
-    description="B2B multi-tenant platform where partners and vendors sell energy products.",
-    users="external partners, vendors, OEES operations",
-    blast_radius="customer-facing",
-    default_branch="main",
-    check="make check",
-    check_fast="make check-fast",
-)
 
 
 def manifest(**overrides: object) -> Manifest:

@@ -12,17 +12,7 @@ from oees_agents.manifest import Extras, Manifest, Project
 from oees_agents.output import ManagedBlock, Output, RenderError, merge_outputs
 from oees_agents.render import render
 
-from conftest import IN_PROJECT
-
-PROJECT = Project(
-    name="portal",
-    description="B2B multi-tenant platform where partners and vendors sell energy products.",
-    users="external partners, vendors, OEES operations",
-    blast_radius="customer-facing",
-    default_branch="main",
-    check="make check",
-    check_fast="make check-fast",
-)
+from conftest import IN_PROJECT, PROJECT
 
 KITS = ("django-drf", "htmx-alpine")
 

@@ -399,8 +399,11 @@ def _history_reason() -> str | None:
     return None
 
 
-@pytest.mark.skipif(_history_reason() is not None, reason=_history_reason() or "")
+@pytest.mark.slow
 def test_the_known_hashes_match_the_git_history() -> None:
+    reason = _history_reason()
+    if reason is not None:
+        pytest.skip(reason)
     regenerated = subprocess.run(
         [sys.executable, str(GENERATOR), "--stdout"],
         capture_output=True,

@@ -1,7 +1,6 @@
 """Each kit in this repository renders on its own for every target."""
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import pytest
 
@@ -9,11 +8,10 @@ from oees_agents.content import Content, load_content, parse_frontmatter
 from oees_agents.lint import lint_content
 from oees_agents.output import Output
 from oees_agents.render import render
-from test_render_claude import manifest, settings, under
+from test_render_claude import manifest, settings
 
-from conftest import IN_PROJECT
+from conftest import IN_PROJECT, REPO, under
 
-REPO = Path(__file__).resolve().parents[1]
 TARGETS = ("claude", "cursor", "codex")
 JUNK = ("__pycache__", ".ruff_cache", ".mypy_cache", ".pytest_cache", ".pyc")
 

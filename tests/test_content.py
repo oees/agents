@@ -12,11 +12,10 @@ from conftest import (
     DEFAULTS,
     EXTENDED_SUBAGENTS,
     KITS,
+    REPO,
     SKILLS,
     write,
 )
-
-REPO = Path(__file__).resolve().parents[1]
 
 
 def test_every_expected_tier_skill_kit_and_subagent_is_found(content_root: Path) -> None:

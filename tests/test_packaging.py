@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parents[1]
+from conftest import REPO
 
 
 @pytest.mark.slow

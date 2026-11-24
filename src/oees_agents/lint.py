@@ -39,6 +39,7 @@ def lint_content(content: Content) -> list[Problem]:
             *_throwaway_claims(content),
             *_dangling_skill_references(content),
             *_subagent_vocabulary(content),
+            *_stray_skill_markdown(content),
         ],
         key=lambda problem: (problem.source, problem.message),
     )
@@ -87,3 +88,14 @@ def _subagent_vocabulary(content: Content) -> Iterator[Problem]:
             for word in PROJECT_VOCABULARY:
                 if word in text:
                     yield Problem(agent.source, f"names project vocabulary {word!r}")
+
+
+def _stray_skill_markdown(content: Content) -> Iterator[Problem]:
+    """Claude Code loads only SKILL.md from a skill's folder; other top-level notes are lost."""
+    for skill in (*content.skills.values(), *content.kits.values()):
+        for relative in skill.files:
+            if "/" not in relative and relative.endswith(".md") and relative != "SKILL.md":
+                folder = skill.document.source.rpartition("/")[0]
+                yield Problem(
+                    f"{folder}/{relative}", "is markdown beside SKILL.md; Claude Code ignores it"
+                )
