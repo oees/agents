@@ -392,3 +392,35 @@ def test_crlf_line_endings_from_git_on_windows_are_not_an_edit(tmp_path: Path) -
 
     assert pending.conflicts == ()
     assert relocked.is_clean
+
+
+def to_crlf(path: Path) -> None:
+    path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+
+
+def test_a_crlf_checkout_of_a_managed_block_is_not_an_edit(tmp_path: Path) -> None:
+    sync(tmp_path, output({}, AGENTS_md=RULES))
+    lock_on_linux = read_lock(tmp_path)
+    to_crlf(tmp_path / "AGENTS.md")
+
+    updated = plan(
+        tmp_path, output({}, AGENTS_md=ManagedBlock("Shared rules v2.\n", "bottom")), lock_on_linux
+    )
+    dropped = plan(tmp_path, output({}), lock_on_linux)
+
+    assert updated.conflicts == ()
+    assert list(updated.writes) == ["AGENTS.md"]
+    assert dropped.conflicts == ()
+
+
+def test_the_lock_records_the_same_block_hash_on_every_platform(tmp_path: Path) -> None:
+    linux, windows = tmp_path / "linux", tmp_path / "windows"
+    (windows / "AGENTS.md").parent.mkdir(parents=True)
+    (windows / "AGENTS.md").write_bytes(b"Project notes.\r\n")
+    linux.mkdir()
+    (linux / "AGENTS.md").write_bytes(b"Project notes.\n")
+
+    assert (
+        sync(linux, output({}, AGENTS_md=RULES)).lock
+        == sync(windows, output({}, AGENTS_md=RULES)).lock
+    )

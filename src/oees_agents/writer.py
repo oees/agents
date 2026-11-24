@@ -194,14 +194,14 @@ class _Builder:
         locked = self.lock.blocks.get(path)
         if current == data:
             self.unchanged.append(path)
-        elif old_block is None or locked is None or digest(old_block) == locked or self.force:
+        elif old_block is None or locked is None or _matches(old_block, locked) or self.force:
             self.writes[path] = data
         else:
             self._conflict(path, locked, self.lock.blocks, self.blocks, inside_block=True)
             return
         new_block = extract(data)
         assert new_block is not None  # splice always leaves exactly one block
-        self.blocks[path] = digest(new_block)
+        self.blocks[path] = digest(_lf(new_block))
 
     def drop_file(self, path: str) -> None:
         current = self._read(path)
@@ -227,7 +227,7 @@ class _Builder:
             return
         if current is None or old_block is None:
             return
-        if digest(old_block) == self.lock.blocks[path] or self.force:
+        if _matches(old_block, self.lock.blocks[path]) or self.force:
             self.unblocked[path] = remove(current)
         else:
             self._conflict(
@@ -293,11 +293,16 @@ _UNSAFE = _Unsafe()
 
 def _same(current: bytes, data: bytes) -> bool:
     """Equal, or equal once Git on Windows (core.autocrlf) has turned LF into CRLF."""
-    return current == data or current.replace(b"\r\n", b"\n") == data
+    return current == data or _lf(current) == data
 
 
 def _matches(current: bytes, locked: str | None) -> bool:
-    return locked in (digest(current), digest(current.replace(b"\r\n", b"\n")))
+    return locked in (digest(current), digest(_lf(current)))
+
+
+def _lf(data: bytes) -> bytes:
+    """Git on Windows may check text out with CRLF; that is not an edit."""
+    return data.replace(b"\r\n", b"\n")
 
 
 def _check_inside(path: str) -> None:
