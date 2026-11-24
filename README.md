@@ -1,6 +1,6 @@
 # agents
 
-Shared AI-agent configuration for Octopus Energy España (OEES) projects, for Claude Code, Cursor and Codex. It gives a project rules, skills, slash commands, subagents and stack kits, and the project chooses which of them it takes. The Octopus way is the default: a small conduct core is always on, the default rules are on unless a project opts out of them, and kits and extras are opt-in. A project's choices live in one committed manifest, and the `oees-agents` CLI generates every tool's files from it.
+Shared AI-agent configuration for Octopus Energy España (OEES) projects, for Claude Code, Cursor and Codex. It gives a project rules, skills, slash commands, subagents and stack kits, and the project chooses which of them it takes. A small conduct core is always on. The default rules are on unless a project opts out of them. Kits and extras are opt-in. A project's choices live in one committed manifest, and the `oees-agents` CLI generates every tool's files from it.
 
 ## Install
 
@@ -11,6 +11,13 @@ uvx --from git+https://github.com/oees/agents@main oees-agents init
 ```
 
 `uvx` runs the CLI in a temporary environment. It installs nothing in the project and nothing globally.
+
+Then commit the result. Add only the targets you picked:
+
+```bash
+git add .oees-agents.toml .oees-agents.lock AGENTS.md .claude/ .cursor/
+git commit -m "Add OEES agent configuration"
+```
 
 **After the first release:** each release is a `v*` tag. Replace `@main` with the tag, for example `@v1.0.0`, so that every machine renders the same content.
 
@@ -42,14 +49,7 @@ The machine install applies to every project, unless the project has its own ins
   - If you already have a `~/.codex/hooks.json`, the CLI keeps it and prints the hook for you to add.
   - The hook sets `"additionalContextLimit": 0`. Without it, Codex moves hook output above 2,500 tokens to a file and shows only a preview.
 
-Then commit the result. Add only the targets you picked:
-
-```bash
-git add .oees-agents.toml .oees-agents.lock AGENTS.md .claude/ .cursor/
-git commit -m "Add OEES agent configuration"
-```
-
-When you commit these files, everyone on the project gets the same configuration. The rest of this README writes `oees-agents <command>`. Run it through the entry point you used, for example `uvx --from git+https://github.com/oees/agents@main oees-agents update`.
+The rest of this README writes `oees-agents <command>`. Run it through the entry point you used, for example `uvx --from git+https://github.com/oees/agents@main oees-agents update`.
 
 ## What `init` asks
 
@@ -167,7 +167,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 | `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
 | `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
 | `language` | Write English in ASD-STE100 Simplified Technical English and Spanish in plain language to UNE-ISO 24495-1 |
-| `secrets` | Never commit secrets; use env vars and secret managers |
+| `secrets` | Never commit secrets; keep runtime secrets in environment variables |
 <!-- END GENERATED: conduct -->
 
 ### Defaults (on unless the project opts out)
@@ -193,7 +193,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 | `commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
 | `personal-data` | Keep personal data out of logs, traces, errors, analytics, exports, fixtures and model prompts. Use when adding logging or error handling, writing a serializer, export, webhook or analytics event, sending data to a third party or an LLM, creating test fixtures, or reviewing a change for PII exposure. |
 | `plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
-| `pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
+| `pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
 | `python-patterns` | How OEES builds Python backends — Django + DRF or FastAPI, typed boundaries, domain exceptions, structured logging, settings per environment, imports at module top. Use when writing or reviewing Python code. |
 | `reviewing` | The shared protocol that the reviewer subagents and the docs verifier preload — inputs, read-only working, severity levels and the findings report. Only those subagents use it; the main session asks a reviewer subagent for a review. |
 | `shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |
@@ -221,7 +221,7 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 | `/code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
 | `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
 | `/plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
-| `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
+| `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
 | `/shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |
 | `/test` | Write well-structured tests following TDD. Test design, mocking discipline, naming, and coverage decisions. Use when writing tests or reviewing test quality. |
 <!-- END GENERATED: commands -->
@@ -251,7 +251,11 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 
 `.claude/settings.json` is generated from the manifest:
 
-- **Allow**: read-only and local Git commands (`git status`, `diff`, `log`, `show`, `branch`, `add`, `commit`, `stash`, `rebase`, `fetch`), basic file commands (`ls`, `grep`, `cat`, `head`, `tail`, `wc`, `mkdir`, `mv`, `cp`, `touch`), the project's `check` and `check_fast` commands, and the Python toolchain when a kit needs it: `uv sync`, `uv lock`, `uv run pytest`, `uv run ruff`, `uv run mypy`, `pytest`, `ruff` and `mypy`. All three current kits need it. Each command is allowed alone and with arguments, as `Bash(ls)` and `Bash(ls *)`, so `Bash(ls *)` does not also allow `lsof`.
+- **Allow**: the commands below. The settings allow each command alone and with arguments, as `Bash(ls)` and `Bash(ls *)`. So `Bash(ls *)` does not also allow `lsof`.
+  - Git commands, read-only and local: `git status`, `diff`, `log`, `show`, `branch`, `add`, `commit`, `stash`, `rebase` and `fetch`.
+  - File commands: `ls`, `grep`, `cat`, `head`, `tail`, `wc`, `mkdir`, `mv`, `cp` and `touch`.
+  - Check commands: the project's `check` and `check_fast` commands.
+  - The Python toolchain, when a kit needs it: `uv sync`, `uv lock`, `uv run pytest`, `uv run ruff`, `uv run mypy`, `pytest`, `ruff` and `mypy`. All three current kits need it.
 - **Not allowed**: commands that run another program, such as `uv run <anything>`, `uvx`, `npx` and `find` (which can `-exec` or `-delete`). Claude Code asks first.
 - **Deny**: `git push` (which also covers `git push --force`), `git reset --hard`, `git rebase -i`, `git rebase --interactive` and `git filter-branch`. `rm` is not denied.
 - **Machine rules**: `claudeMdExcludes` skips the rules of a [machine install](#this-project-or-the-whole-machine), so this project's rules apply instead. It has no effect where there is no machine install. A machine install's own `settings.json` does not have it.
@@ -299,7 +303,9 @@ oees-agents update --machine
 
 `update` re-renders every generated file from the manifest. The content comes from the CLI you run: `uvx --from git+https://github.com/oees/agents@main oees-agents update` renders `main`, and after a release, `uvx --from git+https://github.com/oees/agents@v1.1.0 oees-agents update` renders `v1.1.0`. `--ref <tag or branch>` instead clones that version of this repository (it needs `git`), and `--content-dir <path>` renders from a local checkout. `update` then pins the manifest's `source` to what it rendered, rewriting that one line only, so comments in the manifest survive.
 
-Files the CLI wrote before that the new render no longer produces are removed, so disabling a kit cleans up after it. A file or managed block whose hash differs from the lock (someone edited it), or a file the CLI did not write, is never overwritten without `--force`; `update` lists it and leaves it alone. Symlinks and malformed markers are refused even with `--force`. Review the diff and commit it.
+`update` removes the files that the CLI wrote before and that the new render no longer produces. So when you disable a kit, `update` removes its files. `update` never overwrites a file or managed block whose hash differs from the lock, unless you pass `--force`. A different hash means that someone edited it. `update` also never overwrites a file that the CLI did not write, unless you pass `--force`. Instead, `update` lists each such file and leaves it unchanged.
+
+`update` refuses symlinks and malformed markers, even with `--force`. Review the diff and commit it.
 
 ## Checking
 
@@ -332,7 +338,19 @@ Kits and extras work the same way: remove the kit from `kits.enabled`, set `comm
 
 ## Existing installs
 
-If the project was set up with the old install scripts, run `oees-agents init` as for a new install. It finds the old install by its proof: a file that this repository shipped, with its bytes unchanged, old `@rules/` imports in `.claude/CLAUDE.md`, or the old shared-rules marker in `AGENTS.md`. Your own files at the same paths are not proof. When it finds an old install, it takes the targets, kept defaults and commands from what is present; kits and subagents start off (pass `--kit` or `--subagents` to turn them on), so it asks only the project-context questions. It removes the old files whose bytes match a version this repository once shipped at that path, keeps the ones you edited and lists them so you can decide. In the old `.claude/CLAUDE.md`, only the `@rules/` imports are removed; every other line survives.
+If the old install scripts set up the project, run `oees-agents init` as for a new install.
+
+**How `init` finds an old install.** `init` looks for proof of an old install. Each of these is proof:
+
+- a file that this repository shipped, with its bytes unchanged
+- old `@rules/` imports in `.claude/CLAUDE.md`
+- the old shared-rules marker in `AGENTS.md`
+
+Your own files at the same paths are not proof.
+
+**What `init` keeps from it.** When `init` finds an old install, it takes the targets, kept defaults and commands from what is present. Kits and subagents start off. To turn them on, pass `--kit` or `--subagents`. So `init` asks only the project-context questions.
+
+**What `init` removes.** `init` removes each old file whose bytes match a version that this repository once shipped at that path. It keeps the old files that you edited and lists them, so that you can decide. In the old `.claude/CLAUDE.md`, `init` removes only the `@rules/` imports. Every other line stays.
 
 ## Codex notes
 
@@ -347,7 +365,7 @@ Three kinds of hook are easy to confuse:
 
 - **Git hooks** run through ordinary Git commands in every client. Agents must fix failures and rerun the checks; a check blocked by the environment is reported, never bypassed or called a pass.
 - **Claude Code tool hooks** live in `.claude/settings.json`. The generated settings configure none.
-- **Codex lifecycle hooks** use [their own configuration and trust review](https://learn.chatgpt.com/docs/hooks). The CLI does not configure or trust them.
+- **Codex lifecycle hooks** use [their own configuration and trust review](https://learn.chatgpt.com/docs/hooks). A [machine install](#this-project-or-the-whole-machine) adds one `SessionStart` hook to `~/.codex/hooks.json`. A project install adds none.
 
 The rules guide the agent; the project's Git hooks and CI do the checking.
 

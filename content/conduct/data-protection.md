@@ -4,14 +4,25 @@ description: Personal data stays out of logs, traces, errors, fixtures and promp
 
 # Data protection
 
-Personal data is any value identifying a person alone or combined with another: name, email, phone, address, DNI/NIE, IBAN, CUPS and meter serial, geolocation, consumption tied to a supply point. Log the surrogate id (account, supply, request, task) instead.
+Personal data is any value that identifies a person, alone or together with another value. Examples are name, email, phone, address, DNI/NIE, IBAN, CUPS and meter serial, geolocation, and consumption tied to a supply point. Log the surrogate id (account, supply, request, task) instead.
 
-Never write it to a sink that outlives the request: logs and log context, traces, span attributes, metric labels, exception messages, URLs, cache keys, queue arguments, analytics events, alerts, tickets, or prompts sent to a model or external API.
+Never write personal data to a sink that outlives the request. Each of these is such a sink:
 
-Redact at one boundary per service, not at each call site, and prove it with a test that sends a known value through the real pipeline and asserts it never reaches the sink. An untested convention is not a safeguard.
+- logs, log context, traces, span attributes and metric labels
+- exception messages, URLs, cache keys and queue arguments
+- analytics events, alerts and tickets
+- prompts sent to a model or an external API
 
-Serializers, exports and outbound payloads carry the fields the caller needs and no more. Fixtures, docs, screenshots and agent prompts use synthetic or approved anonymised data. Every store holding personal data needs a retention period and an erasure path that reaches it.
+Redact personal data at one boundary per service, not at each call site. Prove the redaction with a test. The test sends a known value through the real pipeline and asserts that the value never reaches the sink. An untested convention is not a safeguard.
 
-A leak is an incident: tell the data protection officer (dpd@octopusenergy.es) the same day, purge the sink, then close the path. Deleting the line in a later commit is not enough.
+Serializers, exports and outbound payloads carry only the fields that the caller needs. Fixtures, docs, screenshots and agent prompts use synthetic or approved anonymised data. Every store that holds personal data needs a retention period and an erasure path that reaches the store.
 
-Exceptions: the system of record stores what its lawful basis allows, and the UI shows it to an authorised user. Debugging with real data needs a named approver, an access-controlled destination and a deletion deadline.
+A leak is an incident. If personal data leaks, do these steps:
+
+1. Tell the data protection officer (dpd@octopusenergy.es) the same day.
+2. Purge the sink.
+3. Close the path.
+
+A later commit that deletes the line is not enough.
+
+Exceptions: the system of record stores what its lawful basis allows. The UI shows that data to an authorised user. If you debug with real data, you need a named approver, an access-controlled destination and a deletion deadline.

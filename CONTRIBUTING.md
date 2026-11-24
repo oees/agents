@@ -1,16 +1,20 @@
 # Contributing to OEES code
 
-This is the "why" document for every **Octopus Energy España (OEES)**
-repository. It explains the philosophy behind the rules our engineers and our
-AI coding agents (Claude Code, Cursor, Codex) follow. It is written for humans
-and agents alike. How to install the shared tooling is covered in
-[README.md](README.md); this document covers why the tooling says what it says.
+This is the contributor guide for this repository, `oees/agents`. It also
+explains the rules that this repository installs in **Octopus Energy España
+(OEES)** projects. Our engineers and our AI coding agents (Claude Code, Cursor
+and Codex) follow those rules. This document is for humans and agents.
+[README.md](README.md) tells you how to install the shared tooling. This
+document tells you why the tooling says what it says.
+
+Projects do not receive a copy of this file. From another repository, read it at
+<https://github.com/oees/agents/blob/main/CONTRIBUTING.md>.
 
 ---
 
 ## 1. Why this exists
 
-Our job is to make energy *fair, clean and simple*, backed by outrageously good
+Our job is to give customers energy that is fair, clean and simple, with good
 service. The customer is the point. Everything else here (tests, reviews,
 checks, logs, careful migrations) is how we keep that promise while moving
 fast, and never at the customer's expense.
@@ -50,17 +54,17 @@ actually happened.
 
 ### Visible, tracked debt
 
-Shortcuts are sometimes right. Hidden shortcuts never are. Every waiver carries
-an issue, an owner and an expiry. Every typed escape hatch (`# type: ignore`,
-`any`) carries a one-line justification. Silent debt is not acceptable; visible,
-tracked debt is something we can plan to pay down.
+Shortcuts are sometimes right. Hidden shortcuts never are. A visible, tracked
+shortcut is debt that we can plan to pay. §11 tells you how to record one.
 
 ### Checks are not negotiable
 
 Hooks, linters, type checkers, tests and scanners exist because each one caught
 something once. Never weaken or bypass them to get a pass. Fix the cause and
 rerun. If the environment prevents a check from running, say exactly which and
-why: a blocked or waived check is not a pass.
+why: a blocked or waived check is not a pass. The
+[conduct rule](content/conduct/conduct.md#hooks-and-checks) holds the exact
+text.
 
 ### Calibrate to the blast radius
 
@@ -83,9 +87,7 @@ real people still depend on them.
    work that the task already authorises, such as editing files, running
    checks and committing locally, needs no repeated permission.
 2. **Never merge PRs yourself.** A human reviews and merges from the GitHub UI.
-3. **Never force-push the default branch.** Let Git hooks run normally. Never
-   bypass or weaken hooks or required checks; fix failures and rerun them. Only
-   a human's explicit waiver for a specific check permits bypass (§11).
+3. **Never force-push the default branch.** For hooks and checks, see §2.
 4. **Spec first for new features** (§7). Bug fixes and minor refactors can go
    straight to a PR.
 5. **Tests ship with the change** (§8). Write the failing test first.
@@ -94,8 +96,8 @@ real people still depend on them.
 
 The machine-loaded source agents actually read is `content/conduct/conduct.md`,
 together with `secrets.md`, `data-protection.md` and `language.md` in the same
-directory. All four are always on and cannot be opted out of. If this prose and `conduct.md` disagree, `conduct.md` wins and
-this section should be fixed.
+directory. All four are always on, and no project can opt out of them. If this
+text and `conduct.md` disagree, `conduct.md` wins. Then fix this section.
 
 ---
 
@@ -133,7 +135,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
 | `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
 | `language` | Write English in ASD-STE100 Simplified Technical English and Spanish in plain language to UNE-ISO 24495-1 |
-| `secrets` | Never commit secrets; use env vars and secret managers |
+| `secrets` | Never commit secrets; keep runtime secrets in environment variables |
 <!-- END GENERATED: conduct -->
 
 ### Defaults (opt out per project)
@@ -191,7 +193,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | `/code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
 | `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
 | `/plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
-| `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
+| `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
 | `/shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |
 | `/test` | Write well-structured tests following TDD. Test design, mocking discipline, naming, and coverage decisions. Use when writing tests or reviewing test quality. |
 <!-- END GENERATED: commands -->
@@ -203,19 +205,21 @@ Prefer a repo's own PR and sync skills when present.
 
 ## 5. The stacks at a glance
 
-**Patterns you'll see repeatedly:** Django + DRF or FastAPI on the backend;
-Celery + Redis/RabbitMQ for async work; PostgreSQL (TimescaleDB for telemetry);
-React + TypeScript + Vite + TanStack Query on the frontend, or server-rendered
-HTMX + Alpine; everything runs in **Docker**; deploys target **DigitalOcean App
-Platform** or **Vercel**.
+These patterns occur in many OEES projects:
+
+- **Backend**: Django + DRF or FastAPI.
+- **Async work**: Celery + Redis or RabbitMQ.
+- **Database**: PostgreSQL, with TimescaleDB for telemetry.
+- **Frontend**: React + TypeScript + Vite + TanStack Query, or server-rendered
+  HTMX + Alpine.
+- **Runtime**: everything runs in **Docker**.
+- **Deploys**: **DigitalOcean App Platform** or **Vercel**.
 
 ---
 
 ## 6. Architecture conventions
 
-- **Backend owns the truth** (§2). Business rules, validation, authorisation,
-  persistence and computed outcomes live in backend services and domain apps,
-  never duplicated in clients.
+- **Backend owns the truth** (§2).
 - **Organise by domain, not by technical layer.** Files that change together
   live together. Test layout follows the kit the project uses.
 - **Settings are split by environment**: `base` / `local` / `test` /
@@ -269,19 +273,13 @@ differs.
 - **Security**: dependency scanning, and `gitleaks` for secrets as a hard CI
   block.
 
-**Git hooks must run normally.** Never autonomously use `--no-verify`, `SKIP`,
-`HUSKY=0`, `core.hooksPath` overrides, empty hook directories or equivalent
-bypasses. Do not edit hooks, assertions, checks or configuration merely to make
-validation pass. Fix the cause, rerun the hook and affected checks, then retry.
-If the environment prevents a check from running, report the exact check and
-blocker. A blocked or explicitly waived check is not a pass; identify any human
-waiver and follow §11. Routine authorised checks need no fresh approval.
+For hooks, checks and waivers, see §2 and §11.
 
-**In Dockerised repos, run tooling inside the container**, not on your host;
-local versions drift from CI (for example `docker compose exec <service> make
-check-fast`). Watch repo-specific footguns, which each repo's `CLAUDE.md`
-lists: CI may run tests on a different database engine than local dev, and
-Celery prefork workers do not hot-reload.
+**Run the gate the way the project's kit says.** The service kits run it on the
+host against the database from `compose.yml`, or in a container. Each repo's
+`CLAUDE.md` lists the risks that are specific to that repo. For example, CI can
+run tests on a different database engine than local development. Celery prefork
+workers do not hot-reload.
 
 ---
 
@@ -310,12 +308,14 @@ Celery prefork workers do not hot-reload.
   example configs. Runtime secrets come from environment variables; commit only
   `.env.example` with placeholders. If a secret leaks: **rotate immediately**,
   then scrub history. Deleting it in a new commit is not enough.
-- **Personal data**: name, email, address, DNI/NIE, IBAN, CUPS, consumption
-  series. Log the surrogate id instead, and keep it out of traces, exception
-  messages, URLs, queue arguments, analytics and model prompts. Redact in one
-  place per service, with a test that proves it. Fixtures use synthetic data;
-  a leak is an incident: tell dpd@octopusenergy.es the same day. The
-  `personal-data` skill holds the detail.
+- **Personal data**: name, email, phone, address, DNI/NIE, IBAN, CUPS and
+  meter serial, geolocation, and consumption tied to a supply point. The
+  [data-protection rule](content/conduct/data-protection.md) holds the full
+  list. Log the surrogate id instead. Keep personal data out of traces,
+  exception messages, URLs, queue arguments, analytics and model prompts.
+  Redact in one place per service. Prove the redaction with a test. Use
+  synthetic data in fixtures. A leak is an incident: tell dpd@octopusenergy.es
+  the same day. The `personal-data` skill holds the detail.
 - **Migrations**: backwards-compatible and reversible. Ship the migration
   first, verify, then ship the code that needs it; never bundle them.
   Destructive changes (drop, rename) need a deprecate, remove references,
@@ -359,13 +359,14 @@ one-line reason. Silent debt is not acceptable; visible, tracked debt is.
 ## 12. Working as an agent on OEES code
 
 - **Read before you write.** Start with the project context block, then the
-  repo's `CLAUDE.md` and `README.md`, then this file for the reasoning behind a
-  rule. Read only the docs you need.
+  repo's `CLAUDE.md` and `README.md`. For the reasoning behind a rule, read
+  this file at <https://github.com/oees/agents/blob/main/CONTRIBUTING.md>.
+  Read only the docs you need.
 - **Know the stack.** The project context says which stack and kits apply.
   Ask only when it is missing.
-- **Encourage cross-team communication.** When work touches another team's
-  domain (CRM, billing, a partner integration), flag it so the
-  right people are looped in.
+- **Encourage cross-team communication.** If work touches the domain of
+  another team (CRM, billing, a partner integration), tell the human. Then the
+  human can tell the right people.
 - **Communicate simply and transparently.** Report outcomes faithfully: if
   tests fail, say so with the output; if you skipped a step, say that. Don't
   over-explain unless asked. The `language` rule sets the style: ASD-STE100
@@ -407,10 +408,11 @@ oees-agents update . --content-dir .` to regenerate this repository's own
 `AGENTS.md` block, and `make check` before opening a PR; `make check` fails
 until both are current. Commits stand alone, as everywhere else.
 
-Releases are cut by bumping `version` in `pyproject.toml` and pushing a
-matching `v*` tag on `main`, which runs `.github/workflows/release.yml`: it
-checks the tag and runs `make check`. The tag is the release; projects install
-it with `uvx`. Nothing is published to a package registry.
+To make a release, increase `version` in `pyproject.toml`. Then push a
+matching `v*` tag on `main`. The tag starts `.github/workflows/release.yml`,
+which checks the tag and runs `make check`. The tag is the release, and
+projects install it with `uvx`. This repository publishes nothing to a package
+registry.
 
 ---
 

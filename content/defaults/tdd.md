@@ -6,9 +6,18 @@ description: "TDD: write failing tests before implementation, red-green-refactor
 
 Default for OEES projects. A project opts out in its manifest.
 
-Write a failing test before every behavioral change. Red → green → refactor, in that order. Tests ship in the same commit as the implementation.
+Write a failing test before every behavioural change. Do the steps red, green and refactor, in that order. Ship the tests in the same commit as the implementation.
 
-Requires a test: new functions/classes/components, changed return values or side effects, bug fixes (reproduce the bug with a test first, then fix).
-No new test needed: pure refactors, renames, comments, config changes — but existing tests must still pass.
+These changes need a test:
 
-Exception: skip only for urgent hotfixes when explicitly instructed; note the reason in the commit.
+- a new function, class or component
+- a changed return value or side effect
+- a bug fix: first reproduce the bug with a test, then fix it
+
+These changes need no new test, but the existing tests must still pass:
+
+- pure refactors and renames
+- comments
+- config changes
+
+Exception: skip the test only for an urgent hotfix, and only when a human explicitly tells you to. Write the reason in the commit.
