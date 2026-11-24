@@ -113,7 +113,7 @@ subagents = "core"                  # none | core | extended
 | Field | Meaning |
 |---|---|
 | `version` | Manifest format version. Currently `1`. |
-| `source` | The content version the generated files came from: `v<version>` of the CLI that rendered them, the `--ref` it was given, or `local` for `--content-dir`. An install from `main` records the version in `pyproject.toml` (now `v0.1.0`), which is not a tag yet. `update` rewrites this line and nothing else. |
+| `source` | The content version the generated files came from: `v<version>` of the CLI that rendered them, the `--ref` it was given, or `local` for `--content-dir`. An install from `main` records the version in `pyproject.toml` (now `v1.0.0`). Between releases, `main` can hold changes that this tag does not have. `update` rewrites this line and nothing else. |
 | `scope` | `machine` for a machine install. A project manifest leaves it out (it means `project`). |
 | `targets` | Which tools to generate files for: any of `claude`, `cursor`, `codex`. A machine install takes only `claude` and `codex`. |
 | `project.name` | The project's name, as agents should refer to it. |
