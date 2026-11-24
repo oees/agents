@@ -74,6 +74,8 @@ Report outcomes faithfully. If tests fail, say so and give the output. If you sk
 
 Personal data is any value that identifies a person, alone or together with another value. Examples are name, email, phone, address, DNI/NIE, IBAN, CUPS and meter serial, geolocation, and consumption tied to a supply point. Log the surrogate id (account, supply, request, task) instead.
 
+An identifier that a public register resolves is personal data, whatever it looks like. A CUPS, a meter serial, a cadastral reference and a UK UPRN each lead to one address. An id is a surrogate only when the route back to the person stays inside our own systems.
+
 Never write personal data to a sink that outlives the request. Each of these is such a sink:
 
 - logs, log context, traces, span attributes and metric labels
@@ -82,6 +84,8 @@ Never write personal data to a sink that outlives the request. Each of these is 
 - prompts sent to a model or an external API
 
 Redact personal data at one boundary per service, not at each call site. Prove the redaction with a test. The test sends a known value through the real pipeline and asserts that the value never reaches the sink. An untested convention is not a safeguard.
+
+An error reporter needs a denylist of its own. Sentry sends the local variables of every stack frame, the body of the request and the headers. A field that the code never logs still reaches it. Name the fields to strip in the configuration of the client. Add the name of each new personal field as you add the field.
 
 Serializers, exports and outbound payloads carry only the fields that the caller needs. Fixtures, docs, screenshots and agent prompts use synthetic or approved anonymised data. Every store that holds personal data needs a retention period and an erasure path that reaches the store.
 

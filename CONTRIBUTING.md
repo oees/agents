@@ -133,7 +133,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | Rule | What it covers |
 |---|---|
 | `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
-| `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
+| `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts, publicly resolvable identifiers included |
 | `language` | Write English in ASD-STE100 Simplified Technical English and Spanish in plain language to UNE-ISO 24495-1 |
 | `secrets` | Never commit secrets; keep runtime secrets in environment variables |
 <!-- END GENERATED: conduct -->
