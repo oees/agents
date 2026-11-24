@@ -8,7 +8,15 @@ Always on in every OEES project. These rules have no opt-out.
 
 ## Permission
 
-Take no externally visible action without explicit permission from the human for that specific action: pushing, merging, opening, closing or commenting on pull requests and issues, sending messages, deleting branches, files or data, and editing secrets or production configuration. Permission is per action: "yes, open the PR" does not authorise a later force-push. Routine work the task already authorises, such as editing files, running checks and committing locally, needs no repeated permission.
+Before an externally visible action, get explicit permission from the human for that specific action. These actions are externally visible:
+
+- pushing
+- merging, opening, closing or commenting on pull requests and issues
+- sending messages
+- deleting branches, files or data
+- editing secrets or production configuration
+
+Permission applies to one action only. For example, "yes, open the PR" does not authorise a later force-push. Routine work that the task already authorises needs no repeated permission. Routine work includes editing files, running checks and committing locally.
 
 ## Never
 
@@ -17,10 +25,10 @@ Take no externally visible action without explicit permission from the human for
 
 ## Hooks and checks
 
-Let Git hooks and required checks run on ordinary commands. Never bypass them (`--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories or equivalents), and never weaken assertions, checks or their configuration to get a pass. When one fails, fix the cause, then rerun it and the affected checks.
+Let Git hooks and required checks run on ordinary commands. Never bypass them. Bypasses include `--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories and equivalents. Never weaken assertions, checks or their configuration to get a pass. If a hook or check fails, fix the cause. Then rerun it and the affected checks.
 
-Report each check as passed, failed, blocked by the environment or explicitly waived, naming the exact check and the reason. A blocked or waived check is not a pass. Only an explicit human waiver for a specific check permits a bypass, within the project's waiver policy; urgency, unrelated baseline failures and sandbox or network problems are not waivers.
+Report each check as passed, failed, blocked by the environment or explicitly waived. Name the exact check and the reason. A blocked or waived check is not a pass. Only an explicit human waiver for a specific check permits a bypass, within the waiver policy of the project. Urgency, unrelated baseline failures and sandbox or network problems are not waivers.
 
 ## Reporting
 
-Report outcomes faithfully. If tests fail, say so with the output. If you skipped a step, say which and why. Never describe work as done or verified when it is not.
+Report outcomes faithfully. If tests fail, say so and give the output. If you skipped a step, say which step and why. Never describe work as done or verified when it is not.

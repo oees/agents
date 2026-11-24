@@ -6,10 +6,17 @@ description: Safe, backwards-compatible database schema migrations
 
 Default for OEES projects. A project opts out in its manifest.
 
-Write migrations to be backwards-compatible: the app must run correctly against both old and new schema simultaneously. Never bundle a migration and the app code that requires it in the same deployment — ship the migration first, verify, then ship the app change.
+Write backwards-compatible migrations. The app must run correctly against the old schema and the new schema at the same time. Never put a migration and the app code that needs it in the same deployment. Ship the migration first and verify it. Then ship the app change.
 
-Destructive operations (DROP COLUMN, DROP TABLE, renames) require a multi-step plan: deprecate → remove app references → deploy → then drop. Adding NOT NULL columns requires a default or backfill before applying the constraint.
+A destructive operation (DROP COLUMN, DROP TABLE, rename) needs a plan in steps:
 
-Test against a copy of production data before merging. Write a `down` migration unless the operation is genuinely irreversible.
+1. Deprecate the column, table or name.
+2. Remove the references to it from the app.
+3. Deploy.
+4. Drop it.
 
-Exceptions: greenfield schemas with no live traffic may skip the backwards-compat constraint.
+If you add a NOT NULL column, give it a default or a backfill before you apply the constraint.
+
+Test against a copy of production data before you merge. Write a `down` migration, unless nobody can reverse the operation.
+
+Exceptions: a new schema with no live traffic can skip the backwards-compatibility constraint.

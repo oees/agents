@@ -9,14 +9,14 @@ description: Run an extremely strict maintainability review for abstraction qual
 
 Use this skill for an unusually strict review focused on implementation quality, maintainability, abstraction quality, and codebase health.
 
-Above all, this skill should push the reviewer to be **ambitious** about code structure. Do not merely identify local cleanup opportunities. Actively search for "code judo" moves: restructurings that preserve behavior while making the implementation dramatically simpler, smaller, more direct, and more elegant.
+Above all, this skill should push the reviewer to be **ambitious** about code structure. Do not merely identify local cleanup opportunities. Actively search for "code judo" moves: restructurings that preserve behaviour while making the implementation dramatically simpler, smaller, more direct, and more elegant.
 
 ## Core Prompt
 
 Start from this baseline:
 
 > Perform a deep code quality audit of the current branch's changes.
-> Rethink how to structure / implement the changes to meaningfully improve code quality without impacting behavior.
+> Rethink how to structure / implement the changes to meaningfully improve code quality without impacting behaviour.
 > Work to improve abstractions, modularity, reduce Spaghetti code, improve succinctness and legibility.
 > Be ambitious, if there is a clear path to improving the implementation that involves restructuring some of the codebase, go for it.
 > Be extremely thorough and rigorous. Measure twice, cut once.
@@ -45,12 +45,12 @@ Apply the baseline prompt above, plus these explicit review rules:
    - Call out changes that make the surrounding code harder to reason about, even if they technically work.
 
 3. **Bias toward cleaning the design, not just accepting working code.**
-   - If behavior can stay the same while the structure becomes meaningfully cleaner, push for the cleaner version.
+   - If behaviour can stay the same while the structure becomes meaningfully cleaner, push for the cleaner version.
    - Do not rubber-stamp "it works" implementations that leave the codebase messier.
    - Strongly prefer simplifications that remove moving pieces altogether over refactors that merely spread the same complexity around.
 
 4. **Prefer direct, boring, maintainable code over hacky or magical code.**
-   - Treat brittle, ad-hoc, or "magic" behavior as a code-quality problem.
+   - Treat brittle, ad-hoc, or "magic" behaviour as a code-quality problem.
    - Be skeptical of generic mechanisms that hide simple data-shape assumptions.
    - Flag thin abstractions, identity wrappers, or pass-through helpers that add indirection without buying clarity.
 

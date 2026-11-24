@@ -10,9 +10,9 @@ Principles for writing tests that catch real bugs and stay maintainable. Follows
 
 ## What to Test
 
-Test behavior and contracts, not implementation details. Test the public interface — if you need to break encapsulation to assert something, that's a design smell, not a test gap.
+Test behaviour and contracts, not implementation details. Test the public interface — if you need to break encapsulation to assert something, that's a design smell, not a test gap.
 
-One test per logical behavior. If a test needs a long comment to explain what it's checking, split it.
+One test per logical behaviour. If a test needs a long comment to explain what it's checking, split it.
 
 ## Naming
 
@@ -56,13 +56,13 @@ Before marking a test suite complete, check:
 
 ## Parameterization
 
-Use parameterized tests when the same logic runs over multiple inputs. Don't use them when different inputs test meaningfully different behaviors — those deserve separate named tests with clear intent.
+Use parameterized tests when the same logic runs over multiple inputs. Don't use them when different inputs test meaningfully different behaviours — those deserve separate named tests with clear intent.
 
 ## Decision Checklist
 
 - [ ] Test written before implementation (TDD rule)?
-- [ ] Testing behavior, not implementation details?
+- [ ] Testing behaviour, not implementation details?
 - [ ] Name reads as a spec sentence?
 - [ ] Mocks only at system boundaries?
 - [ ] Edge cases covered?
-- [ ] Test passes for the right reason (would it fail if the behavior broke)?
+- [ ] Test passes for the right reason (would it fail if the behaviour broke)?

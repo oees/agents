@@ -1,13 +1,13 @@
 ---
 name: pr-tidy
-description: Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff".
+description: Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff".
 ---
 
 > Calibrate every judgement call to the project context block in the instruction files. Where it is missing, ask before assuming anything about who depends on this code.
 
 # Make PR Easy to Review
 
-Prepare a PR so a reviewer can quickly understand the intent, important files, and risk. The default goal is reviewability without behavior changes.
+Prepare a PR so a reviewer can quickly understand the intent, important files, and risk. The default goal is reviewability without behaviour changes.
 
 ## Workflow
 
@@ -32,7 +32,7 @@ Good commit groupings usually follow dependency order:
 1. Schema/storage or generated API definitions.
 2. Core logic.
 3. Wiring and integration.
-4. UI or surface behavior.
+4. UI or surface behaviour.
 5. Tests.
 
 After rewriting, verify content identity:
@@ -47,16 +47,16 @@ Do not push if the tree changed unintentionally.
 
 ## Reviewer Guidance
 
-When code behavior should stay untouched, prefer PR description and review notes:
+When code behaviour should stay untouched, prefer PR description and review notes:
 
 - Add a TL;DR that matches the actual diff.
 - Separate core files from generated or mechanical files.
-- Call out risky behavior changes, migration order, rollout plan, and test coverage.
+- Call out risky behaviour changes, migration order, rollout plan, and test coverage.
 - Link issue trackers, dashboards, or design docs when they explain intent.
 
 ## Guardrails
 
-- Never hide meaningful behavior changes inside "cleanup".
+- Never hide meaningful behaviour changes inside "cleanup".
 - Let Git hooks run normally, including during history cleanup. Follow the git and quality-gates rules: no autonomous `--no-verify`, `SKIP`, `HUSKY=0`, `core.hooksPath` overrides, empty hook directories, or changes that weaken checks merely to pass. Fix failures and rerun the hook and affected checks. Report environmental blockers accurately; bypass only the specific check explicitly waived by a human under the repository's waiver policy, and identify it in the handover.
 - If the PR is too large to make reviewable with notes, recommend splitting instead of polishing around the problem.
 
