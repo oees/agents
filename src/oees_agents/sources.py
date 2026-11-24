@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 from oees_agents import __version__
 from oees_agents.content import Content, load_content
@@ -46,6 +47,7 @@ def resolve(ref: str | None, content_dir: Path | None) -> Source:
 
 def _fetch(ref: str) -> Content:
     repository = os.environ.get(REPOSITORY_ENV, REPOSITORY)
+    shown = _without_credentials(repository)
     with tempfile.TemporaryDirectory(prefix="oees-agents-") as directory:
         command = [
             "git",
@@ -58,17 +60,24 @@ def _fetch(ref: str) -> Content:
             repository,
             directory,
         ]
-        logger.info("fetching content", extra={"ref": ref, "repository": repository})
+        logger.info("fetching content", extra={"ref": ref, "repository": shown})
         try:
             subprocess.run(command, check=True, capture_output=True, text=True)
         except FileNotFoundError as error:
             raise SourceError("git is needed to fetch content with --ref") from error
         except subprocess.CalledProcessError as error:
+            stderr = error.stderr.strip().replace(repository, shown)
             logger.error(
                 "fetching content failed",
-                extra={"ref": ref, "repository": repository, "stderr": error.stderr.strip()},
+                extra={"ref": ref, "repository": shown, "stderr": stderr},
             )
-            raise SourceError(
-                f"cannot fetch {ref!r} from {repository}: {error.stderr.strip()}"
-            ) from error
+            raise SourceError(f"cannot fetch {ref!r} from {shown}: {stderr}") from error
         return load_content(Path(directory))
+
+
+def _without_credentials(repository: str) -> str:
+    """The repository URL with any user name and password removed, for logs and errors."""
+    parts = urlsplit(repository)
+    if parts.username is None and parts.password is None:
+        return repository
+    return urlunsplit(parts._replace(netloc=parts.netloc.rpartition("@")[2]))
