@@ -17,8 +17,11 @@ check_fast = "make check-fast"
 defaults = [
     "api",
     "git",
+    "integrations",
     "migrations",
+    "naming",
     "observability",
+    "pull-requests",
     "quality-gates",
     "standards",
     "tdd",

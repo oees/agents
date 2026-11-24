@@ -74,6 +74,8 @@ Report outcomes faithfully. If tests fail, say so and give the output. If you sk
 
 Personal data is any value that identifies a person, alone or together with another value. Examples are name, email, phone, address, DNI/NIE, IBAN, CUPS and meter serial, geolocation, and consumption tied to a supply point. Log the surrogate id (account, supply, request, task) instead.
 
+An identifier that a public register resolves is personal data, whatever it looks like. A CUPS, a meter serial, a cadastral reference and a UK UPRN each lead to one address. An id is a surrogate only when the route back to the person stays inside our own systems.
+
 Never write personal data to a sink that outlives the request. Each of these is such a sink:
 
 - logs, log context, traces, span attributes and metric labels
@@ -82,6 +84,8 @@ Never write personal data to a sink that outlives the request. Each of these is 
 - prompts sent to a model or an external API
 
 Redact personal data at one boundary per service, not at each call site. Prove the redaction with a test. The test sends a known value through the real pipeline and asserts that the value never reaches the sink. An untested convention is not a safeguard.
+
+An error reporter needs a denylist of its own. Sentry sends the local variables of every stack frame, the body of the request and the headers. A field that the code never logs still reaches it. Name the fields to strip in the configuration of the client. Add the name of each new personal field as you add the field.
 
 Serializers, exports and outbound payloads carry only the fields that the caller needs. Fixtures, docs, screenshots and agent prompts use synthetic or approved anonymised data. Every store that holds personal data needs a retention period and an erasure path that reaches the store.
 
@@ -156,6 +160,34 @@ Default for OEES projects. A project opts out in its manifest.
 
 Version all endpoints under `/api/<version>/`. Return consistent error envelopes with appropriate HTTP status codes. Paginate all list endpoints. Use typed schema validation, token-based auth with secure refresh handling, and auto-generated API docs.
 
+## No input causes a 500
+
+A client must not be able to make the API return HTTP 500. A 500 is a defect in our code, and each one reaches the alert path for an engineer to fix.
+
+Return a 4xx with the reason for each request that is malformed, incomplete, inconsistent or not permitted. Validate the whole input before the first side effect. Never let a parse error, a missing key, a wrong type or an absent record escape as an unhandled exception.
+
+## Address a record by its external reference
+
+Accept an `external_reference` in the request and return it in the response. Never use the primary key of the database.
+
+A primary key is an implementation detail. It ties the contract to one table, it changes when the record moves between systems, and the number tells the caller how many rows exist.
+
+## Check the permission on each identifier and on the relation
+
+If a request names more than one record, check the permission of the viewer on each record. Then check the relation between the records.
+
+A viewer who can read account A and can read meter M still has no right to read M as a part of A. Only the relation between A and M gives that right.
+
+## Give the same answer for a hidden record and a missing one
+
+Return the same error when the record does not exist and when the viewer cannot see it. A different status for each case tells the caller which references are real. That is data the viewer has no right to.
+
+## Carry a stable error code
+
+Put a machine-readable code in every error: `errorCode` in the extension of a GraphQL error, the code field of the REST envelope. The client reads the code and never the message.
+
+Write the message for a developer who reads a log. Keep personal data out of it. Leave the wording for the user, and its translation, to the client. A message can change at any time. A code is part of the contract, so a change to a code is a breaking change.
+
 Exceptions: a public endpoint can skip auth if its documentation says so and it has a rate limit. An internal-only endpoint can use a different auth pattern if it has a recorded security review.
 
 <!-- Source: content/defaults/git.md -->
@@ -177,9 +209,50 @@ To keep the branch current, rebase it onto the target branch. Never merge the ta
 
 Rebase and merge is the only merge method. Every OEES repository turns off merge commits and squash merges, with no exception for a project. Every commit lands on the default branch as you wrote it. So make each commit good in itself: one logical change that builds and passes on its own. Tidy the commits of the branch before review, not at merge time.
 
+Express one thought in each commit. If the subject says "change this and that", split the commit. Commit a code movement separately from a code change. The move commit carries the import and reference updates that the move needs, and nothing else. Keep a refactor separate from a functional change.
+
+Write the subject in the imperative mood, with a maximum of 70 characters. Start it with a capital letter. Use no final full stop. The subject must complete the sentence "If merged, this commit will...".
+
+Put a blank line after the subject. Then write a body that says why the change is necessary and how it solves the problem. Wrap the body at 72 columns. Link the ticket.
+
+Never credit a model with a `Co-Authored-By:` trailer. The author owns the work, and a model cannot be accountable for what ships. Add no model trailer of any kind.
+
 A human reviews and merges the pull request. An agent never merges or approves a pull request. An agent never enables auto-merge.
 
 Hooks run on every Git command, as the conduct rule requires. If a hook fails, fix the cause. Then rerun the hook and the affected checks before you try again.
+
+<!-- Source: content/defaults/integrations.md -->
+# Integrations
+
+Default for OEES projects. A project opts out in its manifest.
+
+## Set a timeout on every call
+
+Give every outbound call an explicit timeout. The default of a client library is often no timeout at all. One slow dependency then holds a worker until the request dies.
+
+Set the connect timeout and the read timeout. Pick each one from the time that the caller can wait.
+
+## Reuse one client
+
+Build the HTTP client once and reuse it. A new client for each call opens a new TCP connection and a new TLS session. That costs more than the request itself.
+
+Under concurrency, give the client a connection pool. Size the pool for the number of workers.
+
+## Never retry inside the request
+
+A failed call to another service gets no retry in the same request. A retry multiplies the load on a dependency that already fails, and the caller waits for each attempt.
+
+Fail fast and return the error. Retry in a task, with a backoff.
+
+## Put the vendor behind an abstraction
+
+Depend on an interface that the domain owns, not on the client of the vendor. The types, errors and field names of the vendor stay in one adapter module.
+
+- Ship a fake with every abstraction. The tests of the callers use the fake. They then reach no network and need no test mode from the vendor.
+- Document each failure mode on the abstraction: the timeout, the rate limit, the partial success and the duplicate delivery. A caller cannot handle a failure that the interface hides.
+- Keep the error types of the vendor out of the domain. Translate each one into an error that the domain defines.
+
+Exceptions: a one-off script can call a vendor client directly. A vendor SDK that owns a whole protocol, such as a payment redirect flow, can show its own types in the tests of the adapter.
 
 <!-- Source: content/defaults/migrations.md -->
 # Migrations
@@ -187,6 +260,8 @@ Hooks run on every Git command, as the conduct rule requires. If a hook fails, f
 Default for OEES projects. A project opts out in its manifest.
 
 Write backwards-compatible migrations. The app must run correctly against the old schema and the new schema at the same time. Never put a migration and the app code that needs it in the same deployment. Ship the migration first and verify it. Then ship the app change.
+
+Put the migration in a pull request of its own, with no application change in it. A schema change and a code change fail in different ways and recover in different ways. A revert of the code must not revert the schema. A pull request that holds only the migration also puts the generated SQL in front of the reviewer, instead of inside a feature diff.
 
 A destructive operation (DROP COLUMN, DROP TABLE, rename) needs a plan in steps:
 
@@ -201,6 +276,32 @@ Test against a copy of production data before you merge. Write a `down` migratio
 
 Exceptions: a new schema with no live traffic can skip the backwards-compatibility constraint.
 
+<!-- Source: content/defaults/naming.md -->
+# Naming
+
+Default for OEES projects. A project opts out in its manifest. This rule covers the names in the code. The language conduct rule covers the prose.
+
+## Use the inclusive term
+
+Use the term that describes the thing:
+
+- `allow-list` and `deny-list`, not `whitelist` or `blacklist`.
+- `primary` and `replica` for a database or a queue, not `master` or `slave`.
+- `main` for a default branch.
+- `safety check` for a check that catches an impossible state.
+
+Each replacement is the clearer word as well as the inclusive one. A deny-list says what it denies. A blacklist says nothing.
+
+A term reaches the code through an external API, a legacy column or a vendor library. Keep it at that boundary. Map it to our term on the way in, and never carry it into a new name.
+
+## Spell every identifier in American English
+
+Use American English spelling in each name that an engineer types. This covers a variable, a function, a class, a file, a branch, an API field, a database column, an event name and a metric name. Write `color`, `serialize`, `license` and `behavior`.
+
+One spelling across the group lets a search find every use. Two spellings for one concept hide half of them.
+
+Exceptions: an identifier that an external system defines keeps the spelling of that system at the boundary.
+
 <!-- Source: content/defaults/observability.md -->
 # Observability
 
@@ -210,7 +311,66 @@ Emit structured logs for backend operations and failures, and for frontend failu
 
 Use consistent log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL) and one structured logger per service. Use consistent API error envelopes. Log a stack trace for each unexpected exception.
 
+## Name the event after what happened
+
+Name each event in reverse domain order, from the widest scope to the narrowest. Write `billing.invoice.issued`, not `issued_invoice`.
+
+The name is a contract. A dashboard, a monitor and a search each depend on it. Keep the name stable, and rename it only together with its consumers.
+
+## Write the fields that the reader needs
+
+List every field explicitly. Never put an object, a dictionary or a serialized payload in the log and leave the reader to find the value.
+
+- Put the unit in the field name: `duration_ms`, `amount_eur`, `size_bytes`. A field called `duration` tells the reader nothing.
+- Identify the actor in a `viewer` field, in the format `{system}|{model}:{id}`, for example `kraken|account:A-1234ABCD`. One format across the services makes a search across them possible.
+- Use the same field name for the same thing in every service.
+
+## Count with metrics, not with logs
+
+Use a metric for each value that you aggregate: a rate, a total or a percentile. Use a log for the detail of one occurrence. A count of log lines is slow and expensive, and the retention period deletes the answer.
+
+Keep the cardinality of the tags bounded. Never use an identifier, a URL, an email address or a timestamp as a metric tag. Put those values in the log.
+
+## Send to Sentry only what needs a code change
+
+Sentry holds the defects that an engineer must fix. An expected failure is not a defect. A validation error, a missing record and a rate limit are expected failures. Report each one in the logs and the metrics, and keep it out of the alert path.
+
 Exceptions: on high-frequency paths, you can sample debug logs when the volume affects cost or performance.
+
+<!-- Source: content/defaults/pull-requests.md -->
+# Pull requests
+
+Default for OEES projects. A project opts out in its manifest.
+
+## Open it as a draft
+
+Open every pull request as a draft. Mark it ready for review when the work is complete and the checks pass. A draft tells the reviewer that the branch still moves.
+
+Never request a review before the tests pass. A reviewer who reads a branch with a failing test reads code that will change.
+
+## Write the description for the reviewer
+
+Link the ticket. Then say what the change does and why the project needs it. "Please review this change" is not a description.
+
+Add tasting notes: tell the reviewer where to look and what to check. Name the part that looks redundant or complex at a glance, so the reviewer spends attention there.
+
+If a model helped with the change, say so and say how you verified the result. The author owns the code, whatever wrote the first draft.
+
+## Keep it small
+
+A small pull request gets a better review than a large one. If the work needs more than one pull request, chain them: each pull request takes the previous branch as its base. The reviewer then reads one step at a time.
+
+Do not use a release branch to hold unfinished work. Merge the work behind a feature flag instead.
+
+## Answer every comment
+
+Acknowledge each comment. A 👍 reaction is enough when you agree and you make the change. Write a reply when you do not.
+
+On a re-review, say what changed since the last pass. The reviewer must not look for it.
+
+One approval is not always enough. If the change is complex or urgent, say so to the reviewers and ask for a second pair of eyes.
+
+Exceptions: a revert of a broken change on the default branch can skip the draft stage and the tasting notes.
 
 <!-- Source: content/defaults/quality-gates.md -->
 # Quality gates
@@ -246,6 +406,8 @@ Exceptions: a small utility repo can use a simpler structure if the boundaries s
 ## Frontend orchestrates
 
 Keep frontend code to UI, state orchestration and API consumption, with no backend business logic in components. Use strong static typing, schema-based input validation and a server-state cache with explicit invalidation. Cosmetic derivation on the client is fine.
+
+A date belongs to the market, not to the browser. Store and send every instant in UTC. Convert to the timezone of the market, `Europe/Madrid` for OEES, for the display and for every day boundary. A billing period, a meter read day and a tariff hour are defined in the timezone of the market. A client that reads the timezone of the device shows the wrong day to a customer who travels.
 
 Exceptions: a prototype can relax the layering for a short time. Production code must restore the separation of concerns. Generated client code that you commit on purpose can include verbose types.
 

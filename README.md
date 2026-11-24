@@ -165,7 +165,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 | Rule | What it covers |
 |---|---|
 | `conduct` | Always-on conduct — per-action permission for visible actions, never merge, hooks and checks never bypassed, faithful reporting |
-| `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts |
+| `data-protection` | Personal data stays out of logs, traces, errors, fixtures and prompts, publicly resolvable identifiers included |
 | `language` | Write English in ASD-STE100 Simplified Technical English and Spanish in plain language to UNE-ISO 24495-1 |
 | `secrets` | Never commit secrets; keep runtime secrets in environment variables |
 <!-- END GENERATED: conduct -->
@@ -175,12 +175,15 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 <!-- BEGIN GENERATED: defaults -->
 | Rule | What it covers |
 |---|---|
-| `api` | Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs |
-| `git` | Every change reaches the default branch through a pull request, rebase-only merges, no merge commits, no squashing, commits that stand alone |
-| `migrations` | Safe, backwards-compatible database schema migrations |
-| `observability` | Structured logging, contextual errors, no silent exceptions |
+| `api` | Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs, no client-inducible 500, external references, a permission check per identifier, stable error codes |
+| `git` | Every change reaches the default branch through a pull request, rebase-only merges, no merge commits, no squashing, commits that stand alone with a 70-character imperative subject |
+| `integrations` | A timeout on every call, one reused client, no synchronous retry, a vendor behind an abstraction with a fake and documented failure modes |
+| `migrations` | Safe, backwards-compatible database schema migrations, each in its own pull request |
+| `naming` | Inclusive technical terms and American English spelling in every identifier |
+| `observability` | Structured logging, contextual errors, no silent exceptions, reverse-domain event names, explicit fields, units in field names, metrics for aggregates, Sentry for code defects |
+| `pull-requests` | Draft until ready, a linked ticket and context, tasting notes, declared model assistance, small and chained, review only after the tests pass |
 | `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |
-| `standards` | Backend owns the truth, organise by domain, frontend orchestrates, validated deploys |
+| `standards` | Backend owns the truth, organise by domain, frontend orchestrates, dates in the market timezone, validated deploys |
 | `tdd` | TDD: write failing tests before implementation, red-green-refactor |
 <!-- END GENERATED: defaults -->
 
@@ -190,7 +193,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 | Skill | What it does |
 |---|---|
 | `code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
-| `commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
+| `commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤70 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
 | `personal-data` | Keep personal data out of logs, traces, errors, analytics, exports, fixtures and model prompts. Use when adding logging or error handling, writing a serializer, export, webhook or analytics event, sending data to a third party or an LLM, creating test fixtures, or reviewing a change for PII exposure. |
 | `plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
 | `pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
@@ -219,7 +222,7 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 | Command | What it does |
 |---|---|
 | `/code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
-| `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
+| `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤70 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
 | `/plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
 | `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
 | `/shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |
