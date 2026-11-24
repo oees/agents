@@ -6,12 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from oees_agents.blocks import BEGIN, END, BlockError, merge
+from oees_agents import writer
+from oees_agents.blocks import BEGIN, END
 from oees_agents.content import load_content
 from oees_agents.manifest import Manifest, Project
 from oees_agents.output import Output
 from oees_agents.scope import machine_layout
 from oees_agents.targets.codex import CODEX_INSTRUCTION_LIMIT, render
+from oees_agents.writer import Plan
 
 from conftest import CONDUCT, DEFAULTS, IN_PROJECT, write
 
@@ -32,13 +34,9 @@ def manifest(defaults: tuple[str, ...] = DEFAULTS, project: Project | None = PRO
     return Manifest(source="v1.0.0", targets=("codex",), project=project, defaults=defaults)
 
 
-def sync(root: Path, content_root: Path, project_manifest: Manifest) -> list[str]:
-    """Render and write AGENTS.md the way the writer will, returning merge warnings."""
-    output = render(project_manifest, load_content(content_root), IN_PROJECT)
-    path = root / "AGENTS.md"
-    data, warnings = merge(path, output.blocks["AGENTS.md"])
-    path.write_bytes(data)
-    return warnings
+def sync(root: Path, content_root: Path, project_manifest: Manifest) -> Plan:
+    """Render and write AGENTS.md through the real writer."""
+    return writer.sync(root, render(project_manifest, load_content(content_root), IN_PROJECT))
 
 
 def marker_count(data: bytes, marker: str) -> int:
@@ -187,9 +185,10 @@ def test_malformed_or_multiple_markers_are_refused_without_changing_the_file(
     path = write(tmp_path / "AGENTS.md", existing)
     before = path.read_bytes()
 
-    with pytest.raises(BlockError, match="markers"):
-        sync(tmp_path, content_root, manifest())
+    pending = sync(tmp_path, content_root, manifest())
 
+    assert [conflict.path for conflict in pending.conflicts] == ["AGENTS.md"]
+    assert "markers" in pending.conflicts[0].reason
     assert path.read_bytes() == before
 
 
@@ -202,9 +201,10 @@ def test_a_symlinked_agents_md_is_refused_and_the_link_and_target_are_untouched(
     before = original.read_bytes()
     (root / "AGENTS.md").symlink_to(original)
 
-    with pytest.raises(BlockError, match="symlink"):
-        sync(root, content_root, manifest())
+    pending = sync(root, content_root, manifest())
 
+    assert [conflict.path for conflict in pending.conflicts] == ["AGENTS.md"]
+    assert "symlink" in pending.conflicts[0].reason
     assert (root / "AGENTS.md").is_symlink()
     assert os.readlink(root / "AGENTS.md") == str(original)
     assert original.read_bytes() == before
@@ -244,7 +244,7 @@ def test_an_agents_md_over_32_kib_is_still_produced_with_a_warning(
     local = "Local instructions that are long.\n" * 1_000
     write(tmp_path / "AGENTS.md", local)
 
-    warnings = sync(tmp_path, content_root, manifest())
+    warnings = sync(tmp_path, content_root, manifest()).warnings
 
     assert len(warnings) == 1
     assert str(CODEX_INSTRUCTION_LIMIT) in warnings[0]
@@ -254,7 +254,7 @@ def test_an_agents_md_over_32_kib_is_still_produced_with_a_warning(
 
 
 def test_a_small_agents_md_produces_no_warning(tmp_path: Path, content_root: Path) -> None:
-    assert sync(tmp_path, content_root, manifest()) == []
+    assert sync(tmp_path, content_root, manifest()).warnings == ()
 
 
 def test_the_context_block_appears_once_inside_the_block_before_the_rules(

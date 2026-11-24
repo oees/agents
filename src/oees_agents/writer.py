@@ -15,9 +15,11 @@ project has no file of its own. A project's own file there is listed in
 import hashlib
 import logging
 import tomllib
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path, PurePosixPath
+from typing import Literal
 
 import tomli_w
 
@@ -105,13 +107,14 @@ def plan(root: Path, output: Output, lock: Lock | None, force: bool = False) -> 
         _check_inside(path)
     builder = _Builder(root, lock, force)
     for path, data in output.files.items():
-        builder.file(path, data, optional=path in output.optional)
+        optional = path in output.optional
+        builder.attempt("files", path, partial(builder.file, path, data, optional))
     for path, block in output.blocks.items():
-        builder.block(path, block)
+        builder.attempt("blocks", path, partial(builder.block, path, block))
     for path in sorted(set(lock.files) - output.paths):
-        builder.drop_file(path)
+        builder.attempt("files", path, partial(builder.drop_file, path))
     for path in sorted(set(lock.blocks) - output.paths):
-        builder.drop_block(path)
+        builder.attempt("blocks", path, partial(builder.drop_block, path))
     return builder.build()
 
 
@@ -144,6 +147,13 @@ def sync(root: Path, output: Output, force: bool = False) -> Plan:
     return pending
 
 
+class _Refused(Exception):
+    """A path the builder leaves alone; the message is the reason the user sees."""
+
+
+Table = Literal["files", "blocks"]
+
+
 class _Builder:
     def __init__(self, root: Path, lock: Lock, force: bool) -> None:
         self.root, self.lock, self.force = root, lock, force
@@ -154,14 +164,20 @@ class _Builder:
         self.unchanged: list[str] = []
         self.own: list[str] = []
         self.warnings: list[str] = []
-        self.files: dict[str, str] = {}
-        self.blocks: dict[str, str] = {}
+        self.locked: dict[Table, dict[str, str]] = {"files": {}, "blocks": {}}
 
-    def file(self, path: str, data: bytes, optional: bool = False) -> None:
+    def attempt(self, table: Table, path: str, action: Callable[[], None]) -> None:
+        """Run one step for `path`; on refusal, record why and keep its lock entry."""
+        try:
+            action()
+        except (_Refused, BlockError) as refused:
+            self.conflicts.append(Conflict(path, str(refused)))
+            previous = getattr(self.lock, table)
+            if path in previous:
+                self.locked[table][path] = previous[path]
+
+    def file(self, path: str, data: bytes, optional: bool) -> None:
         current = self._read(path)
-        if isinstance(current, _Unsafe):
-            self._keep(path, self.lock.files, self.files)
-            return
         locked = self.lock.files.get(path)
         same = current is not None and _same(current, data)
         if optional and current is not None and not same and locked is None and not self.force:
@@ -172,67 +188,43 @@ class _Builder:
         elif current is None or _matches(current, locked) or self.force:
             self.writes[path] = data
         else:
-            self._conflict(path, locked, self.lock.files, self.files)
-            return
-        self.files[path] = digest(data)
+            raise _Refused(_edited(locked, "file"))
+        self.locked["files"][path] = digest(data)
 
     def block(self, path: str, block: ManagedBlock) -> None:
         current = self._read(path)
-        if isinstance(current, _Unsafe):
-            self._keep(path, self.lock.blocks, self.blocks)
-            return
-        try:
-            data = splice(current, block)
-            old_block = extract(current) if current is not None else None
-        except BlockError as error:
-            self.conflicts.append(Conflict(path, str(error)))
-            self._keep(path, self.lock.blocks, self.blocks)
-            return
-        warning = size_warning(path, data, block)
-        if warning:
-            self.warnings.append(warning)
+        data = splice(current, block)
+        old_block = extract(current) if current is not None else None
         locked = self.lock.blocks.get(path)
         if current == data:
             self.unchanged.append(path)
         elif old_block is None or locked is None or _matches(old_block, locked) or self.force:
             self.writes[path] = data
         else:
-            self._conflict(path, locked, self.lock.blocks, self.blocks, inside_block=True)
-            return
+            raise _Refused(_edited(locked, "managed block"))
+        warning = size_warning(path, data, block)
+        if warning:
+            self.warnings.append(warning)
         new_block = extract(data)
         assert new_block is not None  # splice always leaves exactly one block
-        self.blocks[path] = digest(_lf(new_block))
+        self.locked["blocks"][path] = digest(_lf(new_block))
 
     def drop_file(self, path: str) -> None:
         current = self._read(path)
-        if isinstance(current, _Unsafe):
-            self._keep(path, self.lock.files, self.files)
-        elif current is None:
+        if current is None:
             return
-        elif _matches(current, self.lock.files[path]) or self.force:
-            self.deletes.append(path)
-        else:
-            self._conflict(path, self.lock.files[path], self.lock.files, self.files)
+        if not (_matches(current, self.lock.files[path]) or self.force):
+            raise _Refused(_edited(self.lock.files[path], "file"))
+        self.deletes.append(path)
 
     def drop_block(self, path: str) -> None:
         current = self._read(path)
-        if isinstance(current, _Unsafe):
-            self._keep(path, self.lock.blocks, self.blocks)
-            return
-        try:
-            old_block = extract(current) if current is not None else None
-        except BlockError as error:
-            self.conflicts.append(Conflict(path, str(error)))
-            self._keep(path, self.lock.blocks, self.blocks)
-            return
+        old_block = extract(current) if current is not None else None
         if current is None or old_block is None:
             return
-        if _matches(old_block, self.lock.blocks[path]) or self.force:
-            self.unblocked[path] = remove(current)
-        else:
-            self._conflict(
-                path, self.lock.blocks[path], self.lock.blocks, self.blocks, inside_block=True
-            )
+        if not (_matches(old_block, self.lock.blocks[path]) or self.force):
+            raise _Refused(_edited(self.lock.blocks[path], "managed block"))
+        self.unblocked[path] = remove(current)
 
     def build(self) -> Plan:
         return Plan(
@@ -244,51 +236,28 @@ class _Builder:
             warnings=tuple(self.warnings),
             own=tuple(sorted(self.own)),
             lock=Lock(
-                files=dict(sorted(self.files.items())), blocks=dict(sorted(self.blocks.items()))
+                files=dict(sorted(self.locked["files"].items())),
+                blocks=dict(sorted(self.locked["blocks"].items())),
             ),
         )
 
-    def _read(self, path: str) -> "bytes | _Unsafe | None":
+    def _read(self, path: str) -> bytes | None:
+        """The bytes at `path`, None if it is absent; refuses anything but a regular file."""
         target = self.root / path
         for parent in [*reversed(PurePosixPath(path).parents)][1:]:
             if (self.root / parent).is_symlink():
-                self.conflicts.append(
-                    Conflict(path, f"{parent} is a symlink; refusing to follow it")
-                )
-                return _UNSAFE
+                raise _Refused(f"{parent} is a symlink; refusing to follow it")
         if target.is_symlink() or (target.exists() and not target.is_file()):
-            self.conflicts.append(Conflict(path, "is a symlink or not a regular file; refusing it"))
-            return _UNSAFE
+            raise _Refused("is a symlink or not a regular file; refusing it")
         return target.read_bytes() if target.exists() else None
 
-    def _conflict(
-        self,
-        path: str,
-        locked: str | None,
-        previous: Mapping[str, str],
-        kept: dict[str, str],
-        inside_block: bool = False,
-    ) -> None:
-        if locked is None:
-            reason = "exists and was not written by oees-agents; use --force to replace it"
-        elif inside_block:
-            reason = "managed block modified since oees-agents wrote it; use --force to replace it"
-        else:
-            reason = "modified since oees-agents wrote it; use --force to replace it"
-        self.conflicts.append(Conflict(path, reason))
-        self._keep(path, previous, kept)
 
-    @staticmethod
-    def _keep(path: str, previous: Mapping[str, str], kept: dict[str, str]) -> None:
-        if path in previous:
-            kept[path] = previous[path]
-
-
-class _Unsafe:
-    pass
-
-
-_UNSAFE = _Unsafe()
+def _edited(locked: str | None, what: str) -> str:
+    if locked is None:
+        return "exists and was not written by oees-agents; use --force to replace it"
+    if what == "file":
+        return "modified since oees-agents wrote it; use --force to replace it"
+    return f"{what} modified since oees-agents wrote it; use --force to replace it"
 
 
 def _same(current: bytes, data: bytes) -> bool:

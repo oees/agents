@@ -2,10 +2,8 @@
 
 Everything outside the markers belongs to the project and is kept byte for
 byte. Files with an unclosed, orphaned, duplicated or reversed marker are
-refused rather than guessed at, and so are symlinks and non-files.
+refused rather than guessed at. The writer refuses symlinks and non-files.
 """
-
-from pathlib import Path
 
 from oees_agents.errors import OeesAgentsError
 from oees_agents.output import ManagedBlock
@@ -16,23 +14,6 @@ END = "<!-- END OEES SHARED RULES -->"
 
 class BlockError(OeesAgentsError):
     """A file cannot safely receive the managed block."""
-
-
-def read_target(path: Path) -> bytes | None:
-    if path.is_symlink():
-        raise BlockError(f"refusing to replace a symlink: {path}")
-    if not path.exists():
-        return None
-    if not path.is_file():
-        raise BlockError(f"refusing to replace something that is not a regular file: {path}")
-    return path.read_bytes()
-
-
-def merge(path: Path, block: ManagedBlock) -> tuple[bytes, list[str]]:
-    """The bytes `path` should hold with `block` in place; never writes."""
-    data = splice(read_target(path), block)
-    warning = size_warning(path.name, data, block)
-    return data, [warning] if warning else []
 
 
 def size_warning(name: str, data: bytes, block: ManagedBlock) -> str | None:
