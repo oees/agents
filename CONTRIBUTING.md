@@ -147,7 +147,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | `api` | Versioned endpoints, consistent error envelopes, pagination, typed validation, token auth, generated docs, no client-inducible 500, external references, a permission check per identifier, stable error codes |
 | `git` | Every change reaches the default branch through a pull request, rebase-only merges, no merge commits, no squashing, commits that stand alone with a 70-character imperative subject |
 | `integrations` | A timeout on every call, one reused client, no synchronous retry, a vendor behind an abstraction with a fake and documented failure modes |
-| `migrations` | Safe, backwards-compatible database schema migrations |
+| `migrations` | Safe, backwards-compatible database schema migrations, each in its own pull request |
 | `naming` | Inclusive technical terms and American English spelling in every identifier |
 | `observability` | Structured logging, contextual errors, no silent exceptions, reverse-domain event names, explicit fields, units in field names, metrics for aggregates, Sentry for code defects |
 | `pull-requests` | Draft until ready, a linked ticket and context, tasting notes, declared model assistance, small and chained, review only after the tests pass |
