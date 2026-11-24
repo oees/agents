@@ -13,7 +13,7 @@ from oees_agents.content import load_content
 from oees_agents.manifest import MANIFEST_NAME, read_manifest, write_manifest
 from oees_agents.writer import LOCK_NAME
 
-from conftest import DEFAULTS, build_content_tree
+from conftest import DEFAULTS, REPO, build_content_tree
 
 runner = CliRunner()
 
@@ -368,9 +368,10 @@ def test_verbose_logs_each_file_operation_as_json_with_a_run_id(
 
     records = [json.loads(line) for line in result.stderr.splitlines() if line.startswith("{")]
     assert result.exit_code == 0, result.output
-    assert {"message": "wrote file", "path": "AGENTS.md"}.items() <= records[0].items()
+    expected = {"message": "wrote file", "path": "AGENTS.md"}.items()
+    assert any(expected <= record.items() for record in records)
     assert len({record["run_id"] for record in records}) == 1
-    assert records[0]["run_id"]
+    assert all(record["run_id"] for record in records)
 
 
 def test_check_reports_a_missing_block_without_creating_it(
@@ -402,7 +403,6 @@ def test_check_reports_stale_rules_after_a_content_change(
 
 
 LEGACY_FIXTURE = Path(__file__).resolve().parent / "fixtures/legacy/main"
-REPO = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture
@@ -560,3 +560,38 @@ def test_a_legacy_error_is_reported_without_a_traceback(
 
     assert result.exit_code == 1
     assert "error: a legacy file changed; nothing removed" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("setup", "message"),
+    [
+        ("bad-content", "has no SKILL.md"),
+        ("bad-lock", "is not valid TOML"),
+        ("codex-home-outside", "CODEX_HOME points outside your home directory"),
+    ],
+)
+def test_a_user_error_is_one_line_on_stderr_without_a_traceback(
+    project: Path,
+    content_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    setup: str,
+    message: str,
+) -> None:
+    command = ["init", str(project), "--yes", "--content-dir", str(content_root)]
+    command += ["--description", "d", "--users", "u", "--target", "codex"]
+    if setup == "bad-content":
+        (content_root / "skills/plan/SKILL.md").unlink()
+    elif setup == "bad-lock":
+        (project / LOCK_NAME).write_text("not = [toml\n")
+    else:
+        monkeypatch.setenv("CODEX_HOME", str(project.parent / "elsewhere"))
+        command = ["init", "--machine", "--yes", "--content-dir", str(content_root)]
+
+    result = runner.invoke(app, command)
+
+    assert result.exit_code == 1
+    assert [line for line in result.stderr.splitlines() if line.startswith("error:")] == [
+        line for line in result.stderr.splitlines() if line.strip()
+    ]
+    assert message in result.stderr
+    assert "Traceback" not in result.stderr

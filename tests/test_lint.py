@@ -1,8 +1,7 @@
-"""The content lint rules of the restructure, run through the loader.
+"""The content lint rules, run through the loader.
 
 The fixture tree is clean; each test plants one violation and expects exactly
-that problem. The last test runs the rules against this repository once its
-content is in the new layout.
+that problem. The last test runs the rules against this repository.
 """
 
 from pathlib import Path
@@ -12,9 +11,7 @@ import pytest
 from oees_agents.content import load_content
 from oees_agents.lint import lint_content
 
-from conftest import write
-
-REPO = Path(__file__).resolve().parents[1]
+from conftest import REPO, write
 
 
 def problems(root: Path) -> list[str]:
@@ -70,9 +67,14 @@ def test_subagents_contain_no_project_vocabulary(content_root: Path, word: str) 
     ]
 
 
-@pytest.mark.skipif(
-    not (REPO / "content/conduct").is_dir(),
-    reason="this repository's content is not in the restructured layout yet (Phase 1)",
-)
+def test_a_skill_holds_no_markdown_beside_its_skill_md(content_root: Path) -> None:
+    write(content_root / "skills/plan/notes.md", "# Notes\n")
+    write(content_root / "content/kits/fastapi/templates/README.md", "# Templates\n")
+
+    assert problems(content_root) == [
+        "skills/plan/notes.md: is markdown beside SKILL.md; Claude Code ignores it"
+    ]
+
+
 def test_this_repositorys_content_is_clean() -> None:
     assert problems(REPO) == []
