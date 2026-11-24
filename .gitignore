@@ -1,10 +1,12 @@
-local/*
-!local/.gitkeep
 .DS_Store
-*.backup-*
 .venv/
 __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 dist/
+# Local secrets and personal Claude Code settings never go in the repository.
+.env
+.env.*
+!.env.example
+.claude/settings.local.json

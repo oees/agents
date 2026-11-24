@@ -377,7 +377,7 @@ make check        # the contributor gate: ruff, format, mypy, every test,
 make docs         # regenerate the tables in README.md and CONTRIBUTING.md
 ```
 
-This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/` or `commands/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. CI (`tooling-ci.yml`) runs `make check`. Releases are tag-driven: push a `v*` tag that matches the version in `pyproject.toml`. The release workflow checks the tag and runs `make check`; projects then install that tag with `uvx`.
+This repository installs itself for Codex: `.oees-agents.toml`, `.oees-agents.lock` and the managed block in `AGENTS.md`. After changing `content/`, `skills/` or `commands/`, run `uv run --frozen oees-agents update . --content-dir .` and `make docs`; `make check` fails until both are current. `make check` runs lint, format, type checks, the tests, `pip-audit` on the locked dependencies, and the dogfood check. CI (`tooling-ci.yml`) runs `make check` and a `gitleaks` secret scan. Releases are tag-driven: push a `v*` tag that matches the version in `pyproject.toml`. The release workflow checks the tag and runs `make check`; projects then install that tag with `uvx`.
 
 [CONTRIBUTING.md](CONTRIBUTING.md) explains why the rules are what they are, and how to add a rule, kit or subagent.
 

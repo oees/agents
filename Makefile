@@ -1,14 +1,14 @@
 UV ?= uv
 RUN := $(UV) run --frozen
 
-.PHONY: check check-fast lint format-check typecheck test dogfood docs
+.PHONY: check check-fast lint format-check typecheck test audit dogfood docs
 
 ## check-fast: lint, format, types and the fast test suite; run while working
 check-fast: lint format-check typecheck
 	$(RUN) pytest -q -m "not slow"
 
 ## check: everything CI runs; run before handing over
-check: lint format-check typecheck test dogfood
+check: lint format-check typecheck test audit dogfood
 
 lint:
 	$(RUN) ruff check .
@@ -21,6 +21,11 @@ typecheck:
 
 test:
 	$(RUN) pytest -q
+
+## audit: known vulnerabilities in the locked dependencies
+audit:
+	$(UV) export --locked --no-emit-project --format requirements-txt --quiet \
+		| $(RUN) pip-audit --strict --disable-pip --require-hashes --requirement /dev/stdin
 
 ## dogfood: this repository's own generated instructions match its content
 dogfood:
