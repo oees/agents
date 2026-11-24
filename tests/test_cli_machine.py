@@ -1,5 +1,6 @@
 """Installing for the whole machine: ~/.claude/ and ~/.codex/AGENTS.md."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -50,7 +51,7 @@ def test_init_for_the_machine_writes_into_the_home_directory(
     assert manifest.project is None
     assert manifest.targets == ("claude", "codex")
     assert (home / LOCK_NAME).is_file()
-    assert (home / ".claude/rules/git.md").is_file()
+    assert (home / ".claude/rules/oees-agents/git.md").is_file()
     assert "Shared engineering rules" in (home / ".claude/CLAUDE.md").read_text()
     assert (home / ".claude/skills/commit/SKILL.md").is_file()
     assert "Shared engineering rules" in (home / ".codex/AGENTS.md").read_text()
@@ -95,14 +96,14 @@ def test_project_questions_do_not_apply_to_a_machine_install(
 
 def test_update_and_check_work_on_the_machine_install(home: Path, content_root: Path) -> None:
     init_machine(content_root)
-    (home / ".claude/rules/git.md").unlink()
+    (home / ".claude/rules/oees-agents/git.md").unlink()
 
     stale = invoke("check", "--machine", "--content-dir", content_root)
     updated = invoke("update", "--machine", "--content-dir", content_root)
     current = invoke("check", "--machine", "--content-dir", content_root)
 
     assert stale.exit_code == 1
-    assert "stale or missing: .claude/rules/git.md" in stale.output
+    assert "stale or missing: .claude/rules/oees-agents/git.md" in stale.output
     assert updated.exit_code == 0, updated.output
     assert current.exit_code == 0, current.output
 
@@ -132,15 +133,56 @@ def test_a_project_without_a_manifest_points_at_the_machine_install(
     assert "--machine" in result.stderr
 
 
-def test_a_project_install_says_when_the_machine_install_also_loads(
+def init_project(project: Path, content_root: Path, target: str) -> Result:
+    return invoke(
+        "init", project, "--yes", "--content-dir", content_root,
+        "--description", "A portal.", "--users", "partners", "--target", target,
+    )  # fmt: skip
+
+
+def test_a_project_install_makes_claude_code_skip_the_machine_rules(
     home: Path, project: Path, content_root: Path
 ) -> None:
     init_machine(content_root, "--target", "claude")
 
-    result = invoke(
-        "init", project, "--yes", "--content-dir", content_root,
-        "--description", "A portal.", "--users", "partners", "--target", "claude",
-    )  # fmt: skip
+    result = init_project(project, content_root, "claude")
 
     assert result.exit_code == 0, result.output
-    assert "machine install" in result.output
+    settings = json.loads((project / ".claude/settings.json").read_text())
+    assert settings["claudeMdExcludes"] == ["**/rules/oees-agents/**"]
+    assert "machine" not in result.output
+
+
+def test_a_project_with_its_own_settings_is_told_how_to_skip_the_machine_rules(
+    home: Path, project: Path, content_root: Path
+) -> None:
+    init_machine(content_root, "--target", "claude")
+    (project / ".claude").mkdir()
+    (project / ".claude/settings.json").write_text("{}\n")
+
+    result = init_project(project, content_root, "claude")
+
+    assert result.exit_code == 0, result.output
+    assert '"claudeMdExcludes": ["**/rules/oees-agents/**"]' in result.output
+
+
+def test_a_project_install_says_that_codex_also_loads_the_machine_rules(
+    home: Path, project: Path, content_root: Path
+) -> None:
+    init_machine(content_root, "--target", "codex")
+
+    result = init_project(project, content_root, "codex")
+
+    assert result.exit_code == 0, result.output
+    assert "Codex also loads the machine rules" in result.output
+
+
+def test_no_note_when_the_project_and_the_machine_share_no_tool(
+    home: Path, project: Path, content_root: Path
+) -> None:
+    init_machine(content_root, "--target", "codex")
+
+    result = init_project(project, content_root, "claude")
+
+    assert result.exit_code == 0, result.output
+    assert "machine" not in result.output

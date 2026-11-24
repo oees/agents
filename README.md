@@ -27,13 +27,17 @@ uvx --from git+https://github.com/oees/agents@main oees-agents init --machine
 
 | Tool | Machine install writes |
 |---|---|
-| Claude Code | `~/.claude/` (or `$CLAUDE_CONFIG_DIR`): the managed block at the top of `CLAUDE.md`, `rules/`, `skills/`, `commands/`, `agents/` and `settings.json` |
+| Claude Code | `~/.claude/` (or `$CLAUDE_CONFIG_DIR`): the managed block at the top of `CLAUDE.md`, `rules/oees-agents/`, `skills/`, `commands/`, `agents/` and `settings.json` |
 | Codex | the managed block at the bottom of `~/.codex/AGENTS.md` (or `$CODEX_HOME/AGENTS.md`) |
 | Cursor | nothing: Cursor reads rule files only from a project. Install it per project. |
 
 The manifest and the lock go to `~/.oees-agents.toml` and `~/.oees-agents.lock`. A machine install asks no project question (name, description, users, blast radius, branch, checks), so it has no project context block. Your own text in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` outside the managed block stays, and so does a `~/.claude/settings.json` that you already had. `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME` must point inside your home directory.
 
-Claude Code and Codex load the machine instructions and the project instructions together. A project that has its own install therefore loads the shared rules twice, and `init` says so. Pick one scope per project where you can.
+The machine install applies to every project, unless the project has its own install. Each tool handles this differently:
+
+- **Claude Code rules**: the project install's `.claude/settings.json` tells Claude Code to skip the machine rules, with `"claudeMdExcludes": ["**/rules/oees-agents/**"]`. So the project's rules apply, not both. If the project keeps its own `settings.json`, add that line to it yourself; `init` prints it.
+- **Claude Code skills and subagents**: Claude Code uses the machine skill when the machine and the project have a skill with the same name, and the project subagent when both have a subagent with the same name. No setting changes this. Keep both installs on the same version.
+- **Codex**: Codex always loads `~/.codex/AGENTS.md` first, then the project's `AGENTS.md`. It has no setting to skip the global file, so a project with its own install gets both, and `init` says so. The project's rules come later, so they win where the two differ.
 
 Then commit the result. Add only the targets you picked:
 
@@ -247,6 +251,7 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 - **Allow**: read-only and local Git commands (`git status`, `diff`, `log`, `show`, `branch`, `add`, `commit`, `stash`, `rebase`, `fetch`), basic file commands (`ls`, `grep`, `cat`, `head`, `tail`, `wc`, `mkdir`, `mv`, `cp`, `touch`), the project's `check` and `check_fast` commands, and the Python toolchain when a kit needs it: `uv sync`, `uv lock`, `uv run pytest`, `uv run ruff`, `uv run mypy`, `pytest`, `ruff` and `mypy`. All three current kits need it. Each command is allowed alone and with arguments, as `Bash(ls)` and `Bash(ls *)`, so `Bash(ls *)` does not also allow `lsof`.
 - **Not allowed**: commands that run another program, such as `uv run <anything>`, `uvx`, `npx` and `find` (which can `-exec` or `-delete`). Claude Code asks first.
 - **Deny**: `git push`, `git push --force`, `git reset --hard`, `git rebase -i`, `git rebase --interactive` and `git filter-branch`. `rm` is not denied.
+- **Machine rules**: `claudeMdExcludes` skips the rules of a [machine install](#this-project-or-the-whole-machine), so this project's rules apply instead. It has no effect where there is no machine install. A machine install's own `settings.json` does not have it.
 - **Hooks**: none.
 
 If the project already has a `.claude/settings.json` that the CLI did not write, the CLI keeps it, does not manage it, and says so. `check` does not fail because of it. To take the generated file, delete yours or run `update --force`.
