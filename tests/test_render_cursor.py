@@ -87,7 +87,7 @@ def test_conduct_and_enabled_defaults_always_apply(
 ) -> None:
     fields, body = rule(rendered(content_root), name)
 
-    assert fields == {"description": f"{name} {tier}", "alwaysApply": "true"}
+    assert fields == {"description": f'"{name} {tier}"', "alwaysApply": "true"}
     assert body.startswith(f"# {name.title()}\n")
 
 
@@ -103,7 +103,7 @@ def test_a_document_without_a_description_falls_back_to_its_name(content_root: P
 
     fields, body = rule(rendered(content_root), "plain")
 
-    assert fields["description"] == "plain rules"
+    assert json.loads(fields["description"]) == "plain rules"
     assert body == "# Plain\n\nNo frontmatter.\n"
 
 
@@ -126,7 +126,7 @@ def test_an_enabled_kit_with_known_globs_is_glob_attached(content_root: Path) ->
 
     assert fields["globs"] == json.dumps(list(KIT_GLOBS["django-drf"]))
     assert fields["alwaysApply"] == "false"
-    assert fields["description"] == "The django-drf stack kit."
+    assert json.loads(fields["description"]) == "The django-drf stack kit."
     assert body.startswith("# django-drf\n")
 
 
@@ -145,7 +145,7 @@ def test_an_enabled_kit_without_known_globs_is_agent_requested(content_root: Pat
 
     fields, _ = rule(rendered(content_root, kits=("rails",)), "rails")
 
-    assert fields == {"description": "The rails stack kit.", "alwaysApply": "false"}
+    assert fields == {"description": '"The rails stack kit."', "alwaysApply": "false"}
 
 
 @pytest.mark.parametrize("name", COMMAND_SKILLS)
@@ -189,6 +189,10 @@ def test_a_description_with_a_colon_is_quoted_and_round_trips(content_root: Path
         "[bracketed]",
         "'single quoted'",
         "Ends with a colon:",
+        "# A heading",
+        "true",
+        "null",
+        "123",
     ],
 )
 def test_yaml_unsafe_descriptions_are_quoted(content_root: Path, description: str) -> None:
@@ -210,7 +214,7 @@ def test_descriptions_are_collapsed_to_one_line(content_root: Path) -> None:
 
     fields, _ = rule(rendered(content_root), "wrapped")
 
-    assert fields["description"] == "Two lines"
+    assert json.loads(fields["description"]) == "Two lines"
 
 
 def test_two_rules_for_one_file_name_are_refused(content_root: Path) -> None:
