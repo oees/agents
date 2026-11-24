@@ -50,7 +50,8 @@ def test_init_for_the_machine_writes_into_the_home_directory(
     assert manifest.project is None
     assert manifest.targets == ("claude", "codex")
     assert (home / LOCK_NAME).is_file()
-    assert "@rules/git.md" in (home / ".claude/CLAUDE.md").read_text()
+    assert (home / ".claude/rules/git.md").is_file()
+    assert "Shared engineering rules" in (home / ".claude/CLAUDE.md").read_text()
     assert (home / ".claude/skills/commit/SKILL.md").is_file()
     assert "Shared engineering rules" in (home / ".codex/AGENTS.md").read_text()
     assert list(project.iterdir()) == []

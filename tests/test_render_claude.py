@@ -84,22 +84,23 @@ def settings(output: Output) -> dict[str, dict[str, list[str]]]:
     return data
 
 
-def test_claude_md_block_starts_with_context_then_imports_conduct_and_defaults(
+def test_claude_md_block_starts_with_context_then_names_the_rules_directory(
     content: Content,
 ) -> None:
     body = claude_block(render(manifest(defaults=("tdd", "git")), content))
 
     assert body.startswith(CONTEXT_BEGIN)
-    assert IMPORT.findall(body) == [
-        "rules/conduct.md",
-        "rules/data-protection.md",
-        "rules/language.md",
-        "rules/secrets.md",
-        "rules/tdd.md",
-        "rules/git.md",
-    ]
     assert "## Shared engineering rules\n" in body
+    assert "`rules/`" in body
     assert "run `oees-agents update`" in body
+
+
+def test_claude_md_block_imports_no_rule_because_claude_code_loads_the_rules_directory(
+    content: Content,
+) -> None:
+    body = claude_block(render(manifest(), content))
+
+    assert IMPORT.findall(body) == []
 
 
 def test_rules_hold_the_raw_documents_for_conduct_and_enabled_defaults(content: Content) -> None:
@@ -111,11 +112,10 @@ def test_rules_hold_the_raw_documents_for_conduct_and_enabled_defaults(content: 
     assert output.files[".claude/rules/tdd.md"] == content.defaults["tdd"].raw
 
 
-def test_an_opted_out_default_has_no_rule_file_and_no_import(content: Content) -> None:
+def test_an_opted_out_default_has_no_rule_file(content: Content) -> None:
     output = render(manifest(defaults=tuple(d for d in DEFAULTS if d != "migrations")), content)
 
     assert ".claude/rules/migrations.md" not in output.paths
-    assert "@rules/migrations.md" not in claude_block(output)
 
 
 def test_the_context_block_appears_once_after_two_renders(content: Content) -> None:
@@ -302,7 +302,7 @@ def test_every_import_resolves_to_a_rendered_path(content: Content) -> None:
         for target in IMPORT.findall(text)
     ]
 
-    assert len(imports) == len(CONDUCT) + len(DEFAULTS) + len(COMMAND_SKILLS)
+    assert len(imports) == len(COMMAND_SKILLS)
     for path, target in imports:
         assert posixpath.normpath(posixpath.join(posixpath.dirname(path), target)) in rendered
 
