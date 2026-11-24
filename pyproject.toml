@@ -1,6 +1,6 @@
 [project]
 name = "oees-agents"
-version = "0.1.0"
+version = "1.0.0"
 description = "Installs the OEES agent conduct, defaults, skills and kits into a project for Claude Code, Cursor and Codex."
 readme = "README.md"
 license = "LicenseRef-Proprietary"
