@@ -166,7 +166,6 @@ def test_local_lines_in_claude_md_survive_byte_for_byte(project: Path, content: 
     migrate(project, install)
 
     expected = b"# Portal\n\nBe kind.\nBetween the imports.\n  \n@rules/team.md\nAfter."
-    assert install.claude_md == expected
     assert (project / CLAUDE_MD).read_bytes() == expected
 
 
@@ -175,9 +174,21 @@ def test_a_crlf_claude_md_keeps_its_crlf(project: Path, content: Content) -> Non
         lines(b"# Portal", *MAIN_IMPORTS, b"Keep me.", newline=b"\r\n")
     )
 
-    install = detected(project, content)
+    migrate(project, detected(project, content))
 
-    assert install.claude_md == b"# Portal\r\nKeep me.\r\n"
+    assert (project / CLAUDE_MD).read_bytes() == b"# Portal\r\nKeep me.\r\n"
+
+
+def test_an_edit_to_claude_md_after_detection_survives_the_migration(
+    project: Path, content: Content
+) -> None:
+    (project / CLAUDE_MD).write_bytes(lines(b"# Portal", *MAIN_IMPORTS))
+    install = detected(project, content)
+    (project / CLAUDE_MD).write_bytes(lines(b"# Portal", b"Added while init asked.", *MAIN_IMPORTS))
+
+    migrate(project, install)
+
+    assert (project / CLAUDE_MD).read_bytes() == b"# Portal\nAdded while init asked.\n"
 
 
 def test_a_claude_md_left_with_only_whitespace_is_deleted(project: Path, content: Content) -> None:
@@ -194,7 +205,7 @@ def test_a_claude_md_without_legacy_imports_is_left_alone(project: Path, content
     install = detected(project, content)
     migrate(project, install)
 
-    assert install.claude_md is None
+    assert not install.strips_claude_md
     assert (project / CLAUDE_MD).read_bytes() == b"# Ours\n@rules/team.md\n"
 
 
