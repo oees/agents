@@ -282,10 +282,33 @@ def test_a_symlinked_parent_directory_is_refused(tmp_path: Path) -> None:
     assert list(outside.iterdir()) == []
 
 
-@pytest.mark.parametrize("path", ["../escape.md", "/etc/passwd", "a/../../b.md"])
+OUTSIDE = ["../escape.md", "/etc/passwd", "a/../../b.md", "", "."]
+
+
+@pytest.mark.parametrize("path", OUTSIDE)
 def test_paths_outside_the_project_are_rejected(tmp_path: Path, path: str) -> None:
     with pytest.raises(WriterError, match="outside the project"):
         plan(tmp_path, output({path: b"x"}), None)
+
+
+@pytest.mark.parametrize("table", ["files", "blocks"])
+@pytest.mark.parametrize("path", OUTSIDE)
+def test_a_lock_that_names_a_path_outside_the_project_is_refused(
+    tmp_path: Path, table: str, path: str
+) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    victim = tmp_path / "victim.md"
+    victim.write_bytes(b"keep me\n")
+    entries = {path: digest(b"keep me\n")}
+    lock = Lock(files=entries, blocks={}) if table == "files" else Lock(files={}, blocks=entries)
+
+    with pytest.raises(WriterError, match="outside the project"):
+        plan(project, output({}), lock)
+    (project / LOCK_NAME).write_text(f'version = 1\n[{table}]\n"{path}" = "sha256:0"\n')
+    with pytest.raises(WriterError, match="outside the project"):
+        read_lock(project)
+    assert victim.read_bytes() == b"keep me\n"
 
 
 def test_plan_does_not_write_until_applied(tmp_path: Path) -> None:

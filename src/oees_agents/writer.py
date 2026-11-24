@@ -83,6 +83,8 @@ def read_lock(root: Path) -> Lock | None:
     for table in (files, blocks):
         if not isinstance(table, dict) or not all(isinstance(v, str) for v in table.values()):
             raise WriterError(f"{LOCK_NAME} maps paths to anything but hashes")
+        for locked_path in table:
+            _check_inside(locked_path)
     return Lock(files=files, blocks=blocks)
 
 
@@ -98,7 +100,8 @@ def write_lock(root: Path, lock: Lock) -> None:
 def plan(root: Path, output: Output, lock: Lock | None, force: bool = False) -> Plan:
     root = root.resolve()
     lock = lock or Lock(files={}, blocks={})
-    for path in output.paths:
+    # The lock is committed, so its paths are as untrusted as the render's.
+    for path in {*output.paths, *lock.files, *lock.blocks}:
         _check_inside(path)
     builder = _Builder(root, lock, force)
     for path, data in output.files.items():
