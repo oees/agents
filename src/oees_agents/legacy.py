@@ -20,8 +20,8 @@ from typing import Literal
 
 from oees_agents.blocks import BEGIN
 from oees_agents.content import Content
+from oees_agents.fs import remove_file, write_atomic
 from oees_agents.manifest import MANIFEST_NAME, TARGETS, Extras, Manifest, Target
-from oees_agents.writer import remove_file, write_atomic
 
 logger = logging.getLogger(__name__)
 

@@ -14,8 +14,6 @@ project has no file of its own. A project's own file there is listed in
 
 import hashlib
 import logging
-import os
-import tempfile
 import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -24,6 +22,7 @@ from pathlib import Path, PurePosixPath
 import tomli_w
 
 from oees_agents.blocks import BlockError, extract, remove, size_warning, splice
+from oees_agents.fs import remove_file, write_atomic
 from oees_agents.output import ManagedBlock, Output
 
 LOCK_NAME = ".oees-agents.lock"
@@ -309,30 +308,3 @@ def _check_inside(path: str) -> None:
     pure = PurePosixPath(path)
     if pure.is_absolute() or ".." in pure.parts or not pure.parts:
         raise WriterError(f"refusing to write outside the project: {path}")
-
-
-def write_atomic(target: Path, data: bytes) -> None:
-    """Replace `target` in one step, keeping its permissions."""
-    target.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(data)
-        if target.exists():
-            os.chmod(temporary, target.stat().st_mode & 0o777)
-        else:
-            os.chmod(temporary, 0o644)
-        os.replace(temporary, target)
-    except BaseException:
-        Path(temporary).unlink(missing_ok=True)
-        raise
-
-
-def remove_file(root: Path, path: str) -> None:
-    """Delete `path` and every directory it leaves empty, up to but not including `root`."""
-    target = root / path
-    target.unlink(missing_ok=True)
-    parent = target.parent
-    while parent != root and parent.is_dir() and not any(parent.iterdir()):
-        parent.rmdir()
-        parent = parent.parent

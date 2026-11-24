@@ -1,8 +1,10 @@
+import os
 from pathlib import Path
 
 import pytest
 
 from oees_agents.manifest import (
+    MANIFEST_NAME,
     Extras,
     Manifest,
     ManifestError,
@@ -245,3 +247,43 @@ def test_a_project_manifest_is_dumped_without_a_scope_line() -> None:
 def test_invalid_machine_manifests_are_rejected(text: str, message: str) -> None:
     with pytest.raises(ManifestError, match=message):
         parse_manifest(text)
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        ('source = "v1.0.0"  # pinned by the team', 'source = "v1.2.0"  # pinned by the team'),
+        ('source="v1.0.0"', 'source="v1.2.0"'),
+        ("source = 'v1.0.0'", 'source = "v1.2.0"'),
+    ],
+)
+def test_set_source_keeps_the_spacing_quotes_and_comment_of_any_valid_line(
+    line: str, expected: str
+) -> None:
+    text = dump_manifest(a_manifest()).replace('source = "v1.0.0"', line)
+
+    assert expected in set_source(text, "v1.2.0").splitlines()
+
+
+def test_a_manifest_write_that_fails_leaves_the_old_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / MANIFEST_NAME
+    write_manifest(path, a_manifest())
+    before = path.read_bytes()
+
+    def fail(source: str, destination: Path) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(os, "replace", fail)
+    with pytest.raises(OSError, match="disk full"):
+        write_manifest(path, a_manifest(source="v9.9.9"))
+
+    assert path.read_bytes() == before
+
+
+def test_set_source_refuses_a_multi_line_string() -> None:
+    text = dump_manifest(a_manifest()).replace('source = "v1.0.0"', 'source = """v1.0.0"""')
+
+    with pytest.raises(ManifestError, match="exactly one"):
+        set_source(text, "v1.2.0")
