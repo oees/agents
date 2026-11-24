@@ -253,7 +253,7 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 
 - **Allow**: read-only and local Git commands (`git status`, `diff`, `log`, `show`, `branch`, `add`, `commit`, `stash`, `rebase`, `fetch`), basic file commands (`ls`, `grep`, `cat`, `head`, `tail`, `wc`, `mkdir`, `mv`, `cp`, `touch`), the project's `check` and `check_fast` commands, and the Python toolchain when a kit needs it: `uv sync`, `uv lock`, `uv run pytest`, `uv run ruff`, `uv run mypy`, `pytest`, `ruff` and `mypy`. All three current kits need it. Each command is allowed alone and with arguments, as `Bash(ls)` and `Bash(ls *)`, so `Bash(ls *)` does not also allow `lsof`.
 - **Not allowed**: commands that run another program, such as `uv run <anything>`, `uvx`, `npx` and `find` (which can `-exec` or `-delete`). Claude Code asks first.
-- **Deny**: `git push`, `git push --force`, `git reset --hard`, `git rebase -i`, `git rebase --interactive` and `git filter-branch`. `rm` is not denied.
+- **Deny**: `git push` (which also covers `git push --force`), `git reset --hard`, `git rebase -i`, `git rebase --interactive` and `git filter-branch`. `rm` is not denied.
 - **Machine rules**: `claudeMdExcludes` skips the rules of a [machine install](#this-project-or-the-whole-machine), so this project's rules apply instead. It has no effect where there is no machine install. A machine install's own `settings.json` does not have it.
 - **Hooks**: none.
 

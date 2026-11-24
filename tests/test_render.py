@@ -24,6 +24,8 @@ PROJECT = Project(
     check_fast="make check-fast",
 )
 
+KITS = ("django-drf", "htmx-alpine")
+
 
 def manifest(**overrides: object) -> Manifest:
     base = Manifest(
@@ -31,14 +33,18 @@ def manifest(**overrides: object) -> Manifest:
         targets=("claude",),
         project=PROJECT,
         defaults=("tdd", "git"),
-        kits=("django-drf", "htmx-alpine"),
+        kits=KITS,
         extras=Extras(),
     )
     return replace(base, **overrides)  # type: ignore[arg-type]  # overrides are test inputs
 
 
+def block_for(content_root: Path, project: Project = PROJECT, kits: tuple[str, ...] = KITS) -> str:
+    return context_block(project, kits, load_content(content_root).context_template)
+
+
 def test_the_context_block_states_the_project(content_root: Path) -> None:
-    block = context_block(manifest(), load_content(content_root))
+    block = block_for(content_root)
 
     assert block == (
         "<!-- BEGIN OEES PROJECT CONTEXT -->\n"
@@ -53,23 +59,13 @@ def test_the_context_block_states_the_project(content_root: Path) -> None:
 
 
 def test_the_context_block_without_kits_says_no_kit(content_root: Path) -> None:
-    block = context_block(manifest(kits=()), load_content(content_root))
-
-    assert block is not None
-    assert "Stack: no kit selected." in block
-
-
-def test_there_is_no_context_block_without_a_project(content_root: Path) -> None:
-    assert context_block(manifest(project=None), load_content(content_root)) is None
+    assert "Stack: no kit selected." in block_for(content_root, kits=())
 
 
 def test_context_values_are_collapsed_to_one_line(content_root: Path) -> None:
     project = replace(PROJECT, description="Line one.\n\n  Line two.")
 
-    block = context_block(manifest(project=project), load_content(content_root))
-
-    assert block is not None
-    assert "**portal**: Line one. Line two.\n" in block
+    assert "**portal**: Line one. Line two.\n" in block_for(content_root, project)
 
 
 @pytest.mark.parametrize("value", ["<!-- sneaky", "ends here -->"])
@@ -77,7 +73,7 @@ def test_context_values_cannot_contain_comment_markers(content_root: Path, value
     project = replace(PROJECT, users=value)
 
     with pytest.raises(RenderError, match=r"project\.users"):
-        context_block(manifest(project=project), load_content(content_root))
+        block_for(content_root, project)
 
 
 @pytest.mark.parametrize(

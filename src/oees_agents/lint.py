@@ -1,4 +1,4 @@
-"""Content rules the restructure introduced, checked against loaded content."""
+"""Rules for the content itself, checked against the loaded content."""
 
 import re
 from collections.abc import Iterator

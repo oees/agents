@@ -27,6 +27,12 @@ MACHINE_TARGETS: tuple[Target, ...] = ("claude", "codex")
 """Cursor reads rule files only from a project, so a machine install leaves it out."""
 BLAST_RADII: tuple[BlastRadius, ...] = get_args(BlastRadius)
 SUBAGENT_TIERS: tuple[SubagentTier, ...] = get_args(SubagentTier)
+SUBAGENTS_LOADED: dict[SubagentTier, tuple[str, ...]] = {
+    "none": (),
+    "core": ("core",),
+    "extended": ("core", "extended"),
+}
+"""The content subagent sets each tier loads: a tier includes the ones below it."""
 
 
 class ManifestError(OeesAgentsError):

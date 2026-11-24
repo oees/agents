@@ -38,7 +38,6 @@ PROJECT = Project(
 CONTEXT_BEGIN = "<!-- BEGIN OEES PROJECT CONTEXT -->"
 DENIED = (
     "Bash(git push*)",
-    "Bash(git push --force*)",
     "Bash(git reset --hard*)",
     "Bash(git rebase -i*)",
     "Bash(git rebase --interactive*)",

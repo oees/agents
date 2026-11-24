@@ -11,7 +11,6 @@ holds them already. So a project's own rules apply, not both.
 
 import json
 import shlex
-from collections.abc import Iterator
 from pathlib import Path
 
 from oees_agents.blocks import BEGIN
@@ -108,17 +107,13 @@ def _hooks(script: Path) -> bytes:
 
 
 def _body(manifest: Manifest, content: Content, layout: Layout, own: str) -> str:
-    context = context_block(manifest, content)
-    sections = [] if context is None else [context.strip("\n")]
+    sections = []
+    if manifest.project is not None:
+        context = context_block(manifest.project, manifest.kits, content.context_template)
+        sections.append(context.strip("\n"))
     sections.append(HEADER.format(update=layout.update_command, own=own))
-    sections.extend(_section(document) for document in _rules(manifest, content))
+    sections.extend(_section(document) for document in content.rules(manifest.defaults))
     return "\n\n".join(sections) + "\n"
-
-
-def _rules(manifest: Manifest, content: Content) -> Iterator[Document]:
-    yield from content.conduct.values()
-    for name in manifest.defaults:
-        yield content.defaults[name]
 
 
 def _section(document: Document) -> str:

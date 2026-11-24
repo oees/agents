@@ -98,7 +98,7 @@ def test_skills_may_also_live_under_content_skills(content_root: Path) -> None:
 
     content = load_content(content_root)
 
-    assert content.skills["shipped"].source == "content/skills/shipped/SKILL.md"
+    assert content.skills["shipped"].document.source == "content/skills/shipped/SKILL.md"
 
 
 def test_a_skill_defined_twice_raises(content_root: Path) -> None:

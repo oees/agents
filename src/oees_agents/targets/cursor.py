@@ -14,9 +14,9 @@ from oees_agents.manifest import Manifest
 from oees_agents.output import Output, RenderError
 from oees_agents.profiles import KIT_GLOBS, PATTERN_GLOBS, SUBAGENT_ONLY_SKILLS
 from oees_agents.scope import Layout
+from oees_agents.sources import LOCAL, REPOSITORY
 
 RULES_DIR = ".cursor/rules"
-REPOSITORY = "https://github.com/oees/agents"
 CONTEXT_RULE = "00-project-context"
 
 
@@ -32,14 +32,12 @@ def render(manifest: Manifest, content: Content, layout: Layout) -> Output:
             raise RenderError(f"{path} is rendered from more than one source")
         files[path] = _mdc(description, body, globs, always_apply=always).encode("utf-8")
 
-    block = context_block(manifest, content)
-    if manifest.project is not None and block is not None:
-        description = (
-            f"Project context for {manifest.project.name}: who depends on it and how careful to be"
-        )
+    project = manifest.project
+    if project is not None:
+        description = f"Project context for {project.name}: who depends on it and how careful to be"
+        block = context_block(project, manifest.kits, content.context_template)
         add(CONTEXT_RULE, description, block, always=True)
-    documents = [*content.conduct.values(), *(content.defaults[name] for name in manifest.defaults)]
-    for document in documents:
+    for document in content.rules(manifest.defaults):
         description = document.description or f"{document.name} rules"
         add(document.name, description, _body(document), always=True)
     for name, skill in content.skills.items():
@@ -58,7 +56,8 @@ def _templates_note(manifest: Manifest, kit: str) -> str:
     if "claude" in manifest.targets:
         where = f"`.claude/skills/{kit}/templates/`"
     else:
-        where = f"{REPOSITORY}/tree/main/content/kits/{kit}/templates"
+        ref = "main" if manifest.source == LOCAL else manifest.source
+        where = f"{REPOSITORY}/tree/{ref}/content/kits/{kit}/templates"
     return f"The files that this kit names are in its templates: {where}."
 
 
