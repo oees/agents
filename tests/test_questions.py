@@ -169,13 +169,6 @@ def test_detect_reads_the_default_branch_from_origin_head(tmp_path: Path) -> Non
     subprocess.run(
         ["git", "-C", str(upstream), "commit", "-q", "--allow-empty", "-m", "start"],
         check=True,
-        env={
-            "GIT_AUTHOR_NAME": "t",
-            "GIT_AUTHOR_EMAIL": "t@t",
-            "GIT_COMMITTER_NAME": "t",
-            "GIT_COMMITTER_EMAIL": "t@t",
-            "PATH": "/usr/bin:/bin",
-        },
     )
     clone = tmp_path / "clone"
     subprocess.run(["git", "clone", "-q", str(upstream), str(clone)], check=True)
