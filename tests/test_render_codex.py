@@ -1,12 +1,15 @@
+import json
 import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from oees_agents.blocks import BEGIN, END, BlockError, merge
 from oees_agents.content import load_content
-from oees_agents.manifest import Manifest, Project
+from oees_agents.manifest import Manifest, Project, Scope, Target, dump_manifest
+from oees_agents.output import Output
 from oees_agents.targets.codex import CODEX_INSTRUCTION_LIMIT, render
 
 from conftest import CONDUCT, DEFAULTS, write
@@ -282,16 +285,153 @@ def test_an_opted_out_default_is_absent_from_the_block(content_root: Path) -> No
         assert f"# {name.title()}\n" in body
 
 
-def test_a_machine_install_writes_the_codex_home_agents_md(
-    content_root: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("HOME", str(tmp_path))
+MACHINE_RULES = ".codex/oees-agents/rules.md"
+SCRIPT = ".codex/oees-agents/session-start.sh"
+HOOKS = ".codex/hooks.json"
+
+
+@pytest.fixture
+def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    path = tmp_path / "home"
+    path.mkdir()
+    monkeypatch.setenv("HOME", str(path))
     monkeypatch.delenv("CODEX_HOME", raising=False)
+    return path
+
+
+def machine_output(content_root: Path) -> Output:
     machine = Manifest(
         source="v1.0.0", targets=("codex",), project=None, defaults=DEFAULTS, scope="machine"
     )
+    return render(machine, load_content(content_root))
 
-    output = render(machine, load_content(content_root))
 
-    assert set(output.blocks) == {".codex/AGENTS.md"}
-    assert "oees-agents update --machine" in output.blocks[".codex/AGENTS.md"].body
+def test_a_machine_install_leaves_the_global_agents_md_alone(
+    home: Path, content_root: Path
+) -> None:
+    output = machine_output(content_root)
+
+    assert output.blocks == {}
+    assert set(output.files) == {MACHINE_RULES, SCRIPT, HOOKS}
+    assert output.optional == {HOOKS}
+    rules = output.files[MACHINE_RULES].decode()
+    assert rules.startswith(HEADING)
+    assert "oees-agents update --machine" in rules
+    assert "outside this block" not in rules
+
+
+def test_the_machine_hook_prints_the_rules_at_each_new_context(
+    home: Path, content_root: Path
+) -> None:
+    hooks = json.loads(machine_output(content_root).files[HOOKS])
+
+    assert set(hooks) == {"description", "hooks"}
+    assert list(hooks["hooks"]) == ["SessionStart"]
+    [group] = hooks["hooks"]["SessionStart"]
+    assert group["matcher"] == "^(startup|clear|compact)$"
+    [handler] = group["hooks"]
+    assert handler["type"] == "command"
+    assert handler["command"] == f"sh {home / SCRIPT}"
+    # Codex moves hook output above 2,500 tokens to a file; 0 keeps the rules inline.
+    assert handler["additionalContextLimit"] == 0
+
+
+def test_the_machine_hook_follows_codex_home(
+    home: Path, content_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CODEX_HOME", str(home / "config/codex"))
+
+    output = machine_output(content_root)
+
+    assert "config/codex/hooks.json" in output.files
+    hooks = json.loads(output.files["config/codex/hooks.json"])
+    command = hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+    assert command == f"sh {home}/config/codex/oees-agents/session-start.sh"
+
+
+def test_the_hook_command_quotes_a_path_with_a_space(
+    tmp_path: Path, content_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "my home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.delenv("CODEX_HOME", raising=False)
+
+    hooks = json.loads(machine_output(content_root).files[HOOKS])
+
+    command = hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+    assert command == f"sh '{home}/.codex/oees-agents/session-start.sh'"
+
+
+def run_hook(home: Path, content_root: Path, cwd: Path) -> str:
+    for path, data in machine_output(content_root).files.items():
+        write(home / path, data.decode())
+    result = subprocess.run(
+        ["sh", str(home / SCRIPT)], cwd=cwd, capture_output=True, text=True, check=True
+    )
+    return result.stdout
+
+
+def manifest_text(*targets: Target, scope: Scope = "project") -> str:
+    """A manifest as the CLI writes it: tomli_w puts each target on its own line."""
+    project = None if scope == "machine" else PROJECT
+    manifest = Manifest(
+        source="v1.0.0", targets=targets, project=project, defaults=DEFAULTS, scope=scope
+    )
+    return dump_manifest(manifest)
+
+
+def project_dir(home: Path, manifest_text: str | None, git: bool = True) -> Path:
+    root = home / "work/portal"
+    (root / "src/app").mkdir(parents=True)
+    if git:
+        (root / ".git").mkdir()
+    if manifest_text is not None:
+        write(root / ".oees-agents.toml", manifest_text)
+    return root
+
+
+def test_the_hook_prints_the_rules_where_the_project_has_no_install(
+    home: Path, content_root: Path
+) -> None:
+    root = project_dir(home, None)
+
+    assert run_hook(home, content_root, root / "src/app").startswith(HEADING)
+
+
+def test_the_hook_prints_nothing_where_the_project_installs_for_codex(
+    home: Path, content_root: Path
+) -> None:
+    root = project_dir(home, manifest_text("claude", "codex"))
+
+    assert run_hook(home, content_root, root / "src/app") == ""
+
+
+def test_the_hook_prints_the_rules_where_the_project_installs_for_other_tools(
+    home: Path, content_root: Path
+) -> None:
+    root = project_dir(home, manifest_text("claude"))
+
+    assert run_hook(home, content_root, root).startswith(HEADING)
+
+
+def test_the_hook_ignores_the_machine_manifest_above_the_project(
+    home: Path, content_root: Path
+) -> None:
+    write(home / ".oees-agents.toml", manifest_text("codex", scope="machine"))
+    root = project_dir(home, None, git=False)
+
+    assert run_hook(home, content_root, root).startswith(HEADING)
+
+
+def test_the_hook_does_not_look_above_the_git_root(home: Path, content_root: Path) -> None:
+    write(home / "work/.oees-agents.toml", manifest_text("codex"))
+    root = project_dir(home, None)
+
+    assert run_hook(home, content_root, root).startswith(HEADING)
+
+
+def test_the_hook_reads_a_one_line_target_list(home: Path, content_root: Path) -> None:
+    root = project_dir(home, 'version = 1\ntargets = ["claude", "codex"]\n\n[project]\n')
+
+    assert run_hook(home, content_root, root) == ""

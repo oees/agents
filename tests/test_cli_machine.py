@@ -54,7 +54,8 @@ def test_init_for_the_machine_writes_into_the_home_directory(
     assert (home / ".claude/rules/oees-agents/git.md").is_file()
     assert "Shared engineering rules" in (home / ".claude/CLAUDE.md").read_text()
     assert (home / ".claude/skills/commit/SKILL.md").is_file()
-    assert "Shared engineering rules" in (home / ".codex/AGENTS.md").read_text()
+    assert (home / ".codex/oees-agents/rules.md").is_file()
+    assert not (home / ".codex/AGENTS.md").exists()
     assert list(project.iterdir()) == []
 
 
@@ -166,7 +167,7 @@ def test_a_project_with_its_own_settings_is_told_how_to_skip_the_machine_rules(
     assert '"claudeMdExcludes": ["**/rules/oees-agents/**"]' in result.output
 
 
-def test_a_project_install_says_that_codex_also_loads_the_machine_rules(
+def test_a_project_install_for_codex_needs_no_note_about_the_machine_rules(
     home: Path, project: Path, content_root: Path
 ) -> None:
     init_machine(content_root, "--target", "codex")
@@ -174,7 +175,31 @@ def test_a_project_install_says_that_codex_also_loads_the_machine_rules(
     result = init_project(project, content_root, "codex")
 
     assert result.exit_code == 0, result.output
-    assert "Codex also loads the machine rules" in result.output
+    assert "machine" not in result.output
+
+
+def test_a_machine_install_for_codex_says_to_approve_the_hook(
+    home: Path, content_root: Path
+) -> None:
+    result = init_machine(content_root, "--target", "codex")
+
+    assert result.exit_code == 0, result.output
+    assert "/hooks" in result.output
+    assert (home / ".codex/hooks.json").is_file()
+
+
+def test_a_machine_install_keeps_your_own_codex_hooks_and_prints_the_hook(
+    home: Path, content_root: Path
+) -> None:
+    (home / ".codex").mkdir()
+    (home / ".codex/hooks.json").write_text('{"hooks": {}}\n')
+
+    result = init_machine(content_root, "--target", "codex")
+
+    assert result.exit_code == 0, result.output
+    assert (home / ".codex/hooks.json").read_text() == '{"hooks": {}}\n'
+    assert f"sh {home}/.codex/oees-agents/session-start.sh" in result.output
+    assert invoke("check", "--machine", "--content-dir", content_root).exit_code == 0
 
 
 def test_no_note_when_the_project_and_the_machine_share_no_tool(
