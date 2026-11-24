@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -19,8 +19,32 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
       # The release installs with --locked; fail here, not at release time, when
       # pyproject.toml changed (a version bump) without `uv lock`.
       - run: uv lock --check
       - run: uv sync --locked
       - run: make check
+
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The gitleaks CLI image (no licence needed): full history on push, the PR's commits on PRs.
+      - name: Scan for secrets
+        env:
+          GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          log_opts=()
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            log_opts=(--log-opts "${BASE_SHA}..${HEAD_SHA}")
+          fi
+          docker run --rm --volume "${GITHUB_WORKSPACE}:/repo" "$GITLEAKS_IMAGE" \
+            git --no-banner --redact --verbose "${log_opts[@]}" /repo
