@@ -452,7 +452,7 @@ def test_init_migrates_a_pre_manifest_install(legacy_project: Path) -> None:
     assert (legacy_project / ".claude/skills/commit/SKILL.md").is_file()
     text = claude_md.read_text()
     assert "Project rule.\n" in text
-    assert text.count("@rules/tdd.md") == 1
+    assert "@rules/" not in text
     check = invoke("check", legacy_project, "--content-dir", REPO)
     assert check.exit_code == 0, check.output
 

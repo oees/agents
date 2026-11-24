@@ -259,7 +259,7 @@ If the project already has a `.claude/settings.json` that the CLI did not write,
 
 claude:
 .claude/
-  CLAUDE.md                   managed block at the top: context, then @rules/ imports
+  CLAUDE.md                   managed block at the top: context, then a note; Claude Code loads rules/ by itself
   rules/                      conduct and kept defaults
   skills/                     every skill, enabled kits with templates/; reviewing only with subagents
   commands/                   slash commands, unless extras.commands = false
