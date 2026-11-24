@@ -5,10 +5,12 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Literal, TypeVar
 
+from oees_agents.errors import OeesAgentsError
+
 V = TypeVar("V")
 
 
-class RenderError(ValueError):
+class RenderError(OeesAgentsError):
     """The manifest asks for something the content cannot provide."""
 
 

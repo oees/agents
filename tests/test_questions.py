@@ -55,6 +55,7 @@ def run_ask(flags: Flags, prompter: Scripted | None) -> Answers:
         defaults=ALL_DEFAULTS,
         kits=KITS,
         prompter=prompter,
+        scope="project",
     )
 
 
@@ -215,13 +216,12 @@ def test_the_line_prompter_reads_piped_answers(monkeypatch: pytest.MonkeyPatch) 
     assert prompter.select("Subagents", ["none", "core", "extended"], "core") == "extended"
 
 
-def test_the_line_prompter_rejects_choices_it_does_not_offer(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr("typer.prompt", lambda *_, **__: "rails")
+def test_a_typed_answer_that_is_not_offered_is_rejected() -> None:
+    flags = Flags(targets=("claude",), description="d", users="u")
+    prompter = Scripted(..., ..., ..., ..., ..., ["rails"])
 
-    with pytest.raises(QuestionError, match="rails"):
-        LinePrompter().checkbox("Kits", ["fastapi"], [])
+    with pytest.raises(QuestionError, match="unknown kit 'rails'"):
+        run_ask(flags, prompter)
 
 
 def test_init_needs_at_least_one_target() -> None:
@@ -268,8 +268,3 @@ def test_a_machine_install_asks_no_project_questions() -> None:
 def test_a_machine_install_refuses_cursor() -> None:
     with pytest.raises(QuestionError, match="Cursor has no machine-wide rules"):
         run_machine_ask(Flags(targets=("claude", "cursor")), None)
-
-
-def test_a_bad_scope_flag_is_rejected() -> None:
-    with pytest.raises(QuestionError, match="scope must be one of project, machine"):
-        ask_scope(Flags(scope="team"), None)

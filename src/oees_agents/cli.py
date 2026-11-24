@@ -6,13 +6,13 @@ from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, NoReturn
 
 import typer
 
 from oees_agents import legacy
-from oees_agents.blocks import BlockError
-from oees_agents.content import ContentError, Document
+from oees_agents.content import Document
+from oees_agents.errors import OeesAgentsError
 from oees_agents.fs import write_atomic
 from oees_agents.log import configure
 from oees_agents.manifest import (
@@ -24,7 +24,7 @@ from oees_agents.manifest import (
     set_source,
     write_manifest,
 )
-from oees_agents.output import Output, RenderError
+from oees_agents.output import Output
 from oees_agents.questions import (
     Flags,
     QuestionError,
@@ -36,8 +36,8 @@ from oees_agents.questions import (
 )
 from oees_agents.render import render
 from oees_agents.scope import Layout, layout, machine_layout
-from oees_agents.sources import LOCAL, SourceError, resolve
-from oees_agents.writer import Plan, WriterError, apply, plan, read_lock
+from oees_agents.sources import LOCAL, resolve
+from oees_agents.writer import Plan, apply, plan, read_lock
 
 app = typer.Typer(
     help="Install the OEES conduct, defaults, skills and kits for Claude Code, Cursor and Codex.",
@@ -149,15 +149,12 @@ def init(
             commands=not no_commands,
         )
         prompter = None if yes else default_prompter()
-        with _answering():
-            scope = ask_scope(flags, prompter)
+        scope = ask_scope(flags, prompter)
         install_layout = layout(scope, path)
         root = install_layout.root
         manifest_path = root / MANIFEST_NAME
         if manifest_path.exists():
             _fail(f"{manifest_path} exists already; run `{install_layout.update_command}` instead")
-        if scope == "machine":
-            _refuse_project_flags(flags)
         source = resolve(ref, content_dir)
         content = source.content
         install = legacy.detect(root, content) if scope == "project" else None
@@ -165,15 +162,14 @@ def init(
             flags = _with_legacy_answers(flags, install, tuple(content.defaults))
         kits = tuple(content.kits)
         suggestions = detect(root, kits) if scope == "project" else detect_machine(root)
-        with _answering():
-            answers = ask(
-                flags,
-                suggestions,
-                defaults=tuple(content.defaults),
-                kits=kits,
-                prompter=prompter,
-                scope=scope,
-            )
+        answers = ask(
+            flags,
+            suggestions,
+            defaults=tuple(content.defaults),
+            kits=kits,
+            prompter=prompter,
+            scope=scope,
+        )
         manifest = Manifest(
             source=source.label,
             scope=scope,
@@ -362,32 +358,25 @@ def _has_machine_install(root: Path) -> bool:
         return False
 
 
-def _refuse_project_flags(flags: Flags) -> None:
-    given = [
-        option
-        for option, value in (
-            ("--name", flags.name),
-            ("--description", flags.description),
-            ("--users", flags.users),
-            ("--blast-radius", flags.blast_radius),
-            ("--default-branch", flags.default_branch),
-            ("--check", flags.check),
-            ("--check-fast", flags.check_fast),
-        )
-        if value is not None
-    ]
-    if given:
-        _fail(f"{', '.join(given)} describe a project; a machine install has no project")
+def _tuple(values: list[str] | None) -> tuple[str, ...] | None:
+    return tuple(values) if values else None
+
+
+def _fail(message: str, code: int = 1) -> NoReturn:
+    typer.echo(f"error: {message}", err=True)
+    raise typer.Exit(code)
 
 
 @contextmanager
-def _answering() -> Iterator[None]:
-    """Turn a bad answer or closed input into a plain error."""
+def _handled() -> Iterator[None]:
+    """Show a problem the user can fix as one line; log anything else with its trace."""
     try:
         yield
     except QuestionError as error:
-        typer.echo(f"error: {error}", err=True)
-        raise typer.Exit(2) from error
+        _fail(str(error), code=2)
+    except OeesAgentsError as error:
+        logger.error("command failed", extra={"error": str(error)})
+        _fail(str(error))
     except typer.Abort:
         if sys.stdin.isatty():
             raise
@@ -395,33 +384,7 @@ def _answering() -> Iterator[None]:
             "init needs answers, but its input ended. Run it in a terminal, "
             "or pass --yes with --description and --users."
         )
-
-
-def _tuple(values: list[str] | None) -> tuple[str, ...] | None:
-    return tuple(values) if values else None
-
-
-def _fail(message: str) -> None:
-    typer.echo(f"error: {message}", err=True)
-    raise typer.Exit(1)
-
-
-@contextmanager
-def _handled() -> Iterator[None]:
-    try:
-        yield
-    except (
-        BlockError,
-        ContentError,
-        legacy.LegacyError,
-        ManifestError,
-        RenderError,
-        SourceError,
-        WriterError,
-    ) as error:
-        logger.error("command failed", extra={"error": str(error)})
-        _fail(str(error))
-    except (typer.Exit, typer.Abort):
+    except typer.Exit:
         raise
     except Exception:
         logger.exception("unexpected failure")

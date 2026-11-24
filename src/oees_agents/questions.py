@@ -7,22 +7,22 @@ import sys
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Protocol, TypeVar
 
 import questionary
 import typer
 
+from oees_agents.errors import OeesAgentsError
 from oees_agents.manifest import (
     BLAST_RADII,
     MACHINE_TARGETS,
+    NO_MACHINE_CURSOR,
     SCOPES,
     SUBAGENT_TIERS,
     TARGETS,
-    BlastRadius,
     Extras,
     Project,
     Scope,
-    SubagentTier,
     Target,
 )
 
@@ -32,7 +32,10 @@ _SKIPPED_DIRS = {".git", ".venv", "venv", "node_modules", "__pycache__", ".tox",
 _SCAN_LIMIT = 5_000
 
 
-class QuestionError(ValueError):
+C = TypeVar("C", bound=str)
+
+
+class QuestionError(OeesAgentsError):
     """An answer or flag value is not one of the allowed choices."""
 
 
@@ -48,7 +51,7 @@ class Prompter(Protocol):
 
 @dataclass(frozen=True)
 class Flags:
-    scope: str | None = None
+    scope: Scope | None = None
     targets: tuple[str, ...] | None = None
     name: str | None = None
     description: str | None = None
@@ -82,8 +85,7 @@ class Answers:
 
 def ask_scope(flags: Flags, prompter: Prompter | None) -> Scope:
     """The first question: install into this project, or for the whole machine."""
-    scope = _Asker(prompter).one("Install for", SCOPES, flags.scope, "project", "scope")
-    return cast(Scope, scope)
+    return _Asker(prompter).one("Install for", SCOPES, flags.scope, "project", "scope")
 
 
 def ask(
@@ -93,7 +95,7 @@ def ask(
     defaults: Sequence[str],
     kits: Sequence[str],
     prompter: Prompter | None,
-    scope: Scope = "project",
+    scope: Scope,
 ) -> Answers:
     """Answer every question from its flag, else the prompter, else its default.
 
@@ -102,9 +104,11 @@ def ask(
     so it asks no project question and offers no Cursor target.
     """
     asker = _Asker(prompter)
+    if scope == "machine":
+        _refuse_project_flags(flags)
+        if flags.targets is not None and "cursor" in flags.targets:
+            raise QuestionError(NO_MACHINE_CURSOR)
     choices = MACHINE_TARGETS if scope == "machine" else TARGETS
-    if scope == "machine" and flags.targets is not None and "cursor" in flags.targets:
-        raise QuestionError("Cursor has no machine-wide rules; install it in each project instead")
     targets = asker.many("Targets", choices, flags.targets, suggestions.targets, "target")
     if not targets:
         raise QuestionError("choose at least one target")
@@ -117,15 +121,29 @@ def ask(
         kept = asker.many("Defaults to keep", defaults, None, defaults, "default")
     subagents = asker.one("Subagents", SUBAGENT_TIERS, flags.subagents, "core", "subagents")
     return Answers(
-        targets=cast(tuple[Target, ...], targets),
+        targets=targets,
         project=project,
         defaults=kept,
         kits=chosen_kits,
-        extras=Extras(
-            commands=flags.commands,
-            subagents=cast(SubagentTier, subagents),
-        ),
+        extras=Extras(commands=flags.commands, subagents=subagents),
     )
+
+
+_PROJECT_FLAGS = (
+    ("--name", "name"),
+    ("--description", "description"),
+    ("--users", "users"),
+    ("--blast-radius", "blast_radius"),
+    ("--default-branch", "default_branch"),
+    ("--check", "check"),
+    ("--check-fast", "check_fast"),
+)
+
+
+def _refuse_project_flags(flags: Flags) -> None:
+    given = [option for option, field in _PROJECT_FLAGS if getattr(flags, field) is not None]
+    if given:
+        raise QuestionError(f"a machine install has no project; leave out {', '.join(given)}")
 
 
 def _ask_project(asker: "_Asker", flags: Flags, suggestions: Suggestions) -> Project:
@@ -146,7 +164,7 @@ def _ask_project(asker: "_Asker", flags: Flags, suggestions: Suggestions) -> Pro
         name=name,
         description=description,
         users=users,
-        blast_radius=cast(BlastRadius, blast_radius),
+        blast_radius=blast_radius,
         default_branch=branch,
         check=check,
         check_fast=check_fast,
@@ -170,43 +188,43 @@ class _Asker:
             raise QuestionError(f"{message} cannot be empty ({option})")
         return value.strip()
 
-    def one(
-        self, message: str, choices: Sequence[str], flag: str | None, default: str, kind: str
-    ) -> str:
+    def one(self, message: str, choices: Sequence[C], flag: str | None, default: C, kind: str) -> C:
         if flag is not None:
             value = flag
         elif self.prompter is not None:
             value = self.prompter.select(message, choices, default)
         else:
             value = default
-        if value not in choices:
-            raise QuestionError(f"{kind} must be one of {', '.join(choices)}, not {value!r}")
-        return value
+        return _known(value, choices, kind)
 
     def many(
         self,
         message: str,
-        choices: Sequence[str],
+        choices: Sequence[C],
         flag: tuple[str, ...] | None,
-        default: Sequence[str],
+        default: Sequence[C],
         kind: str,
-    ) -> tuple[str, ...]:
+    ) -> tuple[C, ...]:
         if flag is not None:
             values: Sequence[str] = flag
         elif self.prompter is not None:
             values = self.prompter.checkbox(message, choices, default)
         else:
             values = default
-        _check_known(values, choices, kind)
-        return tuple(dict.fromkeys(values))
+        return tuple(_known(value, choices, kind) for value in dict.fromkeys(values))
+
+
+def _known(value: str, choices: Sequence[C], kind: str) -> C:
+    """`value` as the choice it names, typed like the choices."""
+    for choice in choices:
+        if value == choice:
+            return choice
+    raise QuestionError(f"unknown {kind} {value!r}; choose from {', '.join(choices) or 'none'}")
 
 
 def _check_known(values: Sequence[str], choices: Sequence[str], kind: str) -> None:
     for value in values:
-        if value not in choices:
-            raise QuestionError(
-                f"unknown {kind} {value!r}; choose from {', '.join(choices) or 'none'}"
-            )
+        _known(value, choices, kind)
 
 
 def detect(root: Path, kits: Sequence[str]) -> Suggestions:
@@ -221,13 +239,10 @@ def detect(root: Path, kits: Sequence[str]) -> Suggestions:
 
 def detect_machine(home: Path) -> Suggestions:
     """Suggest the tools this machine already has a user directory for."""
-    found = tuple(
-        target
-        for target, directory in (("claude", ".claude"), ("codex", ".codex"))
-        if (home / directory).is_dir()
-    )
+    directories: tuple[tuple[Target, str], ...] = (("claude", ".claude"), ("codex", ".codex"))
+    found = tuple(target for target, directory in directories if (home / directory).is_dir())
     return Suggestions(
-        targets=cast(tuple[Target, ...], found) or MACHINE_TARGETS,
+        targets=found or MACHINE_TARGETS,
         name="",
         default_branch="",
         kits=(),
@@ -305,10 +320,7 @@ class LinePrompter:
         return str(typer.prompt(message, default=default, show_default=bool(default)))
 
     def select(self, message: str, choices: Sequence[str], default: str) -> str:
-        answer = str(typer.prompt(f"{message} ({'/'.join(choices)})", default=default)).strip()
-        if answer not in choices:
-            raise QuestionError(f"{answer!r} is not one of {', '.join(choices)}")
-        return answer
+        return str(typer.prompt(f"{message} ({'/'.join(choices)})", default=default)).strip()
 
     def checkbox(self, message: str, choices: Sequence[str], default: Sequence[str]) -> list[str]:
         prompt = (
@@ -317,9 +329,7 @@ class LinePrompter:
         answer = str(typer.prompt(prompt, default=", ".join(default) or "-")).strip()
         if answer == "-":
             return []
-        values = [value.strip() for value in answer.split(",") if value.strip()]
-        _check_known(values, choices, "choice")
-        return values
+        return [value.strip() for value in answer.split(",") if value.strip()]
 
 
 class QuestionaryPrompter:

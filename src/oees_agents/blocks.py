@@ -7,13 +7,14 @@ refused rather than guessed at, and so are symlinks and non-files.
 
 from pathlib import Path
 
+from oees_agents.errors import OeesAgentsError
 from oees_agents.output import ManagedBlock
 
 BEGIN = "<!-- BEGIN OEES SHARED RULES -->"
 END = "<!-- END OEES SHARED RULES -->"
 
 
-class BlockError(ValueError):
+class BlockError(OeesAgentsError):
     """A file cannot safely receive the managed block."""
 
 

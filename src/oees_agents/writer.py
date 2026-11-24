@@ -22,6 +22,7 @@ from pathlib import Path, PurePosixPath
 import tomli_w
 
 from oees_agents.blocks import BlockError, extract, remove, size_warning, splice
+from oees_agents.errors import OeesAgentsError
 from oees_agents.fs import remove_file, write_atomic
 from oees_agents.output import ManagedBlock, Output
 
@@ -31,7 +32,7 @@ LOCK_VERSION = 1
 logger = logging.getLogger(__name__)
 
 
-class WriterError(ValueError):
+class WriterError(OeesAgentsError):
     """The render or the lock cannot be applied at all."""
 
 

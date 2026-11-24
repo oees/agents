@@ -9,6 +9,7 @@ from typing import Any, Literal, TypeVar, cast, get_args
 
 import tomli_w
 
+from oees_agents.errors import OeesAgentsError
 from oees_agents.fs import write_atomic
 
 MANIFEST_NAME = ".oees-agents.toml"
@@ -20,6 +21,7 @@ BlastRadius = Literal["internal", "customer-facing", "regulated"]
 SubagentTier = Literal["none", "core", "extended"]
 
 SCOPES: tuple[Scope, ...] = get_args(Scope)
+NO_MACHINE_CURSOR = "Cursor has no machine-wide rules; install it in each project instead"
 TARGETS: tuple[Target, ...] = get_args(Target)
 MACHINE_TARGETS: tuple[Target, ...] = ("claude", "codex")
 """Cursor reads rule files only from a project, so a machine install leaves it out."""
@@ -27,7 +29,7 @@ BLAST_RADII: tuple[BlastRadius, ...] = get_args(BlastRadius)
 SUBAGENT_TIERS: tuple[SubagentTier, ...] = get_args(SubagentTier)
 
 
-class ManifestError(ValueError):
+class ManifestError(OeesAgentsError):
     """The manifest is not valid TOML or does not match the schema."""
 
 
@@ -210,9 +212,7 @@ def _check_machine(data: Mapping[str, object], targets: tuple[Target, ...]) -> N
     if "project" in data:
         raise ManifestError("project: a machine install has no project; remove [project]")
     if "cursor" in targets:
-        raise ManifestError(
-            "targets: Cursor has no machine-wide rules; install it in each project instead"
-        )
+        raise ManifestError(f"targets: {NO_MACHINE_CURSOR}")
 
 
 def _targets(data: Mapping[str, object]) -> tuple[str, ...]:
