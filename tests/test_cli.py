@@ -1,5 +1,4 @@
 import json
-import os
 import shutil
 import subprocess
 from dataclasses import replace
@@ -17,16 +16,6 @@ from oees_agents.writer import LOCK_NAME
 from conftest import DEFAULTS, build_content_tree
 
 runner = CliRunner()
-
-GIT_ENV = {
-    "GIT_AUTHOR_NAME": "Test",
-    "GIT_AUTHOR_EMAIL": "test@example.com",
-    "GIT_COMMITTER_NAME": "Test",
-    "GIT_COMMITTER_EMAIL": "test@example.com",
-    "GIT_CONFIG_GLOBAL": os.devnull,
-    "GIT_CONFIG_NOSYSTEM": "1",
-    "PATH": os.environ["PATH"],
-}
 
 
 @pytest.fixture
@@ -307,7 +296,7 @@ def tagged_repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         ["commit", "-q", "-m", "content"],
         ["tag", "v9.9.9"],
     ):
-        subprocess.run(["git", "-C", str(repository), *command], check=True, env=GIT_ENV)
+        subprocess.run(["git", "-C", str(repository), *command], check=True)
     monkeypatch.setenv("OEES_AGENTS_REPOSITORY", str(repository))
     return repository
 

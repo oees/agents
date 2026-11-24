@@ -290,15 +290,6 @@ SCRIPT = ".codex/oees-agents/session-start.sh"
 HOOKS = ".codex/hooks.json"
 
 
-@pytest.fixture
-def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    path = tmp_path / "home"
-    path.mkdir()
-    monkeypatch.setenv("HOME", str(path))
-    monkeypatch.delenv("CODEX_HOME", raising=False)
-    return path
-
-
 def machine_output(content_root: Path) -> Output:
     machine = Manifest(
         source="v1.0.0", targets=("codex",), project=None, defaults=DEFAULTS, scope="machine"

@@ -14,16 +14,6 @@ runner = CliRunner()
 
 
 @pytest.fixture
-def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    path = tmp_path / "home"
-    path.mkdir()
-    monkeypatch.setenv("HOME", str(path))
-    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
-    monkeypatch.delenv("CODEX_HOME", raising=False)
-    return path
-
-
-@pytest.fixture
 def project(tmp_path: Path) -> Path:
     path = tmp_path / "portal"
     path.mkdir()

@@ -1,6 +1,6 @@
-"""A content tree in the target layout of the restructure plan, for tests that must
-not depend on the real content while it is being reorganised."""
+"""Shared fixtures: an isolated home directory and git, and a small content tree."""
 
+import os
 import shutil
 from pathlib import Path
 
@@ -83,3 +83,22 @@ def build_content_tree(root: Path) -> Path:
 @pytest.fixture
 def content_root(tmp_path: Path) -> Path:
     return build_content_tree(tmp_path / "agents")
+
+
+@pytest.fixture(autouse=True)
+def home(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Give every test its own home directory and a git with no user or system config.
+
+    A machine install writes into the home directory, and the CLI reads it to
+    find one; no test may see or change the real one.
+    """
+    path = tmp_path_factory.mktemp("home")
+    monkeypatch.setenv("HOME", str(path))
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
+    monkeypatch.delenv("CODEX_HOME", raising=False)
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    for role in ("AUTHOR", "COMMITTER"):
+        monkeypatch.setenv(f"GIT_{role}_NAME", "Test")
+        monkeypatch.setenv(f"GIT_{role}_EMAIL", "test@example.com")
+    return path

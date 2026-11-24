@@ -6,14 +6,6 @@ from oees_agents.output import RenderError
 from oees_agents.scope import claude_dir, codex_dir, install_root
 
 
-@pytest.fixture
-def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
-    monkeypatch.delenv("CODEX_HOME", raising=False)
-    return tmp_path
-
-
 def test_a_project_install_writes_into_the_project(home: Path) -> None:
     assert install_root("project", Path("work/app")) == Path("work/app")
     assert claude_dir("project") == ".claude"
