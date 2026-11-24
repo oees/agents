@@ -88,7 +88,7 @@ def test_the_main_install_migrates_to_every_default_and_no_project(
 
     assert manifest.project is None
     assert manifest.defaults == tuple(content.defaults)
-    assert len(manifest.defaults) == 7
+    assert len(manifest.defaults) == 8
     assert manifest.source == "v1.0.0"
     assert manifest.kits == ()
     assert manifest.extras.subagents == "none"

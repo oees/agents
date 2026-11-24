@@ -25,7 +25,16 @@ PROJECT = Project(
     check_fast="make check-fast",
 )
 CONDUCT = ("conduct", "data-protection", "language", "secrets")
-DEFAULTS = ("tdd", "git", "observability", "migrations", "api", "standards", "quality-gates")
+DEFAULTS = (
+    "tdd",
+    "git",
+    "pull-requests",
+    "observability",
+    "migrations",
+    "api",
+    "standards",
+    "quality-gates",
+)
 COMMAND_SKILLS = ("commit", "code-review", "plan", "pr-tidy", "test", "shipped")
 PATTERN_SKILLS = ("python-patterns", "typescript-patterns")
 SKILLS = (*COMMAND_SKILLS, *PATTERN_SKILLS, "reviewing", "personal-data")

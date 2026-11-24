@@ -148,6 +148,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | `git` | Every change reaches the default branch through a pull request, rebase-only merges, no merge commits, no squashing, commits that stand alone with a 70-character imperative subject |
 | `migrations` | Safe, backwards-compatible database schema migrations |
 | `observability` | Structured logging, contextual errors, no silent exceptions |
+| `pull-requests` | Draft until ready, a linked ticket and context, tasting notes, declared model assistance, small and chained, review only after the tests pass |
 | `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |
 | `standards` | Backend owns the truth, organise by domain, frontend orchestrates, validated deploys |
 | `tdd` | TDD: write failing tests before implementation, red-green-refactor |

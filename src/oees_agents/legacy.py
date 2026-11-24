@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 OLD_RULE_DEFAULTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
         "tdd": ("tdd",),
-        "git": ("git",),
+        "git": ("git", "pull-requests"),
         "observability": ("observability",),
         "migrations": ("migrations",),
         "standards": ("standards", "api"),
@@ -41,6 +41,7 @@ OLD_RULE_DEFAULTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         "language": (),
         "api": ("api",),
         "quality-gates": ("quality-gates",),
+        "pull-requests": ("pull-requests",),
     }
 )
 

@@ -19,6 +19,7 @@ defaults = [
     "git",
     "migrations",
     "observability",
+    "pull-requests",
     "quality-gates",
     "standards",
     "tdd",
