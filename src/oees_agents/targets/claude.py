@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from oees_agents.content import Content, Document, Skill
 from oees_agents.context import context_block
-from oees_agents.manifest import Manifest, Scope
+from oees_agents.manifest import SUBAGENTS_LOADED, Manifest, Scope
 from oees_agents.output import ManagedBlock, Output
 from oees_agents.profiles import KIT_TOOLCHAINS, SUBAGENT_ONLY_SKILLS, Toolchain
 from oees_agents.scope import Layout
@@ -107,7 +107,6 @@ TOOLCHAIN_COMMANDS: dict[Toolchain, tuple[str, ...]] = {
 }
 DENY = (
     "Bash(git push*)",
-    "Bash(git push --force*)",
     "Bash(git reset --hard*)",
     "Bash(git rebase -i*)",
     "Bash(git rebase --interactive*)",
@@ -119,9 +118,8 @@ def render(manifest: Manifest, content: Content, layout: Layout) -> Output:
     root = layout.claude
     placement = _PLACEMENTS[layout.scope]
     settings = f"{root}/settings.json"
-    rules = [*content.conduct.values(), *(content.defaults[name] for name in manifest.defaults)]
     files = {
-        **_documents(f"{root}/{placement.rules}", rules),
+        **_documents(f"{root}/{placement.rules}", content.rules(manifest.defaults)),
         **_skill_files(root, _skills(manifest, content)),
         **_documents(f"{root}/agents", _subagents(manifest, content)),
         settings: _settings(manifest, placement),
@@ -140,8 +138,10 @@ def render(manifest: Manifest, content: Content, layout: Layout) -> Output:
 
 
 def _claude_md(manifest: Manifest, content: Content, section: str) -> str:
-    context = context_block(manifest, content)
-    return section if context is None else f"{context}\n{section}"
+    if manifest.project is None:
+        return section
+    context = context_block(manifest.project, manifest.kits, content.context_template)
+    return f"{context}\n{section}"
 
 
 def _documents(directory: str, documents: Iterable[Document]) -> dict[str, bytes]:
@@ -166,8 +166,7 @@ def _skill_files(root: str, skills: Iterable[Skill]) -> dict[str, bytes]:
 
 
 def _subagents(manifest: Manifest, content: Content) -> Iterator[Document]:
-    tiers = {"none": (), "core": ("core",), "extended": ("core", "extended")}
-    for tier in tiers[manifest.extras.subagents]:
+    for tier in SUBAGENTS_LOADED[manifest.extras.subagents]:
         yield from content.subagents[tier].values()
 
 

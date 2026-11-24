@@ -14,5 +14,6 @@ class BundleContentHook(BuildHookInterface):
             return
         root = Path(self.root)
         for name in BUNDLED:
-            if (root / name).is_dir():
-                build_data["force_include"][str(root / name)] = f"oees_agents/_bundled/{name}"
+            if not (root / name).is_dir():
+                raise FileNotFoundError(f"{name}/ is missing; the wheel would ship no {name}")
+            build_data["force_include"][str(root / name)] = f"oees_agents/_bundled/{name}"

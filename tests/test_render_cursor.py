@@ -60,8 +60,9 @@ def test_the_project_context_rule_always_applies_and_holds_the_block_once(
     content_root: Path,
 ) -> None:
     content = load_content(content_root)
-    block = context_block(manifest(), content)
-    assert block is not None
+    project = manifest().project
+    assert project is not None
+    block = context_block(project, manifest().kits, content.context_template)
 
     fields, body = split(
         render(manifest(), content, IN_PROJECT).files[CONTEXT_FILE].decode("utf-8")
@@ -238,10 +239,16 @@ def test_output_is_sorted_by_path(content_root: Path) -> None:
 def test_a_kit_rule_says_where_its_templates_are_without_claude(content_root: Path) -> None:
     _, body = rule(rendered(content_root, targets=("cursor",)), "django-drf")
 
-    assert "https://github.com/oees/agents/tree/main/content/kits/django-drf/templates" in body
+    assert "https://github.com/oees/agents/tree/v1.0.0/content/kits/django-drf/templates" in body
 
 
 def test_a_kit_rule_points_at_the_installed_templates_with_claude(content_root: Path) -> None:
     _, body = rule(rendered(content_root, targets=("claude", "cursor")), "django-drf")
 
     assert "`.claude/skills/django-drf/templates/`" in body
+
+
+def test_a_kit_rule_from_a_local_checkout_points_at_main(content_root: Path) -> None:
+    _, body = rule(rendered(content_root, targets=("cursor",), source="local"), "django-drf")
+
+    assert "https://github.com/oees/agents/tree/main/content/kits/django-drf/templates" in body

@@ -1,6 +1,6 @@
 """Load the canonical content: tiers, skills, kits, subagents and commands.
 
-The layout is the one the restructure plan targets:
+The layout:
 
     content/conduct/*.md              always on
     content/defaults/*.md             on unless a project opts out
@@ -11,14 +11,15 @@ The layout is the one the restructure plan targets:
 """
 
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from types import MappingProxyType
 
 from oees_agents.errors import OeesAgentsError
 
-SUBAGENT_TIERS = ("core", "extended")
+SUBAGENT_SETS = ("core", "extended")
+"""The subagent directories; a manifest's `extras.subagents` picks which load."""
 CONTEXT_TEMPLATE = "content/blocks/project-context.md"
 TEMPLATES_DIR = "templates"
 # Tool caches and OS litter a skill directory can pick up; never carried.
@@ -67,17 +68,12 @@ class Skill:
     files: Mapping[str, bytes]
 
     @property
-    def source(self) -> str:
-        return self.document.source
-
-    @property
     def description(self) -> str:
         return self.document.description
 
 
 @dataclass(frozen=True)
 class Content:
-    root: Path
     conduct: Mapping[str, Document]
     defaults: Mapping[str, Document]
     skills: Mapping[str, Skill]
@@ -86,11 +82,14 @@ class Content:
     commands: Mapping[str, Document]
     context_template: str
 
+    def rules(self, defaults: Sequence[str]) -> list[Document]:
+        """Every conduct rule, then the kept defaults in manifest order."""
+        return [*self.conduct.values(), *(self.defaults[name] for name in defaults)]
+
 
 def load_content(root: Path) -> Content:
     root = root.resolve()
     return Content(
-        root=root,
         conduct=_documents(root, ("content/conduct",)),
         defaults=_documents(root, ("content/defaults",)),
         skills=_skills(root, ("content/skills", "skills")),
@@ -100,7 +99,7 @@ def load_content(root: Path) -> Content:
                 tier: _documents(
                     root, (f"content/subagents/{tier}",), required=("name", "description")
                 )
-                for tier in SUBAGENT_TIERS
+                for tier in SUBAGENT_SETS
             }
         ),
         commands=_documents(root, ("content/commands", "commands")),
