@@ -8,7 +8,7 @@ import pytest
 
 from oees_agents.blocks import BEGIN, END, BlockError, merge
 from oees_agents.content import load_content
-from oees_agents.manifest import Manifest, Project, Scope, Target, dump_manifest
+from oees_agents.manifest import Manifest, Project
 from oees_agents.output import Output
 from oees_agents.targets.codex import CODEX_INSTRUCTION_LIMIT, render
 
@@ -363,66 +363,68 @@ def run_hook(home: Path, content_root: Path, cwd: Path) -> str:
     return result.stdout
 
 
-def manifest_text(*targets: Target, scope: Scope = "project") -> str:
-    """A manifest as the CLI writes it: tomli_w puts each target on its own line."""
-    project = None if scope == "machine" else PROJECT
-    manifest = Manifest(
-        source="v1.0.0", targets=targets, project=project, defaults=DEFAULTS, scope=scope
-    )
-    return dump_manifest(manifest)
+BLOCK = f"# Portal\n\n{BEGIN}\nproject rules\n{END}\n"
 
 
-def project_dir(home: Path, manifest_text: str | None, git: bool = True) -> Path:
-    root = home / "work/portal"
+def project_dir(home: Path, git: str | None = "dir", name: str = "portal") -> Path:
+    """A project at ~/work/<name> whose Git root is a directory, a file (a worktree) or none."""
+    root = home / "work" / name
     (root / "src/app").mkdir(parents=True)
-    if git:
+    if git == "dir":
         (root / ".git").mkdir()
-    if manifest_text is not None:
-        write(root / ".oees-agents.toml", manifest_text)
+    elif git == "file":
+        write(root / ".git", "gitdir: /elsewhere/.git/worktrees/portal\n")
     return root
 
 
-def test_the_hook_prints_the_rules_where_the_project_has_no_install(
+def test_the_hook_prints_the_rules_where_the_project_has_no_agents_md(
     home: Path, content_root: Path
 ) -> None:
-    root = project_dir(home, None)
+    root = project_dir(home)
 
     assert run_hook(home, content_root, root / "src/app").startswith(HEADING)
 
 
-def test_the_hook_prints_nothing_where_the_project_installs_for_codex(
+def test_the_hook_prints_nothing_where_a_loaded_agents_md_holds_the_rules(
     home: Path, content_root: Path
 ) -> None:
-    root = project_dir(home, manifest_text("claude", "codex"))
+    root = project_dir(home)
+    write(root / "AGENTS.md", BLOCK)
 
     assert run_hook(home, content_root, root / "src/app") == ""
 
 
-def test_the_hook_prints_the_rules_where_the_project_installs_for_other_tools(
+def test_the_hook_prints_the_rules_where_agents_md_has_no_block(
     home: Path, content_root: Path
 ) -> None:
-    root = project_dir(home, manifest_text("claude"))
+    root = project_dir(home)
+    write(root / "AGENTS.md", "# Portal\n\nOur own notes.\n")
 
     assert run_hook(home, content_root, root).startswith(HEADING)
 
 
-def test_the_hook_ignores_the_machine_manifest_above_the_project(
+def test_the_hook_prints_the_rules_where_an_override_hides_the_block(
     home: Path, content_root: Path
 ) -> None:
-    write(home / ".oees-agents.toml", manifest_text("codex", scope="machine"))
-    root = project_dir(home, None, git=False)
+    root = project_dir(home)
+    write(root / "AGENTS.md", BLOCK)
+    write(root / "AGENTS.override.md", "# Temporary instructions\n")
 
     assert run_hook(home, content_root, root).startswith(HEADING)
 
 
-def test_the_hook_does_not_look_above_the_git_root(home: Path, content_root: Path) -> None:
-    write(home / "work/.oees-agents.toml", manifest_text("codex"))
-    root = project_dir(home, None)
+@pytest.mark.parametrize("git", ["dir", "file"])
+def test_the_hook_does_not_look_above_the_git_root(
+    home: Path, content_root: Path, git: str
+) -> None:
+    write(home / "work/AGENTS.md", BLOCK)
+    root = project_dir(home, git=git)
 
     assert run_hook(home, content_root, root).startswith(HEADING)
 
 
-def test_the_hook_reads_a_one_line_target_list(home: Path, content_root: Path) -> None:
-    root = project_dir(home, 'version = 1\ntargets = ["claude", "codex"]\n\n[project]\n')
+def test_the_hook_works_in_a_directory_with_a_space(home: Path, content_root: Path) -> None:
+    root = project_dir(home, name="my portal")
+    write(root / "AGENTS.md", BLOCK)
 
-    assert run_hook(home, content_root, root) == ""
+    assert run_hook(home, content_root, root / "src/app") == ""
