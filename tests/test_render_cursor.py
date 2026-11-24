@@ -11,7 +11,7 @@ from oees_agents.output import RenderError
 from oees_agents.profiles import KIT_GLOBS
 from oees_agents.targets.cursor import render
 
-from conftest import COMMAND_SKILLS, CONDUCT, DEFAULTS, write
+from conftest import COMMAND_SKILLS, CONDUCT, DEFAULTS, IN_PROJECT, write
 
 RULES = ".cursor/rules"
 CONTEXT_FILE = f"{RULES}/00-project-context.mdc"
@@ -40,7 +40,7 @@ def manifest(**overrides: object) -> Manifest:
 
 
 def rendered(content_root: Path, **overrides: object) -> dict[str, str]:
-    output = render(manifest(**overrides), load_content(content_root))
+    output = render(manifest(**overrides), load_content(content_root), IN_PROJECT)
     return {path: data.decode("utf-8") for path, data in output.files.items()}
 
 
@@ -63,7 +63,9 @@ def test_the_project_context_rule_always_applies_and_holds_the_block_once(
     block = context_block(manifest(), content)
     assert block is not None
 
-    fields, body = split(render(manifest(), content).files[CONTEXT_FILE].decode("utf-8"))
+    fields, body = split(
+        render(manifest(), content, IN_PROJECT).files[CONTEXT_FILE].decode("utf-8")
+    )
 
     assert fields["alwaysApply"] == "true"
     assert "globs" not in fields
@@ -221,16 +223,16 @@ def test_two_rules_for_one_file_name_are_refused(content_root: Path) -> None:
     write(content_root / "content/defaults/test.md", "---\ndescription: t\n---\n\n# Test\n")
 
     with pytest.raises(RenderError, match=r"\.cursor/rules/test\.mdc"):
-        render(manifest(defaults=("test",)), load_content(content_root))
+        render(manifest(defaults=("test",)), load_content(content_root), IN_PROJECT)
 
 
 def test_output_is_sorted_by_path(content_root: Path) -> None:
     content = load_content(content_root)
-    paths = list(render(manifest(), content).files)
+    paths = list(render(manifest(), content, IN_PROJECT).files)
 
     assert paths == sorted(paths)
     assert all(path.startswith(f"{RULES}/") and path.endswith(".mdc") for path in paths)
-    assert render(manifest(), content).blocks == {}
+    assert render(manifest(), content, IN_PROJECT).blocks == {}
 
 
 def test_a_kit_rule_says_where_its_templates_are_without_claude(content_root: Path) -> None:

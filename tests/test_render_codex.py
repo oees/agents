@@ -10,9 +10,10 @@ from oees_agents.blocks import BEGIN, END, BlockError, merge
 from oees_agents.content import load_content
 from oees_agents.manifest import Manifest, Project
 from oees_agents.output import Output
+from oees_agents.scope import machine_layout
 from oees_agents.targets.codex import CODEX_INSTRUCTION_LIMIT, render
 
-from conftest import CONDUCT, DEFAULTS, write
+from conftest import CONDUCT, DEFAULTS, IN_PROJECT, write
 
 PROJECT = Project(
     name="portal",
@@ -33,7 +34,7 @@ def manifest(defaults: tuple[str, ...] = DEFAULTS, project: Project | None = PRO
 
 def sync(root: Path, content_root: Path, project_manifest: Manifest) -> list[str]:
     """Render and write AGENTS.md the way the writer will, returning merge warnings."""
-    output = render(project_manifest, load_content(content_root))
+    output = render(project_manifest, load_content(content_root), IN_PROJECT)
     path = root / "AGENTS.md"
     data, warnings = merge(path, output.blocks["AGENTS.md"])
     path.write_bytes(data)
@@ -45,7 +46,7 @@ def marker_count(data: bytes, marker: str) -> int:
 
 
 def test_codex_renders_one_bottom_block_in_agents_md_and_no_files(content_root: Path) -> None:
-    output = render(manifest(), load_content(content_root))
+    output = render(manifest(), load_content(content_root), IN_PROJECT)
 
     assert output.files == {}
     assert set(output.blocks) == {"AGENTS.md"}
@@ -57,7 +58,9 @@ def test_codex_renders_one_bottom_block_in_agents_md_and_no_files(content_root: 
 def test_the_block_body_is_the_policy_then_each_source_without_frontmatter(
     content_root: Path,
 ) -> None:
-    output = render(manifest(defaults=("tdd",), project=None), load_content(content_root))
+    output = render(
+        manifest(defaults=("tdd",), project=None), load_content(content_root), IN_PROJECT
+    )
 
     assert output.blocks["AGENTS.md"].body == (
         "## Shared engineering rules\n"
@@ -96,7 +99,7 @@ def test_the_block_body_is_the_policy_then_each_source_without_frontmatter(
 
 def test_conduct_comes_first_then_defaults_in_manifest_order(content_root: Path) -> None:
     body = (
-        render(manifest(defaults=("git", "tdd")), load_content(content_root))
+        render(manifest(defaults=("git", "tdd")), load_content(content_root), IN_PROJECT)
         .blocks["AGENTS.md"]
         .body
     )
@@ -267,7 +270,11 @@ def test_the_context_block_appears_once_inside_the_block_before_the_rules(
 
 
 def test_there_is_no_context_block_without_a_project(content_root: Path) -> None:
-    body = render(manifest(project=None), load_content(content_root)).blocks["AGENTS.md"].body
+    body = (
+        render(manifest(project=None), load_content(content_root), IN_PROJECT)
+        .blocks["AGENTS.md"]
+        .body
+    )
 
     assert CONTEXT_BEGIN not in body
     assert body.startswith(HEADING)
@@ -277,7 +284,7 @@ def test_an_opted_out_default_is_absent_from_the_block(content_root: Path) -> No
     content = load_content(content_root)
     opted_in = tuple(name for name in DEFAULTS if name != "migrations")
 
-    body = render(manifest(defaults=opted_in), content).blocks["AGENTS.md"].body
+    body = render(manifest(defaults=opted_in), content, IN_PROJECT).blocks["AGENTS.md"].body
 
     assert "content/defaults/migrations.md" not in body
     assert "# Migrations" not in body
@@ -294,7 +301,7 @@ def machine_output(content_root: Path) -> Output:
     machine = Manifest(
         source="v1.0.0", targets=("codex",), project=None, defaults=DEFAULTS, scope="machine"
     )
-    return render(machine, load_content(content_root))
+    return render(machine, load_content(content_root), machine_layout())
 
 
 def test_a_machine_install_leaves_the_global_agents_md_alone(
@@ -304,7 +311,7 @@ def test_a_machine_install_leaves_the_global_agents_md_alone(
 
     assert output.blocks == {}
     assert set(output.files) == {MACHINE_RULES, SCRIPT, HOOKS}
-    assert output.optional == {HOOKS}
+    assert set(output.optional) == {HOOKS}
     rules = output.files[MACHINE_RULES].decode()
     assert rules.startswith(HEADING)
     assert "oees-agents update --machine" in rules

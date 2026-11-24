@@ -12,6 +12,8 @@ from oees_agents.manifest import Extras, Manifest, Project
 from oees_agents.output import ManagedBlock, Output, RenderError, merge_outputs
 from oees_agents.render import render
 
+from conftest import IN_PROJECT
+
 PROJECT = Project(
     name="portal",
     description="B2B multi-tenant platform where partners and vendors sell energy products.",
@@ -89,13 +91,13 @@ def test_render_refuses_names_the_content_does_not_have(
     content_root: Path, overrides: dict[str, object], message: str
 ) -> None:
     with pytest.raises(RenderError, match=message):
-        render(manifest(**overrides), load_content(content_root))
+        render(manifest(**overrides), load_content(content_root), IN_PROJECT)
 
 
 def test_render_is_deterministic(content_root: Path) -> None:
     content = load_content(content_root)
 
-    assert render(manifest(), content) == render(manifest(), content)
+    assert render(manifest(), content, IN_PROJECT) == render(manifest(), content, IN_PROJECT)
 
 
 def test_merging_outputs_refuses_two_owners_for_one_path() -> None:
@@ -107,7 +109,9 @@ def test_merging_outputs_refuses_two_owners_for_one_path() -> None:
 
 
 def test_all_three_targets_render_together(content_root: Path) -> None:
-    rendered = render(manifest(targets=("claude", "cursor", "codex")), load_content(content_root))
+    rendered = render(
+        manifest(targets=("claude", "cursor", "codex")), load_content(content_root), IN_PROJECT
+    )
 
     assert {".claude/CLAUDE.md", "AGENTS.md"} <= set(rendered.blocks)
     assert ".cursor/rules/00-project-context.mdc" in rendered.files
@@ -123,7 +127,7 @@ def test_this_repositorys_content_renders_every_target_with_resolvable_imports()
         extras=Extras(subagents="extended"),
     )
 
-    rendered = render(everything, content)
+    rendered = render(everything, content, IN_PROJECT)
 
     paths = set(rendered.files)
     sources = {

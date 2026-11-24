@@ -13,13 +13,15 @@ from oees_agents.context import context_block
 from oees_agents.manifest import Manifest
 from oees_agents.output import Output, RenderError
 from oees_agents.profiles import KIT_GLOBS, PATTERN_GLOBS, SUBAGENT_ONLY_SKILLS
+from oees_agents.scope import Layout
 
 RULES_DIR = ".cursor/rules"
 REPOSITORY = "https://github.com/oees/agents"
 CONTEXT_RULE = "00-project-context"
 
 
-def render(manifest: Manifest, content: Content) -> Output:
+def render(manifest: Manifest, content: Content, layout: Layout) -> Output:
+    """Cursor reads rules only from a project, so `layout` changes nothing here."""
     files: dict[str, bytes] = {}
 
     def add(

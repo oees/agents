@@ -2,7 +2,7 @@
 
 import logging
 import sys
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
@@ -24,7 +24,7 @@ from oees_agents.manifest import (
     set_source,
     write_manifest,
 )
-from oees_agents.output import RenderError
+from oees_agents.output import Output, RenderError
 from oees_agents.questions import (
     Flags,
     QuestionError,
@@ -35,10 +35,8 @@ from oees_agents.questions import (
     detect_machine,
 )
 from oees_agents.render import render
-from oees_agents.scope import claude_dir, install_root, update_command
+from oees_agents.scope import Layout, layout, machine_layout
 from oees_agents.sources import LOCAL, SourceError, resolve
-from oees_agents.targets import codex
-from oees_agents.targets.claude import MACHINE_RULES_EXCLUDE
 from oees_agents.writer import Plan, WriterError, apply, plan, read_lock
 
 app = typer.Typer(
@@ -73,6 +71,12 @@ Machine = Annotated[
     bool,
     typer.Option(
         "--machine", help="Work on the machine install in your home directory, not a project."
+    ),
+]
+InstallPath = Annotated[
+    Path | None,
+    typer.Argument(
+        help="Project root (default: the current directory).", file_okay=False, resolve_path=True
     ),
 ]
 Many = Annotated[list[str] | None, typer.Option()]
@@ -147,10 +151,11 @@ def init(
         prompter = None if yes else default_prompter()
         with _answering():
             scope = ask_scope(flags, prompter)
-        root = install_root(scope, path)
+        install_layout = layout(scope, path)
+        root = install_layout.root
         manifest_path = root / MANIFEST_NAME
         if manifest_path.exists():
-            _fail(f"{manifest_path} exists already; run `{update_command(scope)}` instead")
+            _fail(f"{manifest_path} exists already; run `{install_layout.update_command}` instead")
         if scope == "machine":
             _refuse_project_flags(flags)
         source = resolve(ref, content_dir)
@@ -178,7 +183,7 @@ def init(
             kits=answers.kits,
             extras=answers.extras,
         )
-        output = render(manifest, content)
+        output = render(manifest, content, install_layout)
         if install is not None:
             legacy.migrate(root, install)
             _report_legacy(install)
@@ -189,16 +194,12 @@ def init(
             typer.echo(f"Wrote {manifest_path}. It and the lock next to it track this machine.")
         else:
             typer.echo(f"Wrote {MANIFEST_NAME}. Commit it with the generated files and the lock.")
-        _report(pending)
-        if scope == "project":
-            _report_machine_overlap(root, manifest, pending)
-        elif "codex" in manifest.targets:
-            _report_codex_hook(manifest, output.files, pending)
+        _report(pending, output)
 
 
 @app.command()
 def update(
-    path: ProjectPath = Path(),
+    path: InstallPath = None,
     machine: Machine = False,
     ref: Ref = None,
     force: Force = False,
@@ -206,37 +207,36 @@ def update(
 ) -> None:
     """Re-render everything from .oees-agents.toml."""
     with _handled():
-        root = install_root("machine", path) if machine else path
-        text, manifest = _read_manifest(root, machine)
+        text, pinned, install_layout = _read_install(path, machine)
+        root = install_layout.root
         source = resolve(ref, content_dir)
-        manifest = replace(manifest, source=source.label)
-        pending = plan(root, render(manifest, source.content), read_lock(root), force)
+        manifest = replace(pinned, source=source.label)
+        output = render(manifest, source.content, install_layout)
+        pending = plan(root, output, read_lock(root), force)
         # Pin first: if the source line cannot be rewritten, no file has changed yet.
-        pinned = None
-        if parse_manifest(text).source != source.label:
-            pinned = set_source(text, source.label)
+        new_text = None if pinned.source == source.label else set_source(text, source.label)
         apply(root, pending)
-        if pinned is not None:
-            write_atomic(root / MANIFEST_NAME, pinned.encode("utf-8"))
+        if new_text is not None:
+            write_atomic(root / MANIFEST_NAME, new_text.encode("utf-8"))
             typer.echo(f"Pinned {MANIFEST_NAME} to {source.label}.")
-        _report(pending)
+        _report(pending, output)
 
 
 @app.command("check")
 def check_command(
-    path: ProjectPath = Path(),
+    path: InstallPath = None,
     machine: Machine = False,
     ref: Ref = None,
     content_dir: ContentDir = None,
 ) -> None:
     """Exit non-zero when generated files are missing, stale or edited by hand."""
     with _handled():
-        root = install_root("machine", path) if machine else path
-        _, manifest = _read_manifest(root, machine)
+        _, manifest, install_layout = _read_install(path, machine)
+        root = install_layout.root
         source = resolve(ref, content_dir)
         if source.label not in (manifest.source, LOCAL):
             typer.echo(f"note: {MANIFEST_NAME} pins {manifest.source}; checking {source.label}")
-        pending = plan(root, render(manifest, source.content), read_lock(root))
+        pending = plan(root, render(manifest, source.content, install_layout), read_lock(root))
         if pending.is_clean:
             typer.echo("oees-agents files are up to date.")
             return
@@ -246,7 +246,7 @@ def check_command(
             typer.echo(f"no longer rendered: {item}")
         for conflict in pending.conflicts:
             typer.echo(f"edited by hand: {conflict.path} ({conflict.reason})")
-        update = update_command(manifest.scope)
+        update = install_layout.update_command
         if pending.writes or pending.deletes or pending.unblocks:
             typer.echo(f"Run `{update}` to bring the generated files in line.")
         if pending.conflicts:
@@ -305,7 +305,7 @@ def _report_legacy(install: legacy.LegacyInstall) -> None:
             typer.echo(f"  {item}")
 
 
-def _report(pending: Plan) -> None:
+def _report(pending: Plan, output: Output) -> None:
     removed = len(pending.deletes) + len(pending.unblocks)
     typer.echo(
         f"Wrote {_files(len(pending.writes))}, removed {removed}, "
@@ -320,6 +320,11 @@ def _report(pending: Plan) -> None:
             f"Kept your own {path}; oees-agents does not manage it. "
             "Delete it, or use --force, to take the generated one."
         )
+        if output.optional[path]:
+            typer.echo(output.optional[path].rstrip("\n"))
+    for path, note in output.notes.items():
+        if path in pending.writes:
+            typer.echo(note)
     for warning in pending.warnings:
         typer.echo(f"warning: {warning}", err=True)
 
@@ -328,56 +333,33 @@ def _files(count: int) -> str:
     return f"{count} file" if count == 1 else f"{count} files"
 
 
-def _read_manifest(root: Path, machine: bool = False) -> tuple[str, Manifest]:
+def _read_install(path: Path | None, machine: bool) -> tuple[str, Manifest, Layout]:
+    """The manifest text, the manifest and the layout of the install to work on."""
+    if machine and path is not None:
+        _fail("--machine works on the install in your home directory; leave out the path")
+    root = machine_layout().root if machine else (path or Path.cwd())
     manifest_path = root / MANIFEST_NAME
     if not manifest_path.is_file():
-        hint = ""
-        if not machine and _machine_manifest(root) is not None:
-            hint = "; for the machine install, add --machine"
+        hint = "; for the machine install, add --machine" if _has_machine_install(root) else ""
         _fail(f"no {MANIFEST_NAME} in {root}; run `oees-agents init` first{hint}")
     text = manifest_path.read_text(encoding="utf-8")
     manifest = parse_manifest(text)
     if machine and manifest.scope != "machine":
         _fail(f"{manifest_path} is a project install; run the command without --machine")
-    return text, manifest
+    return text, manifest, layout(manifest.scope, root)
 
 
-def _machine_manifest(root: Path) -> Manifest | None:
-    """The manifest of a machine install other than `root` itself."""
-    home = install_root("machine", root)
-    if root.resolve() == home.resolve() or not (home / MANIFEST_NAME).is_file():
-        return None
+def _has_machine_install(root: Path) -> bool:
+    """A machine install exists, and `root` is not where it lives."""
+    home = Path.home()
+    manifest_path = home / MANIFEST_NAME
+    if root.resolve() == home.resolve() or not manifest_path.is_file():
+        return False
     try:
-        manifest = read_manifest(home / MANIFEST_NAME)
-    except ManifestError:
-        return None
-    return manifest if manifest.scope == "machine" else None
-
-
-def _report_machine_overlap(root: Path, manifest: Manifest, pending: Plan) -> None:
-    """Say where the machine rules still load next to this project's rules.
-
-    The generated Claude Code settings skip the machine rules; a project's own
-    settings file does not. The machine's Codex hook skips them by itself.
-    """
-    machine = _machine_manifest(root)
-    if machine is None or "claude" not in set(manifest.targets) & set(machine.targets):
-        return
-    settings = f"{claude_dir('project')}/settings.json"
-    if settings in pending.own:
-        typer.echo(
-            "Claude Code also loads the machine rules here. To use only this project's "
-            f'rules, add "claudeMdExcludes": ["{MACHINE_RULES_EXCLUDE}"] to {settings}.'
-        )
-
-
-def _report_codex_hook(manifest: Manifest, files: Mapping[str, bytes], pending: Plan) -> None:
-    """Codex loads the machine rules through a hook that the user must approve."""
-    hooks = codex.hooks_path(manifest)
-    if hooks in pending.own:
-        typer.echo(f"Codex loads the machine rules through a session hook. Add it to your {hooks}:")
-        typer.echo(files[hooks].decode(), nl=False)
-    typer.echo("Codex runs the hook only after you approve it: start Codex and run /hooks.")
+        return read_manifest(manifest_path).scope == "machine"
+    except ManifestError as error:
+        logger.debug("unreadable machine manifest", extra={"error": str(error)})
+        return False
 
 
 def _refuse_project_flags(flags: Flags) -> None:

@@ -6,14 +6,14 @@ where Claude Code reads its user-level memory, skills, agents and settings.
 
 import json
 from collections.abc import Iterable, Iterator
-from types import MappingProxyType
+from dataclasses import dataclass
 
 from oees_agents.content import Content, Document, Skill
 from oees_agents.context import context_block
-from oees_agents.manifest import Manifest
+from oees_agents.manifest import Manifest, Scope
 from oees_agents.output import ManagedBlock, Output
 from oees_agents.profiles import KIT_TOOLCHAINS, SUBAGENT_ONLY_SKILLS, Toolchain
-from oees_agents.scope import claude_dir, update_command
+from oees_agents.scope import Layout
 
 # No `@rules/...` imports: Claude Code loads every file in `rules/` by itself, so
 # an import would load each rule a second time.
@@ -23,11 +23,42 @@ RULES_HEADER = (
     "rule from the `{rules}/` directory next to this file.{skipped} Edit the manifest "
     "and run `{update}`; keep your own instructions outside this block.\n"
 )
-MACHINE_SKIPPED = " A project with its own oees-agents install skips these rules."
 # A machine install keeps its rules in their own folder. Every project install
 # tells Claude Code to skip that folder, so the project's rules apply, not both.
 MACHINE_RULES = "rules/oees-agents"
 MACHINE_RULES_EXCLUDE = f"**/{MACHINE_RULES}/**"
+
+
+@dataclass(frozen=True)
+class _Placement:
+    """What differs between a project install and a machine install."""
+
+    rules: str
+    skipped: str
+    """The sentence in CLAUDE.md that says when these rules stay out."""
+    excludes: tuple[str, ...]
+    """claudeMdExcludes: a project install skips the machine rules."""
+    settings_advice: str
+    """For a user who keeps their own settings.json."""
+
+
+_PLACEMENTS: dict[Scope, _Placement] = {
+    "project": _Placement(
+        rules="rules",
+        skipped="",
+        excludes=(MACHINE_RULES_EXCLUDE,),
+        settings_advice=(
+            "To skip the rules of a machine install here, add "
+            f'"claudeMdExcludes": ["{MACHINE_RULES_EXCLUDE}"] to it.'
+        ),
+    ),
+    "machine": _Placement(
+        rules=MACHINE_RULES,
+        skipped=" A project with its own oees-agents install skips these rules.",
+        excludes=(),
+        settings_advice="",
+    ),
+}
 
 BASE_COMMANDS = (
     "git status",
@@ -84,36 +115,31 @@ DENY = (
 )
 
 
-def render(manifest: Manifest, content: Content) -> Output:
-    root = claude_dir(manifest.scope)
+def render(manifest: Manifest, content: Content, layout: Layout) -> Output:
+    root = layout.claude
+    placement = _PLACEMENTS[layout.scope]
     settings = f"{root}/settings.json"
     rules = [*content.conduct.values(), *(content.defaults[name] for name in manifest.defaults)]
     files = {
-        **_documents(f"{root}/{_rules_dir(manifest)}", rules),
+        **_documents(f"{root}/{placement.rules}", rules),
         **_skill_files(root, _skills(manifest, content)),
         **_documents(f"{root}/agents", _subagents(manifest, content)),
-        settings: _settings(manifest),
+        settings: _settings(manifest, placement),
     }
     if manifest.extras.commands:
         files.update(_documents(f"{root}/commands", content.commands.values()))
-    block = ManagedBlock(body=_claude_md(manifest, content), placement="top")
+    header = RULES_HEADER.format(
+        rules=placement.rules, skipped=placement.skipped, update=layout.update_command
+    )
+    block = ManagedBlock(body=_claude_md(manifest, content, header), placement="top")
     return Output(
-        files=MappingProxyType(dict(sorted(files.items()))),
-        blocks=MappingProxyType({f"{root}/CLAUDE.md": block}),
-        optional=frozenset({settings}),
+        files=files,
+        blocks={f"{root}/CLAUDE.md": block},
+        optional={settings: placement.settings_advice},
     )
 
 
-def _rules_dir(manifest: Manifest) -> str:
-    return MACHINE_RULES if manifest.scope == "machine" else "rules"
-
-
-def _claude_md(manifest: Manifest, content: Content) -> str:
-    section = RULES_HEADER.format(
-        rules=_rules_dir(manifest),
-        skipped=MACHINE_SKIPPED if manifest.scope == "machine" else "",
-        update=update_command(manifest.scope),
-    )
+def _claude_md(manifest: Manifest, content: Content, section: str) -> str:
     context = context_block(manifest, content)
     return section if context is None else f"{context}\n{section}"
 
@@ -145,7 +171,7 @@ def _subagents(manifest: Manifest, content: Content) -> Iterator[Document]:
         yield from content.subagents[tier].values()
 
 
-def _settings(manifest: Manifest) -> bytes:
+def _settings(manifest: Manifest, placement: _Placement) -> bytes:
     commands = list(BASE_COMMANDS)
     if manifest.project is not None:
         checks = (manifest.project.check, manifest.project.check_fast)
@@ -155,8 +181,8 @@ def _settings(manifest: Manifest) -> bytes:
         commands += TOOLCHAIN_COMMANDS[toolchain]
     allow = [rule for command in dict.fromkeys(commands) for rule in _allow(command)]
     data: dict[str, object] = {"permissions": {"allow": allow, "deny": list(DENY)}}
-    if manifest.scope == "project":
-        data["claudeMdExcludes"] = [MACHINE_RULES_EXCLUDE]
+    if placement.excludes:
+        data["claudeMdExcludes"] = list(placement.excludes)
     return (json.dumps(data, indent=2) + "\n").encode()
 
 

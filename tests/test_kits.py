@@ -11,6 +11,8 @@ from oees_agents.output import Output
 from oees_agents.render import render
 from test_render_claude import manifest, settings, under
 
+from conftest import IN_PROJECT
+
 REPO = Path(__file__).resolve().parents[1]
 TARGETS = ("claude", "cursor", "codex")
 JUNK = ("__pycache__", ".ruff_cache", ".mypy_cache", ".pytest_cache", ".pyc")
@@ -86,7 +88,7 @@ def content() -> Content:
 
 
 def rendered(content: Content, kit: Kit) -> Output:
-    return render(manifest(targets=TARGETS, kits=(kit.name,)), content)
+    return render(manifest(targets=TARGETS, kits=(kit.name,)), content, IN_PROJECT)
 
 
 @pytest.mark.parametrize("kit", KITS, ids=lambda kit: kit.name)
