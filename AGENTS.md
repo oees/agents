@@ -177,6 +177,14 @@ To keep the branch current, rebase it onto the target branch. Never merge the ta
 
 Rebase and merge is the only merge method. Every OEES repository turns off merge commits and squash merges, with no exception for a project. Every commit lands on the default branch as you wrote it. So make each commit good in itself: one logical change that builds and passes on its own. Tidy the commits of the branch before review, not at merge time.
 
+Express one thought in each commit. If the subject says "change this and that", split the commit. Commit a code movement separately from a code change. The move commit carries the import and reference updates that the move needs, and nothing else. Keep a refactor separate from a functional change.
+
+Write the subject in the imperative mood, with a maximum of 70 characters. Start it with a capital letter. Use no final full stop. The subject must complete the sentence "If merged, this commit will...".
+
+Put a blank line after the subject. Then write a body that says why the change is necessary and how it solves the problem. Wrap the body at 72 columns. Link the ticket.
+
+Never credit a model with a `Co-Authored-By:` trailer. The author owns the work, and a model cannot be accountable for what ships. Add no model trailer of any kind.
+
 A human reviews and merges the pull request. An agent never merges or approves a pull request. An agent never enables auto-merge.
 
 Hooks run on every Git command, as the conduct rule requires. If a hook fails, fix the cause. Then rerun the hook and the affected checks before you try again.
