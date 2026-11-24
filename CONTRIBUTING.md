@@ -149,7 +149,7 @@ Generated from `content/` by `make docs`; do not edit by hand (`make check` fail
 | `integrations` | A timeout on every call, one reused client, no synchronous retry, a vendor behind an abstraction with a fake and documented failure modes |
 | `migrations` | Safe, backwards-compatible database schema migrations |
 | `naming` | Inclusive technical terms and American English spelling in every identifier |
-| `observability` | Structured logging, contextual errors, no silent exceptions |
+| `observability` | Structured logging, contextual errors, no silent exceptions, reverse-domain event names, explicit fields, units in field names, metrics for aggregates, Sentry for code defects |
 | `pull-requests` | Draft until ready, a linked ticket and context, tasting notes, declared model assistance, small and chained, review only after the tests pass |
 | `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |
 | `standards` | Backend owns the truth, organise by domain, frontend orchestrates, validated deploys |
