@@ -193,7 +193,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 | Skill | What it does |
 |---|---|
 | `code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
-| `commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
+| `commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤70 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
 | `personal-data` | Keep personal data out of logs, traces, errors, analytics, exports, fixtures and model prompts. Use when adding logging or error handling, writing a serializer, export, webhook or analytics event, sending data to a third party or an LLM, creating test fixtures, or reviewing a change for PII exposure. |
 | `plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
 | `pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
@@ -222,7 +222,7 @@ Each kit is a `SKILL.md` covering the stack's layout, settings, logging, errors,
 | Command | What it does |
 |---|---|
 | `/code-review` | Run an extremely strict maintainability review for abstraction quality, giant files, and spaghetti-condition growth. Use for a code quality review or a code audit. |
-| `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
+| `/commit` | Create a well-formed git commit following team standards — atomic scope, imperative subject ≤70 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit. |
 | `/plan` | Write an implementation plan from a spec or requirements before touching code — one commit-sized task at a time, each naming its files and its failing test. Use when given a spec, a feature brief, or a multi-step task to plan out. |
 | `/pr-tidy` | Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behaviour. Use for "make this easy to review", "tidy this PR", "clean up commits", or "annotate the diff". |
 | `/shipped` | Summarize everything the user has personally authored and shipped across all local git repositories in a configurable time period. Use when the user asks "what did I ship?", "what have I worked on?", or wants a personal activity summary. |

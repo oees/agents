@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Create a well-formed git commit following team standards — atomic scope, imperative subject ≤50 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit.
+description: Create a well-formed git commit following team standards — atomic scope, imperative subject ≤70 chars, body explaining what/why, 72-char line wrap. Use when the user asks to commit, wants to write a commit message, or invokes /commit.
 ---
 
 > Calibrate every judgement call to the project context block in the instruction files. Where it is missing, ask before assuming anything about who depends on this code.
@@ -11,12 +11,15 @@ Create a well-formed git commit that follows the team's commit standards.
 
 ## Rules
 
-- Subject line: imperative mood, ≤50 chars, no trailing period
+- Subject line: imperative mood, ≤70 chars, capital first letter, no trailing period
+- The subject completes the sentence "If merged, this commit will..."
 - Separate subject and body with a blank line
 - Body lines wrapped at ≤72 chars
 - Body explains **what** changed and **why**, not how
 - Reference issue IDs when available (e.g. `Related: #123`)
 - One logical change per commit — do not mix unrelated concerns
+- Commit a code movement separately from a code change; the move commit carries only the import and reference updates that the move needs
+- Never credit a model with a `Co-Authored-By:` trailer, or any other model trailer
 
 **Exceptions:** typo/docs-only fixes may omit the body if intent is obvious from the subject alone.
 
@@ -49,7 +52,7 @@ Review the diff to confirm it represents **one logical change**. If the staged c
 Using the diff and any context from the user, draft a message following this template:
 
 ```
-<subject line — imperative, ≤50 chars, no period>
+<subject line — imperative, ≤70 chars, no period>
 
 <body — what changed and why; wrap at 72 chars>
 
@@ -74,13 +77,15 @@ Related: #123
 
 Before committing, verify:
 
-- [ ] Subject is ≤50 chars
+- [ ] Subject is ≤70 chars
+- [ ] Subject starts with a capital letter
 - [ ] Subject uses imperative mood (e.g. "Add", "Fix", "Remove", not "Added", "Fixes", "Removes")
 - [ ] Subject has no trailing period
 - [ ] Subject and body are separated by a blank line
 - [ ] Body lines are ≤72 chars
 - [ ] Body explains what/why (not just restates the subject)
 - [ ] Issue reference included if available
+- [ ] No model trailer
 
 If any check fails, revise before proceeding.
 
