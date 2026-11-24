@@ -183,7 +183,7 @@ It opens the managed block at the top of `.claude/CLAUDE.md` and the managed blo
 | `observability` | Structured logging, contextual errors, no silent exceptions, reverse-domain event names, explicit fields, units in field names, metrics for aggregates, Sentry for code defects |
 | `pull-requests` | Draft until ready, a linked ticket and context, tasting notes, declared model assistance, small and chained, review only after the tests pass |
 | `quality-gates` | Lint, format, types, tests and dependency scan before merge, run through make check and make check-fast |
-| `standards` | Backend owns the truth, organise by domain, frontend orchestrates, validated deploys |
+| `standards` | Backend owns the truth, organise by domain, frontend orchestrates, dates in the market timezone, validated deploys |
 | `tdd` | TDD: write failing tests before implementation, red-green-refactor |
 <!-- END GENERATED: defaults -->
 

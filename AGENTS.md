@@ -407,6 +407,8 @@ Exceptions: a small utility repo can use a simpler structure if the boundaries s
 
 Keep frontend code to UI, state orchestration and API consumption, with no backend business logic in components. Use strong static typing, schema-based input validation and a server-state cache with explicit invalidation. Cosmetic derivation on the client is fine.
 
+A date belongs to the market, not to the browser. Store and send every instant in UTC. Convert to the timezone of the market, `Europe/Madrid` for OEES, for the display and for every day boundary. A billing period, a meter read day and a tariff hour are defined in the timezone of the market. A client that reads the timezone of the device shows the wrong day to a customer who travels.
+
 Exceptions: a prototype can relax the layering for a short time. Production code must restore the separation of concerns. Generated client code that you commit on purpose can include verbose types.
 
 ## Deployment
