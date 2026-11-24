@@ -2,7 +2,7 @@
 
 import logging
 import sys
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
@@ -36,6 +36,7 @@ from oees_agents.questions import (
 from oees_agents.render import render
 from oees_agents.scope import claude_dir, install_root, update_command
 from oees_agents.sources import LOCAL, SourceError, resolve
+from oees_agents.targets import codex
 from oees_agents.targets.claude import MACHINE_RULES_EXCLUDE
 from oees_agents.writer import Plan, WriterError, apply, plan, read_lock
 
@@ -190,6 +191,8 @@ def init(
         _report(pending)
         if scope == "project":
             _report_machine_overlap(root, manifest, pending)
+        elif "codex" in manifest.targets:
+            _report_codex_hook(manifest, output.files, pending)
 
 
 @app.command()
@@ -313,7 +316,7 @@ def _report(pending: Plan) -> None:
             typer.echo(f"  {conflict.path}: {conflict.reason}")
     for path in pending.own:
         typer.echo(
-            f"Kept the project's own {path}; oees-agents does not manage it. "
+            f"Kept your own {path}; oees-agents does not manage it. "
             "Delete it, or use --force, to take the generated one."
         )
     for warning in pending.warnings:
@@ -354,23 +357,26 @@ def _report_machine_overlap(root: Path, manifest: Manifest, pending: Plan) -> No
     """Say where the machine rules still load next to this project's rules.
 
     The generated Claude Code settings skip the machine rules; a project's own
-    settings file does not, and Codex has no setting for it.
+    settings file does not. The machine's Codex hook skips them by itself.
     """
     machine = _machine_manifest(root)
-    if machine is None:
+    if machine is None or "claude" not in set(manifest.targets) & set(machine.targets):
         return
-    shared = set(manifest.targets) & set(machine.targets)
     settings = f"{claude_dir('project')}/settings.json"
-    if "claude" in shared and settings in pending.own:
+    if settings in pending.own:
         typer.echo(
             "Claude Code also loads the machine rules here. To use only this project's "
             f'rules, add "claudeMdExcludes": ["{MACHINE_RULES_EXCLUDE}"] to {settings}.'
         )
-    if "codex" in shared:
-        typer.echo(
-            "Codex also loads the machine rules here, before this project's rules; "
-            "Codex has no setting to skip them."
-        )
+
+
+def _report_codex_hook(manifest: Manifest, files: Mapping[str, bytes], pending: Plan) -> None:
+    """Codex loads the machine rules through a hook that the user must approve."""
+    hooks = codex.hooks_path(manifest)
+    if hooks in pending.own:
+        typer.echo(f"Codex loads the machine rules through a session hook. Add it to your {hooks}:")
+        typer.echo(files[hooks].decode(), nl=False)
+    typer.echo("Codex runs the hook only after you approve it: start Codex and run /hooks.")
 
 
 def _refuse_project_flags(flags: Flags) -> None:

@@ -1,8 +1,8 @@
 """Where a project install and a machine install put each tool's files.
 
 A project install writes into the project root. A machine install writes into
-the home directory, where each tool reads its user-level instructions:
-`~/.claude/` for Claude Code and `~/.codex/AGENTS.md` for Codex. Each tool's
+the home directory, where each tool reads its user-level configuration:
+`~/.claude/` for Claude Code and `~/.codex/` for Codex. Each tool's
 own variable (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`) moves that directory, and the
 install follows it, but only to a place inside the home directory.
 """
@@ -23,10 +23,8 @@ def claude_dir(scope: Scope) -> str:
     return ".claude" if scope == "project" else _in_home("CLAUDE_CONFIG_DIR", ".claude")
 
 
-def codex_agents_md(scope: Scope) -> str:
-    if scope == "project":
-        return "AGENTS.md"
-    return f"{_in_home('CODEX_HOME', '.codex')}/AGENTS.md"
+def codex_dir(scope: Scope) -> str:
+    return ".codex" if scope == "project" else _in_home("CODEX_HOME", ".codex")
 
 
 def update_command(scope: Scope) -> str:

@@ -28,16 +28,19 @@ uvx --from git+https://github.com/oees/agents@main oees-agents init --machine
 | Tool | Machine install writes |
 |---|---|
 | Claude Code | `~/.claude/` (or `$CLAUDE_CONFIG_DIR`): the managed block at the top of `CLAUDE.md`, `rules/oees-agents/`, `skills/`, `commands/`, `agents/` and `settings.json` |
-| Codex | the managed block at the bottom of `~/.codex/AGENTS.md` (or `$CODEX_HOME/AGENTS.md`) |
+| Codex | `~/.codex/` (or `$CODEX_HOME`): the rules in `oees-agents/rules.md`, a session hook in `oees-agents/session-start.sh` and `hooks.json`. Your `AGENTS.md` there is not changed. |
 | Cursor | nothing: Cursor reads rule files only from a project. Install it per project. |
 
-The manifest and the lock go to `~/.oees-agents.toml` and `~/.oees-agents.lock`. A machine install asks no project question (name, description, users, blast radius, branch, checks), so it has no project context block. Your own text in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` outside the managed block stays, and so does a `~/.claude/settings.json` that you already had. `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME` must point inside your home directory.
+The manifest and the lock go to `~/.oees-agents.toml` and `~/.oees-agents.lock`. A machine install asks no project question (name, description, users, blast radius, branch, checks), so it has no project context block. Your own text in `~/.claude/CLAUDE.md` outside the managed block stays, and so does a `~/.claude/settings.json` or `~/.codex/hooks.json` that you already had. `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME` must point inside your home directory.
 
 The machine install applies to every project, unless the project has its own install. Each tool handles this differently:
 
 - **Claude Code rules**: the project install's `.claude/settings.json` tells Claude Code to skip the machine rules, with `"claudeMdExcludes": ["**/rules/oees-agents/**"]`. So the project's rules apply, not both. If the project keeps its own `settings.json`, add that line to it yourself; `init` prints it.
 - **Claude Code skills and subagents**: Claude Code uses the machine skill when the machine and the project have a skill with the same name, and the project subagent when both have a subagent with the same name. No setting changes this. Keep both installs on the same version.
-- **Codex**: Codex always loads `~/.codex/AGENTS.md` first, then the project's `AGENTS.md`. It has no setting to skip the global file, so a project with its own install gets both, and `init` says so. The project's rules come later, so they win where the two differ.
+- **Codex**: Codex loads `~/.codex/AGENTS.md` in every project and has no setting to skip it, so the machine install does not use that file. A session hook gives Codex the rules instead. At each new session, `/clear` or compaction, the hook looks for a `.oees-agents.toml` from the working directory up to the Git root. If it finds a project install for Codex, it prints nothing, so the project's `AGENTS.md` applies. Otherwise it prints the machine rules.
+  - Codex runs the hook only after you approve it. Start Codex and run `/hooks`. Until then, Codex does not load the machine rules. An `update` that changes only the rules needs no new approval.
+  - If you already have a `~/.codex/hooks.json`, the CLI keeps it and prints the hook for you to add.
+  - The hook sets `"additionalContextLimit": 0`. Without it, Codex moves hook output above 2,500 tokens to a file and shows only a preview.
 
 Then commit the result. Add only the targets you picked:
 
@@ -282,7 +285,7 @@ codex:
 AGENTS.md                     managed block at the bottom: context, then conduct and kept defaults in full
 ```
 
-A machine install writes the same Claude Code tree under `~/.claude/`, the Codex block into `~/.codex/AGENTS.md`, and the manifest and lock into your home directory. See [This project or the whole machine](#this-project-or-the-whole-machine).
+A machine install writes the same Claude Code tree under `~/.claude/` (with the rules in `rules/oees-agents/`), the Codex rules and session hook under `~/.codex/`, and the manifest and lock into your home directory. See [This project or the whole machine](#this-project-or-the-whole-machine).
 
 ## Updating
 
