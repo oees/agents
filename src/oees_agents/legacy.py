@@ -78,7 +78,8 @@ class LegacyInstall:
     commands: bool
     removable: tuple[str, ...]
     kept: tuple[str, ...]
-    claude_md: bytes | None
+    strips_claude_md: bool
+    """CLAUDE.md holds old `@rules/` imports to remove."""
 
 
 def detect(root: Path, content: Content) -> LegacyInstall | None:
@@ -89,7 +90,7 @@ def detect(root: Path, content: Content) -> LegacyInstall | None:
     found = {path: kind for path in _CANDIDATES if (kind := _kind(root, path)) != "missing"}
     removable = tuple(path for path, kind in found.items() if _is_known(root, path, kind))
     present = tuple(path for path in found if path in removable or path != SETTINGS_JSON)
-    claude_md, imported = _strip_imports(_read(root, CLAUDE_MD))
+    _, imported = _strip_imports(_read(root, CLAUDE_MD))
     agents_md = _read(root, AGENTS_MD)
     marked = agents_md is not None and _has_marker(agents_md)
     # A file at an old path proves nothing on its own: projects keep their own
@@ -116,7 +117,7 @@ def detect(root: Path, content: Content) -> LegacyInstall | None:
         commands=any(path.startswith(".claude/commands/") for path in present),
         removable=removable,
         kept=tuple(path for path in present if path not in removable),
-        claude_md=claude_md if imported else None,
+        strips_claude_md=bool(imported),
     )
 
 
@@ -124,18 +125,21 @@ def migrate(root: Path, install: LegacyInstall) -> None:
     """Delete `install.removable` and rewrite CLAUDE.md; checks everything before changing any."""
     root = root.resolve()
     for path in install.removable:
-        kind = _kind(root, path) if path in KNOWN_HASHES else "unsafe"
-        if not _is_known(root, path, kind):
+        if not _is_known(root, path, _kind(root, path)):
             raise LegacyError(f"{path} is not an unedited legacy file any more; nothing removed")
-    if install.claude_md is not None and _kind(root, CLAUDE_MD) == "unsafe":
+    if install.strips_claude_md and _kind(root, CLAUDE_MD) == "unsafe":
         raise LegacyError(f"{CLAUDE_MD} is a symlink or not a regular file; nothing removed")
+    # Read CLAUDE.md again: the user may have edited it while init asked its questions.
+    claude_md, _ = _strip_imports(_read(root, CLAUDE_MD))
     for path in install.removable:
         remove_file(root, path)
         logger.info("removed legacy file", extra={"path": path})
-    if install.claude_md is not None and install.claude_md.strip():
-        write_atomic(root / CLAUDE_MD, install.claude_md)
+    if not install.strips_claude_md:
+        return
+    if claude_md.strip():
+        write_atomic(root / CLAUDE_MD, claude_md)
         logger.info("removed legacy rule imports", extra={"path": CLAUDE_MD})
-    elif install.claude_md is not None:
+    else:
         remove_file(root, CLAUDE_MD)
         logger.info("removed legacy file", extra={"path": CLAUDE_MD})
     for path in install.kept:
