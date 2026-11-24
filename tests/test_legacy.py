@@ -88,7 +88,7 @@ def test_the_main_install_migrates_to_every_default_and_no_project(
 
     assert manifest.project is None
     assert manifest.defaults == tuple(content.defaults)
-    assert len(manifest.defaults) == 9
+    assert len(manifest.defaults) == 10
     assert manifest.source == "v1.0.0"
     assert manifest.kits == ()
     assert manifest.extras.subagents == "none"
@@ -119,7 +119,7 @@ def test_shared_rule_markers_in_agents_md_add_codex_and_their_rules(
     install = detected(tmp_path, content)
 
     assert install.targets == ("codex",)
-    assert install.defaults == ("api", "naming", "standards", "tdd")
+    assert install.defaults == ("api", "integrations", "naming", "standards", "tdd")
     assert install.removable == ()
 
 
@@ -127,7 +127,7 @@ def test_shared_rule_markers_in_agents_md_add_codex_and_their_rules(
     ("rules", "defaults"),
     [
         (("code-quality",), ("quality-gates",)),
-        (("standards",), ("api", "naming", "standards")),
+        (("standards",), ("api", "integrations", "naming", "standards")),
         (("secrets", "no-inline-imports"), ()),
         (("conduct", "api", "quality-gates"), ("api", "quality-gates")),
     ],

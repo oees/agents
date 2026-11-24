@@ -32,7 +32,7 @@ OLD_RULE_DEFAULTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         "git": ("git", "pull-requests"),
         "observability": ("observability",),
         "migrations": ("migrations",),
-        "standards": ("standards", "api", "naming"),
+        "standards": ("standards", "api", "integrations", "naming"),
         "code-quality": ("quality-gates",),
         "secrets": (),
         "no-inline-imports": (),
@@ -43,6 +43,7 @@ OLD_RULE_DEFAULTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         "quality-gates": ("quality-gates",),
         "pull-requests": ("pull-requests",),
         "naming": ("naming",),
+        "integrations": ("integrations",),
     }
 )
 

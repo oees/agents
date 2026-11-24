@@ -28,6 +28,7 @@ CONDUCT = ("conduct", "data-protection", "language", "secrets")
 DEFAULTS = (
     "tdd",
     "git",
+    "integrations",
     "pull-requests",
     "observability",
     "migrations",
