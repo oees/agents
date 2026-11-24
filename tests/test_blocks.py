@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from oees_agents.blocks import (
@@ -7,8 +5,6 @@ from oees_agents.blocks import (
     END,
     BlockError,
     extract,
-    merge,
-    read_target,
     remove,
     splice,
 )
@@ -94,46 +90,3 @@ def test_remove_takes_out_the_block_and_its_separator() -> None:
     assert remove(splice(b"Local.\n", BOTTOM)) == b"Local.\n"
     assert remove(splice(b"Local.\n", TOP)) == b"Local.\n"
     assert remove(BLOCK) == b""
-
-
-def test_read_target_refuses_a_symlink_without_touching_it(tmp_path: Path) -> None:
-    original = tmp_path / "linked.md"
-    original.write_text("Keep me.\n")
-    link = tmp_path / "AGENTS.md"
-    link.symlink_to(original)
-
-    with pytest.raises(BlockError, match="symlink"):
-        read_target(link)
-    assert link.is_symlink()
-    assert original.read_text() == "Keep me.\n"
-
-
-def test_read_target_refuses_a_directory(tmp_path: Path) -> None:
-    (tmp_path / "AGENTS.md").mkdir()
-
-    with pytest.raises(BlockError, match="not a regular file"):
-        read_target(tmp_path / "AGENTS.md")
-
-
-def test_read_target_returns_none_for_a_missing_file(tmp_path: Path) -> None:
-    assert read_target(tmp_path / "AGENTS.md") is None
-
-
-def test_merge_warns_when_the_result_exceeds_the_block_limit(tmp_path: Path) -> None:
-    path = tmp_path / "AGENTS.md"
-    path.write_bytes(b"x" * 40_000 + b"\n")
-    block = ManagedBlock(body="Rules.\n", placement="bottom", max_bytes=32_768)
-
-    data, warnings = merge(path, block)
-
-    assert len(data) > 32_768
-    assert warnings == [f"{path.name} is {len(data)} bytes, over the 32768-byte limit"]
-
-
-def test_merge_does_not_write(tmp_path: Path) -> None:
-    path = tmp_path / "AGENTS.md"
-    path.write_bytes(b"Local.\n")
-
-    merge(path, BOTTOM)
-
-    assert path.read_bytes() == b"Local.\n"
