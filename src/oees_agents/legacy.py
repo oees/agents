@@ -20,6 +20,7 @@ from typing import Literal
 
 from oees_agents.blocks import BEGIN
 from oees_agents.content import Content
+from oees_agents.errors import OeesAgentsError
 from oees_agents.fs import remove_file, write_atomic
 from oees_agents.manifest import MANIFEST_NAME, TARGETS, Extras, Manifest, Target
 
@@ -66,7 +67,7 @@ _CANDIDATES = tuple(
 Kind = Literal["missing", "file", "unsafe"]
 
 
-class LegacyError(ValueError):
+class LegacyError(OeesAgentsError):
     """A legacy install cannot be migrated safely; nothing was changed."""
 
 

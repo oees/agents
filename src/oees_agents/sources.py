@@ -10,6 +10,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from oees_agents import __version__
 from oees_agents.content import Content, load_content
+from oees_agents.errors import OeesAgentsError
 
 REPOSITORY = "https://github.com/oees/agents"
 REPOSITORY_ENV = "OEES_AGENTS_REPOSITORY"
@@ -20,7 +21,7 @@ _PACKAGE = Path(__file__).resolve().parent
 logger = logging.getLogger(__name__)
 
 
-class SourceError(RuntimeError):
+class SourceError(OeesAgentsError):
     """The requested content version cannot be fetched."""
 
 

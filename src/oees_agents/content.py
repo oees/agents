@@ -16,6 +16,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from types import MappingProxyType
 
+from oees_agents.errors import OeesAgentsError
+
 SUBAGENT_TIERS = ("core", "extended")
 CONTEXT_TEMPLATE = "content/blocks/project-context.md"
 TEMPLATES_DIR = "templates"
@@ -30,7 +32,7 @@ README_NAME = "README.md"
 Meta = Mapping[str, str | tuple[str, ...]]
 
 
-class ContentError(ValueError):
+class ContentError(OeesAgentsError):
     """The content tree is missing something the installer depends on."""
 
 

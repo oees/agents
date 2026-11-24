@@ -20,6 +20,7 @@ from pathlib import Path
 from types import MappingProxyType
 
 from oees_agents.content import Content, ContentError, Document, load_content
+from oees_agents.errors import OeesAgentsError
 from oees_agents.log import configure
 
 DOC_FILES = ("README.md", "CONTRIBUTING.md")
@@ -29,7 +30,7 @@ _MARKER = re.compile(r"^<!-- (BEGIN|END) GENERATED: ([a-z-]+) -->$")
 logger = logging.getLogger(__name__)
 
 
-class DocsError(ValueError):
+class DocsError(OeesAgentsError):
     """A doc file's generated regions cannot be filled safely."""
 
 

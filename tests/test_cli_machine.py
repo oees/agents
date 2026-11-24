@@ -78,10 +78,10 @@ def test_a_machine_install_keeps_the_users_own_files(home: Path, content_root: P
 def test_project_questions_do_not_apply_to_a_machine_install(
     home: Path, content_root: Path
 ) -> None:
-    result = init_machine(content_root, "--description", "A portal.")
+    result = init_machine(content_root, "--description", "A portal.", "--users", "me")
 
-    assert result.exit_code == 1
-    assert "--description" in result.stderr
+    assert result.exit_code == 2
+    assert "leave out --description, --users" in result.stderr
     assert not (home / MANIFEST_NAME).exists()
 
 
