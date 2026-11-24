@@ -153,7 +153,7 @@ def test_a_claude_md_without_markers_keeps_its_bytes_under_the_block(content: Co
 def test_settings_deny_destructive_git_and_never_rm_or_hooks(content: Content) -> None:
     data = settings(render(manifest(), content))
 
-    assert set(data) == {"permissions"}
+    assert set(data) == {"permissions", "claudeMdExcludes"}
     assert data["permissions"]["deny"] == list(DENIED)
     entries = [*data["permissions"]["allow"], *data["permissions"]["deny"]]
     assert not [entry for entry in entries if re.search(r"\brm\b", entry)]
@@ -347,3 +347,27 @@ def test_a_machine_install_writes_under_the_claude_config_dir(
     block = output.blocks["config/claude/CLAUDE.md"].body
     assert "oees-agents update --machine" in block
     assert CONTEXT_BEGIN not in block
+
+
+MACHINE_RULES_EXCLUDE = ["**/rules/oees-agents/**"]
+
+
+def test_a_project_install_tells_claude_code_to_skip_the_machine_rules(content: Content) -> None:
+    data: dict[str, object] = json.loads(render(manifest(), content).files[".claude/settings.json"])
+
+    assert data["claudeMdExcludes"] == MACHINE_RULES_EXCLUDE
+
+
+def test_a_machine_install_keeps_its_rules_in_a_folder_a_project_can_skip(
+    content: Content, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
+
+    output = render(manifest(scope="machine", project=None), content)
+
+    assert under(output, ".claude/rules/") == {
+        f".claude/rules/oees-agents/{name}.md" for name in (*CONDUCT, *DEFAULTS)
+    }
+    assert "`rules/oees-agents/`" in claude_block(output)
+    assert "claudeMdExcludes" not in settings(output)

@@ -34,8 +34,9 @@ from oees_agents.questions import (
     detect_machine,
 )
 from oees_agents.render import render
-from oees_agents.scope import install_root, update_command
+from oees_agents.scope import claude_dir, install_root, update_command
 from oees_agents.sources import LOCAL, SourceError, resolve
+from oees_agents.targets.claude import MACHINE_RULES_EXCLUDE
 from oees_agents.writer import Plan, WriterError, apply, plan, read_lock
 
 app = typer.Typer(
@@ -187,11 +188,8 @@ def init(
         else:
             typer.echo(f"Wrote {MANIFEST_NAME}. Commit it with the generated files and the lock.")
         _report(pending)
-        if scope == "project" and _has_machine_install(root):
-            typer.echo(
-                "This machine also has a machine install. Claude Code and Codex load both, "
-                "so the shared rules load twice here."
-            )
+        if scope == "project":
+            _report_machine_overlap(root, manifest, pending)
 
 
 @app.command()
@@ -330,7 +328,7 @@ def _read_manifest(root: Path, machine: bool = False) -> tuple[str, Manifest]:
     manifest_path = root / MANIFEST_NAME
     if not manifest_path.is_file():
         hint = ""
-        if not machine and _has_machine_install(root):
+        if not machine and _machine_manifest(root) is not None:
             hint = "; for the machine install, add --machine"
         _fail(f"no {MANIFEST_NAME} in {root}; run `oees-agents init` first{hint}")
     text = manifest_path.read_text(encoding="utf-8")
@@ -340,15 +338,39 @@ def _read_manifest(root: Path, machine: bool = False) -> tuple[str, Manifest]:
     return text, manifest
 
 
-def _has_machine_install(root: Path) -> bool:
-    """A machine install other than `root` itself."""
+def _machine_manifest(root: Path) -> Manifest | None:
+    """The manifest of a machine install other than `root` itself."""
     home = install_root("machine", root)
     if root.resolve() == home.resolve() or not (home / MANIFEST_NAME).is_file():
-        return False
+        return None
     try:
-        return read_manifest(home / MANIFEST_NAME).scope == "machine"
+        manifest = read_manifest(home / MANIFEST_NAME)
     except ManifestError:
-        return False
+        return None
+    return manifest if manifest.scope == "machine" else None
+
+
+def _report_machine_overlap(root: Path, manifest: Manifest, pending: Plan) -> None:
+    """Say where the machine rules still load next to this project's rules.
+
+    The generated Claude Code settings skip the machine rules; a project's own
+    settings file does not, and Codex has no setting for it.
+    """
+    machine = _machine_manifest(root)
+    if machine is None:
+        return
+    shared = set(manifest.targets) & set(machine.targets)
+    settings = f"{claude_dir('project')}/settings.json"
+    if "claude" in shared and settings in pending.own:
+        typer.echo(
+            "Claude Code also loads the machine rules here. To use only this project's "
+            f'rules, add "claudeMdExcludes": ["{MACHINE_RULES_EXCLUDE}"] to {settings}.'
+        )
+    if "codex" in shared:
+        typer.echo(
+            "Codex also loads the machine rules here, before this project's rules; "
+            "Codex has no setting to skip them."
+        )
 
 
 def _refuse_project_flags(flags: Flags) -> None:
